@@ -5,7 +5,7 @@ setup(name='substratools',
       description='Python tools to submit algo on the Substra platform',
       author='Camille',
       packages=['substratools'],
-      install_requires=['numpy'],
+      install_requires=['numpy', 'sklearn'],
       classifiers=[
           'Programming Language :: Python :: 3',
           'Topic :: Scientific/Engineering'

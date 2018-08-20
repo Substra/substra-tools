@@ -1,5 +1,6 @@
 import json
 import numpy as np
+from sklearn.externals import joblib
 
 
 class SubstraModel:
@@ -10,8 +11,8 @@ class SubstraModel:
         self.model_file = model_file
 
     def save_json_sklearn(self, model):
-        """Save estimated params of a sklearn model in a json file. Not sure
-        this will work pr"""
+        """Save estimated params of a sklearn model in a json file.
+        Does not work for sklearn.ensemble estimators"""
         attr = model.__dict__
         estimated_params = {key: value.tolist() if isinstance(value, np.ndarray) else value
                             for key, value in attr.items() if key[-1] == "_" and key != "loss_function_"}
@@ -27,3 +28,13 @@ class SubstraModel:
                 setattr(model, key, np.array(value))
             else:
                 setattr(model, key, value)
+
+    def save_pkl_sklearn(self, model):
+        """Save sklearn model in pickle file (for ensemble models).
+        Not secure, may be modified later if we do really use such types of models"""
+        joblib.dump(model, self.model_file)
+
+    def load_pkl_sklearn(self):
+        """Load sklearn model in pickle file (for ensemble models).
+        Not secure, may be modified later if we do really use such types of models"""
+        return joblib.load(self.model_file)
