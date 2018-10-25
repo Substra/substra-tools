@@ -1,11 +1,12 @@
-FROM frolvlad/alpine-python-machinelearning
+FROM nvidia/cuda:9.0-base
 
-RUN apk add py3-pillow
+RUN apt-get update; apt-get install -y build-essential libssl-dev  python3 python3-dev python3-pip
+RUN pip3 install pillow
 
 ADD ./setup.py /tmp
 ADD ./substratools /tmp/substratools
-RUN pip install --upgrade pip && cd /tmp && pip install -e . 
+RUN cd /tmp && pip3 install -e .
 
-RUN mkdir -p /sandbox/opener 
+RUN mkdir -p /sandbox/opener
 
 WORKDIR /sandbox
