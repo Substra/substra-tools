@@ -61,8 +61,9 @@ def dummy_algo_class(dummy_opener):
             model = len(models) + 1
             return pred, model
 
-        def predict(self, models):
-            pass
+        def predict(self, X, y, models):
+            pred = ''.join([m['name'] for m in models])
+            return pred
 
     yield DummyAlgo
 
@@ -110,7 +111,13 @@ def test_algo_train_dry_run(dummy_algo_class):
     assert model == 1
 
 
-def test_algo_execute(dummy_algo_class, workdir):
+def test_algo_predict(dummy_algo_class):
+    a = dummy_algo_class()
+    pred = a._execute_predict(model_paths=[])
+    assert pred == ''
+
+
+def test_algo_execute_train(dummy_algo_class, workdir):
     a = dummy_algo_class()
 
     cli = algo._generate_cli(a)
@@ -120,5 +127,15 @@ def test_algo_execute(dummy_algo_class, workdir):
     assert result.exit_code == 0
 
     result = runner.invoke(cli, ['train'])
+    print(result.exception)
+    assert result.exit_code == 0
+
+
+def test_algo_execute_predict(dummy_algo_class, workdir):
+    a = dummy_algo_class()
+
+    cli = algo._generate_cli(a)
+    runner = CliRunner()
+    result = runner.invoke(cli, ['predict'])
     print(result.exception)
     assert result.exit_code == 0

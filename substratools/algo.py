@@ -45,7 +45,7 @@ def _validate_serializer(serializer):
 
 
 class Algo(abc.ABC):
-    """Abstract base class for algo to submit on the platform."""
+    """Abstract base class for executing an algo on the platform."""
     OPENER = None
     MODEL_SERIALIZER = serializers.JSON
 
@@ -64,13 +64,25 @@ class Algo(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def predict(self, models):
-        """Load a model and save predictions made on train data."""
+    def predict(self, X, y, models):
+        """Load models and save predictions made on train data."""
         raise NotImplementedError
 
     def dry_run(self, X, y, models, rank):
         """Train model dry run mode."""
         return self.train(X, y, models, rank=0)
+
+    def _load_models(self, model_paths):
+        """Load models in-memory from paths."""
+        # load models from workspace and deserialize them
+        model_buffers = [self._workspace.load_model(path)
+                         for path in model_paths]
+        return [self.MODEL_SERIALIZER.load(buff) for buff in model_buffers]
+
+    def _save_model(self, model):
+        """Save model object to workspace."""
+        model_buff = self.MODEL_SERIALIZER.dump(model)
+        self._workspace.save_model(model_buff)
 
     def _execute_train(self, model_paths, rank=0, dry_run=False):
         """Train method wrapper."""
@@ -82,23 +94,37 @@ class Algo(abc.ABC):
             X = self.OPENER.get_X()
             y = self.OPENER.get_y()
 
-        # load models from workspace and deserialize them
-        model_buffers = [self._workspace.load_model(path)
-                         for path in model_paths]
-        models = [self.MODEL_SERIALIZER.load(buff) for buff in model_buffers]
+        # load models
+        models = self._load_models(model_paths)
 
         # train new model
         method = self.train if not dry_run else self.dry_run
         pred, model = method(X, y, models, rank)
 
         # serialize output model and save it to workspace
-        model_buff = self.MODEL_SERIALIZER.dump(model)
-        self._workspace.save_model(model_buff)
+        self._save_model(model)
 
         # save prediction
         self.OPENER.save_pred(pred)
 
         return pred, model
+
+    def _execute_predict(self, model_paths):
+        """Predict method wrapper."""
+        # load data from opener
+        X = self.OPENER.get_X()
+        y = self.OPENER.get_y()
+
+        # load models
+        models = self._load_models(model_paths)
+
+        # get predictions
+        pred = self.predict(X, y, models)
+
+        # save prediction
+        self.OPENER.save_pred(pred)
+
+        return pred
 
 
 def _generate_cli(algo):
@@ -121,8 +147,9 @@ def _generate_cli(algo):
 
     @cli.command()
     @click.argument('models', nargs=-1)
+    @click.pass_obj
     def predict(algo, models):
-        algo.predict(models)
+        algo._execute_predict(models)
 
     return cli
 
