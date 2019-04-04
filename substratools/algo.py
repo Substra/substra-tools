@@ -111,18 +111,13 @@ def _generate_cli(algo):
 
     @cli.command()
     @click.argument('models', nargs=-1)
-    @click.pass_obj
-    def dry_run(algo, models):
-        # TODO could be an option of the train method
-        algo._execute_train(models)
-
-    @cli.command()
-    @click.argument('models', nargs=-1)
     @click.option('-r', '--rank', type=click.INT, default=0,
                   help='Rank of the fltask')
+    @click.option('-d', '--dry-run', is_flag=True,
+                  help='Launch in dry run mode')
     @click.pass_obj
-    def train(algo, models, rank):
-        algo._execute_train(models, rank)
+    def train(algo, models, rank, dry_run):
+        algo._execute_train(models, rank, dry_run)
 
     @cli.command()
     @click.argument('models', nargs=-1)

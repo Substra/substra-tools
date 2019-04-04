@@ -115,7 +115,7 @@ def test_algo_execute(dummy_algo_class, workdir):
 
     cli = algo._generate_cli(a)
     runner = CliRunner()
-    result = runner.invoke(cli, ['dry-run'])
+    result = runner.invoke(cli, ['train', '--dry-run'])
     print(result.exception)
     assert result.exit_code == 0
 
