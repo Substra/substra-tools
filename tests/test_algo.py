@@ -68,19 +68,19 @@ def dummy_algo_class(dummy_opener):
     yield DummyAlgo
 
 
-def test_algo_create(dummy_algo_class):
+def test_create(dummy_algo_class):
     # check we can instantiate a dummy algo class
     dummy_algo_class()
 
 
-def test_algo_train_no_model(dummy_algo_class):
+def test_train_no_model(dummy_algo_class):
     a = dummy_algo_class()
     pred, model = a._execute_train(model_paths=[])
     assert pred == 'Xy'
     assert model == 1
 
 
-def test_algo_train_multiple_models(dummy_algo_class, workdir):
+def test_train_multiple_models(dummy_algo_class, workdir):
     model_a = {'name': 'a'}
     model_b = {'name': 'b'}
 
@@ -104,38 +104,41 @@ def test_algo_train_multiple_models(dummy_algo_class, workdir):
     assert model == 3
 
 
-def test_algo_train_dry_run(dummy_algo_class):
+def test_train_dry_run(dummy_algo_class):
     a = dummy_algo_class()
     pred, model = a._execute_train(model_paths=[], dry_run=True)
     assert pred == 'Xfakeyfake'
     assert model == 1
 
 
-def test_algo_predict(dummy_algo_class):
+def test_predict(dummy_algo_class):
     a = dummy_algo_class()
     pred = a._execute_predict(model_paths=[])
     assert pred == ''
 
 
-def test_algo_execute_train(dummy_algo_class, workdir):
+def test_execute_train(dummy_algo_class, workdir):
     a = dummy_algo_class()
-
     cli = algo._generate_cli(a)
     runner = CliRunner()
-    result = runner.invoke(cli, ['train', '--dry-run'])
-    print(result.exception)
-    assert result.exit_code == 0
+
+    output_model_path = workdir / 'model' / 'model'
+
+    assert not output_model_path.exists()
 
     result = runner.invoke(cli, ['train'])
-    print(result.exception)
+    assert result.exit_code == 0
+    assert output_model_path.exists()
+
+    result = runner.invoke(cli, ['train', '--dry-run'])
     assert result.exit_code == 0
 
 
-def test_algo_execute_predict(dummy_algo_class, workdir):
+def test_execute_predict(dummy_algo_class, workdir):
     a = dummy_algo_class()
-
     cli = algo._generate_cli(a)
     runner = CliRunner()
+
     result = runner.invoke(cli, ['predict'])
     print(result.exception)
     assert result.exit_code == 0
