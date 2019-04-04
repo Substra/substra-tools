@@ -15,6 +15,7 @@ def _load_opener_module():
 
 class Workspace(object):
     """Filesystem workspace for algo execution."""
+    LOG_FILENAME = 'log_model.log'
 
     def __init__(self, dirpath=None):
         self._root_path = dirpath if dirpath else os.getcwd()
@@ -30,6 +31,10 @@ class Workspace(object):
             except FileExistsError:
                 pass
 
+    @property
+    def log_path(self):
+        return os.path.join(self._model_folder, self.LOG_FILENAME)
+
     def save_model(self, buff, name='model'):
         with open(os.path.join(self._model_folder, name), 'w') as f:
             return f.write(buff)
@@ -41,14 +46,14 @@ class Workspace(object):
 
 def _validate_serializer(serializer):
     assert isinstance(serializer, serializers.Serializer)
-    assert callable(serializer.load)
-    assert callable(serializer.dump)
+    assert callable(serializer.loads)
+    assert callable(serializer.dumps)
 
 
 class Algo(abc.ABC):
     """Abstract base class for executing an algo on the platform."""
     OPENER = None
-    MODEL_SERIALIZER = serializers.JSON
+    MODEL_SERIALIZER = serializers.JSON  # default serializer
 
     def __init__(self):
         if self.OPENER is None:
@@ -61,12 +66,18 @@ class Algo(abc.ABC):
 
     @abc.abstractmethod
     def train(self, X, y, models, rank):
-        """Train algorithm and produce new model."""
+        """Train algorithm and produce new model.
+
+        Must return a tuple (predictions, model).
+        """
         raise NotImplementedError
 
     @abc.abstractmethod
     def predict(self, X, y, models):
-        """Load models and save predictions made on train data."""
+        """Load models and save predictions made on train data.
+
+        Must return predictions.
+        """
         raise NotImplementedError
 
     def dry_run(self, X, y, models, rank):
@@ -79,11 +90,11 @@ class Algo(abc.ABC):
         model_paths = model_paths if model_paths else []
         model_buffers = [self._workspace.load_model(path)
                          for path in model_paths]
-        return [self.MODEL_SERIALIZER.load(buff) for buff in model_buffers]
+        return [self.MODEL_SERIALIZER.loads(buff) for buff in model_buffers]
 
     def _save_model(self, model):
         """Save model object to workspace."""
-        model_buff = self.MODEL_SERIALIZER.dump(model)
+        model_buff = self.MODEL_SERIALIZER.dumps(model)
         self._workspace.save_model(model_buff)
 
     def _execute_train(self, model_paths, rank=0, dry_run=False):
@@ -140,6 +151,8 @@ class Algo(abc.ABC):
 
 def _generate_cli(algo):
     """Helper to generate a command line interface client."""
+    logging.basicConfig(filename=algo._workspace.log_path,
+                        level=logging.DEBUG)
 
     @click.group()
     @click.pass_context
@@ -167,6 +180,5 @@ def _generate_cli(algo):
 
 def execute(algo):
     """Launch algo command line interface."""
-    logging.basicConfig(level=logging.INFO)
     cli = _generate_cli(algo)
     cli()
