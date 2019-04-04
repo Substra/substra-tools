@@ -1,4 +1,5 @@
 import abc
+import logging
 import os
 
 import importlib
@@ -75,6 +76,7 @@ class Algo(abc.ABC):
     def _load_models(self, model_paths):
         """Load models in-memory from paths."""
         # load models from workspace and deserialize them
+        model_paths = model_paths if model_paths else []
         model_buffers = [self._workspace.load_model(path)
                          for path in model_paths]
         return [self.MODEL_SERIALIZER.load(buff) for buff in model_buffers]
@@ -87,6 +89,7 @@ class Algo(abc.ABC):
     def _execute_train(self, model_paths, rank=0, dry_run=False):
         """Train method wrapper."""
         # load data from opener
+        logging.info('loading data from opener')
         if dry_run:
             X = self.OPENER.fake_X()
             y = self.OPENER.fake_y()
@@ -95,16 +98,20 @@ class Algo(abc.ABC):
             y = self.OPENER.get_y()
 
         # load models
+        logging.info('loading models')
         models = self._load_models(model_paths)
 
         # train new model
+        logging.info('training')
         method = self.train if not dry_run else self.dry_run
         pred, model = method(X, y, models, rank)
 
         # serialize output model and save it to workspace
+        logging.info('saving output model')
         self._save_model(model)
 
         # save prediction
+        logging.info('saving prediction')
         self.OPENER.save_pred(pred)
 
         return pred, model
@@ -112,16 +119,20 @@ class Algo(abc.ABC):
     def _execute_predict(self, model_paths):
         """Predict method wrapper."""
         # load data from opener
+        logging.info('loading data from opener')
         X = self.OPENER.get_X()
         y = self.OPENER.get_y()
 
         # load models
+        logging.info('loading models')
         models = self._load_models(model_paths)
 
         # get predictions
+        logging.info('predicting')
         pred = self.predict(X, y, models)
 
         # save prediction
+        logging.info('saving prediction')
         self.OPENER.save_pred(pred)
 
         return pred
@@ -156,5 +167,6 @@ def _generate_cli(algo):
 
 def execute(algo):
     """Launch algo command line interface."""
+    logging.basicConfig(level=logging.INFO)
     cli = _generate_cli(algo)
     cli()
