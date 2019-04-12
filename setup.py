@@ -5,7 +5,7 @@ setup(
     name='substratools',
     version='0.0',
     description='Python tools to submit algo on the Substra platform',
-    author='Camille',
+    author='Camille Marini',
     packages=find_packages(),
     install_requires=[
         'click',
