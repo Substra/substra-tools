@@ -7,7 +7,10 @@ setup(
     description='Python tools to submit algo on the Substra platform',
     author='Camille',
     packages=find_packages(),
-    install_requires=['numpy', 'sklearn'],
+    install_requires=[
+        'click',
+        'numpy',
+        'sklearn'],
     classifiers=[
         'Programming Language :: Python :: 3',
         'Topic :: Scientific/Engineering'
