@@ -46,24 +46,26 @@ class AlgoWrapper(object):
     def __init__(self, interface):
         assert isinstance(interface, Algo)
 
+        # validate or load default opener
         if interface.OPENER:
             self._OPENER_WRAPPER = opener.OpenerWrapper(interface.OPENER)
         else:
             self._OPENER_WRAPPER = opener.load_from_module()
         assert isinstance(self._OPENER_WRAPPER, opener.OpenerWrapper)
 
+        # validate model serializer
         _validate_serializer(interface.MODEL_SERIALIZER)
         self.MODEL_SERIALIZER = interface.MODEL_SERIALIZER
 
         self._interface = interface
         self._workspace = workspace.Workspace()
 
-    def _load_models(self, model_paths):
-        """Load models in-memory from paths."""
+    def _load_models(self, model_names):
+        """Load models in-memory from names."""
         # load models from workspace and deserialize them
-        model_paths = model_paths if model_paths else []
-        model_buffers = [self._workspace.load_model(path)
-                         for path in model_paths]
+        model_names = model_names if model_names else []
+        model_buffers = [self._workspace.load_model(name)
+                         for name in model_names]
         return [self.MODEL_SERIALIZER.loads(buff) for buff in model_buffers]
 
     def _save_model(self, model):
@@ -71,7 +73,7 @@ class AlgoWrapper(object):
         model_buff = self.MODEL_SERIALIZER.dumps(model)
         self._workspace.save_model(model_buff)
 
-    def train(self, model_paths, rank=0, dry_run=False):
+    def train(self, model_names, rank=0, dry_run=False):
         """Train method wrapper."""
         # load data from opener
         logging.info('loading data from opener')
@@ -80,7 +82,7 @@ class AlgoWrapper(object):
 
         # load models
         logging.info('loading models')
-        models = self._load_models(model_paths)
+        models = self._load_models(model_names)
 
         # train new model
         logging.info('training')
@@ -98,7 +100,7 @@ class AlgoWrapper(object):
 
         return pred, model
 
-    def predict(self, model_paths):
+    def predict(self, model_names):
         """Predict method wrapper."""
         # load data from opener
         logging.info('loading data from opener')
@@ -107,7 +109,7 @@ class AlgoWrapper(object):
 
         # load models
         logging.info('loading models')
-        models = self._load_models(model_paths)
+        models = self._load_models(model_names)
 
         # get predictions
         logging.info('predicting')

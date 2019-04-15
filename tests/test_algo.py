@@ -1,25 +1,9 @@
 import json
-import os
 
 from substratools import algo, Opener
 
 import pytest
 from click.testing import CliRunner
-
-
-@pytest.fixture
-def workdir(tmp_path):
-    d = tmp_path / "substra-workspace"
-    d.mkdir()
-    return d
-
-
-@pytest.fixture(autouse=True)
-def patch_cwd(monkeypatch, workdir):
-    # this is needed to ensure the workspace is located in a tmpdir
-    def getcwd():
-        return str(workdir)
-    monkeypatch.setattr(os, 'getcwd', getcwd)
 
 
 @pytest.fixture
@@ -76,7 +60,7 @@ def test_create(dummy_algo_class):
 def test_train_no_model(dummy_algo_class):
     a = dummy_algo_class()
     wp = algo.AlgoWrapper(a)
-    pred, model = wp.train(model_paths=[])
+    pred, model = wp.train([])
     assert pred == 'Xy'
     assert model == 1
 
@@ -101,7 +85,7 @@ def test_train_multiple_models(dummy_algo_class, workdir):
     a = dummy_algo_class()
     wp = algo.AlgoWrapper(a)
 
-    pred, model = wp.train(model_paths=model_filenames)
+    pred, model = wp.train(model_filenames)
     assert pred == 'Xy'
     assert model == 3
 
@@ -109,7 +93,7 @@ def test_train_multiple_models(dummy_algo_class, workdir):
 def test_train_dry_run(dummy_algo_class):
     a = dummy_algo_class()
     wp = algo.AlgoWrapper(a)
-    pred, model = wp.train(model_paths=[], dry_run=True)
+    pred, model = wp.train([], dry_run=True)
     assert pred == 'Xfakeyfake'
     assert model == 1
 
@@ -117,7 +101,7 @@ def test_train_dry_run(dummy_algo_class):
 def test_predict(dummy_algo_class):
     a = dummy_algo_class()
     wp = algo.AlgoWrapper(a)
-    pred = wp.predict(model_paths=[])
+    pred = wp.predict([])
     assert pred == ''
 
 

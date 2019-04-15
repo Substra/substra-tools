@@ -1,5 +1,9 @@
 import os
 
+DEFAULT_MODEL_FILENAME = 'model'
+DEFAULT_PRED_FILENAME = 'pred'
+DEFAULT_SCORE_FILENAME = 'pref.json'
+
 
 class Workspace(object):
     """Filesystem workspace for algo execution."""
@@ -24,21 +28,26 @@ class Workspace(object):
         return self._data_folder
 
     @property
+    def model_folder(self):
+        return self._model_folder
+
+    @property
     def pred_filepath(self):
-        return os.path.join(self._pred_folder, 'pred')
+        return os.path.join(self._pred_folder, DEFAULT_PRED_FILENAME)
 
     @property
     def score_filepath(self):
-        return os.path.join(self._pred_folder, 'perf.json')
+        return os.path.join(self._pred_folder, DEFAULT_SCORE_FILENAME)
 
     @property
     def log_path(self):
         return os.path.join(self._model_folder, self.LOG_FILENAME)
 
-    def save_model(self, buff, name='model'):
+    def save_model(self, buff, name=DEFAULT_MODEL_FILENAME):
         with open(os.path.join(self._model_folder, name), 'w') as f:
             return f.write(buff)
 
-    def load_model(self, name='model'):
-        with open(os.path.join(self._model_folder, name), 'r') as f:
+    def load_model(self, name=DEFAULT_MODEL_FILENAME):
+        path = os.path.join(self._model_folder, name)
+        with open(path, 'r') as f:
             return f.read()
