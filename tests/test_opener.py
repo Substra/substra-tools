@@ -57,6 +57,8 @@ def get_y():
 
 def test_load_opener_as_module(tmp_cwd):
     script = """
+def _helper():
+    pass
 def get_X(folder):
     return 'X'
 def get_y(folder):
@@ -99,3 +101,8 @@ class MyOpener(Opener):
 
     o = opener.load_from_module()
     assert o.get_X() == 'Xclass'
+
+
+def test_opener_wrapper_invalid_interface():
+    with pytest.raises(exceptions.InvalidOpener):
+        opener.OpenerWrapper(opener='invalid')

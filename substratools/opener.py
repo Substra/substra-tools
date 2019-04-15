@@ -2,6 +2,7 @@ import abc
 import inspect
 import importlib
 import sys
+import types
 
 from substratools import exceptions, workspace
 
@@ -27,19 +28,48 @@ class Opener(abc.ABC):
     def fake_y(self):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def get_pred(self, path):
         """Get predictions from path."""
         raise NotImplementedError
 
+    @abc.abstractmethod
     def save_pred(self, y_pred, path):
         """Save predictions to path."""
         raise NotImplementedError
+
+
+REQUIRED_FUNCTIONS = set([
+    'get_X', 'get_y', 'fake_X', 'fake_y', 'get_pred', 'save_pred'])
 
 
 class OpenerWrapper(object):
     """Internal wrapper to call opener interface."""
 
     def __init__(self, opener):
+        # validate opener
+        if isinstance(opener, Opener):
+            pass
+
+        elif isinstance(opener, types.ModuleType):
+            missing_functions = REQUIRED_FUNCTIONS.copy()
+            for name, obj in inspect.getmembers(opener):
+                if not inspect.isfunction(obj):
+                    continue
+                try:
+                    missing_functions.remove(name)
+                except KeyError:
+                    pass
+
+            if missing_functions:
+                message = "Method(s) {} not implemented".format(
+                    ", ".join(["'{}'".format(m) for m in missing_functions]))
+                raise exceptions.InvalidOpener(message)
+
+        else:
+            raise exceptions.InvalidOpener(
+                "Opener must be a module or an Opener instance")
+
         self._interface = opener
         self._workspace = workspace.Workspace()
 
@@ -62,7 +92,7 @@ class OpenerWrapper(object):
         return self._interface.save_pred(y_pred, self._workspace.pred_filepath)
 
 
-def load_interface_from_module(name):
+def _load_interface_from_module(name):
     try:
         del sys.modules[name]
     except KeyError:
@@ -80,20 +110,7 @@ def load_interface_from_module(name):
             o = opener_class()
             return o
 
-    # backward compatibility; ensure module has the following methods
-    required_methods = set(['get_X', 'get_y', 'fake_X', 'fake_y', 'get_pred',
-                            'save_pred'])
-    for name, obj in inspect.getmembers(opener_module):
-        if not inspect.isfunction(obj):
-            continue
-        try:
-            required_methods.remove(name)
-        except KeyError:
-            pass
-
-    if required_methods:
-        raise exceptions.InvalidOpener("Method(s) {} not implemented".format(
-            ", ".join(["'{}'".format(m) for m in required_methods])))
+    # backward compatibility; accept module
     return opener_module
 
 
@@ -101,6 +118,8 @@ def load_from_module(name='opener'):
     """Load opener interface based on current working directory.
 
     Opener can be defined as an Opener subclass or directly has a module.
+
+    Return an OpenerWrapper instance.
     """
-    interface = load_interface_from_module(name)
+    interface = _load_interface_from_module(name)
     return OpenerWrapper(interface)
