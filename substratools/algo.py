@@ -120,9 +120,9 @@ class AlgoWrapper(object):
         return pred
 
 
-def _generate_cli(algo):
+def _generate_cli(algo_class):
     """Helper to generate a command line interface client."""
-    algo_wrapper = AlgoWrapper(algo())
+    algo_wrapper = AlgoWrapper(algo_class())
     logging.basicConfig(filename=algo_wrapper._workspace.log_path,
                         level=logging.DEBUG)
 
@@ -150,7 +150,7 @@ def _generate_cli(algo):
     return cli
 
 
-def execute(algo):
+def execute(algo_class):
     """Launch algo command line interface."""
-    cli = _generate_cli(algo)
+    cli = _generate_cli(algo_class)
     cli()

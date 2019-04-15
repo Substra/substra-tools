@@ -28,6 +28,10 @@ class Workspace(object):
         return os.path.join(self._pred_folder, 'pred')
 
     @property
+    def score_filepath(self):
+        return os.path.join(self._pred_folder, 'perf.json')
+
+    @property
     def log_path(self):
         return os.path.join(self._model_folder, self.LOG_FILENAME)
 
