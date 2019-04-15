@@ -2,15 +2,9 @@ import abc
 import logging
 import os
 
-import importlib
 import click
 
-from substratools import serializers
-
-
-def _load_opener_module():
-    """Load opener module based on current working directory."""
-    return importlib.import_module('opener')
+from substratools import serializers, opener
 
 
 class Workspace(object):
@@ -57,7 +51,7 @@ class Algo(abc.ABC):
 
     def __init__(self):
         if self.OPENER is None:
-            self.OPENER = _load_opener_module()
+            self.OPENER = opener.load_from_module()
         self._workspace = Workspace()
 
         _validate_serializer(self.MODEL_SERIALIZER)

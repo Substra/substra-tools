@@ -1,7 +1,7 @@
 import json
 import os
 
-from substratools import algo
+from substratools import algo, Opener
 
 import pytest
 from click.testing import CliRunner
@@ -25,7 +25,7 @@ def patch_cwd(monkeypatch, workdir):
 @pytest.fixture
 def dummy_opener():
     # fake opener module using a class
-    class OpenerInterface():
+    class OpenerInterface(Opener):
         def get_X(self):
             return 'X'
 
