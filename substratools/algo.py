@@ -13,24 +13,9 @@ def _validate_serializer(serializer):
 
 
 class Algo(abc.ABC):
-    """Abstract base class for executing an algo on the platform."""
+    """Abstract base class for defining algo to run on the platform."""
     OPENER = None
     MODEL_SERIALIZER = serializers.JSON  # default serializer
-
-    _OPENER_WRAPPER = None
-
-    def __init__(self):
-        if self.OPENER:
-            self._OPENER_WRAPPER = opener.OpenerWrapper(self.OPENER)
-        else:
-            self._OPENER_WRAPPER = opener.load_from_module()
-        assert isinstance(self._OPENER_WRAPPER, opener.OpenerWrapper)
-
-        self._workspace = workspace.Workspace()
-
-        _validate_serializer(self.MODEL_SERIALIZER)
-
-        super(Algo, self).__init__()
 
     @abc.abstractmethod
     def train(self, X, y, models, rank):
@@ -52,6 +37,27 @@ class Algo(abc.ABC):
         """Train model dry run mode."""
         return self.train(X, y, models, rank=0)
 
+
+class AlgoWrapper(object):
+    """Algo wrapper to execute an algo instance on the platform."""
+    MODEL_SERIALIZER = None
+    _OPENER_WRAPPER = None
+
+    def __init__(self, interface):
+        assert isinstance(interface, Algo)
+
+        if interface.OPENER:
+            self._OPENER_WRAPPER = opener.OpenerWrapper(interface.OPENER)
+        else:
+            self._OPENER_WRAPPER = opener.load_from_module()
+        assert isinstance(self._OPENER_WRAPPER, opener.OpenerWrapper)
+
+        _validate_serializer(interface.MODEL_SERIALIZER)
+        self.MODEL_SERIALIZER = interface.MODEL_SERIALIZER
+
+        self._interface = interface
+        self._workspace = workspace.Workspace()
+
     def _load_models(self, model_paths):
         """Load models in-memory from paths."""
         # load models from workspace and deserialize them
@@ -65,7 +71,7 @@ class Algo(abc.ABC):
         model_buff = self.MODEL_SERIALIZER.dumps(model)
         self._workspace.save_model(model_buff)
 
-    def _execute_train(self, model_paths, rank=0, dry_run=False):
+    def train(self, model_paths, rank=0, dry_run=False):
         """Train method wrapper."""
         # load data from opener
         logging.info('loading data from opener')
@@ -78,7 +84,8 @@ class Algo(abc.ABC):
 
         # train new model
         logging.info('training')
-        method = self.train if not dry_run else self.dry_run
+        method = (self._interface.train if not dry_run else
+                  self._interface.dry_run)
         pred, model = method(X, y, models, rank)
 
         # serialize output model and save it to workspace
@@ -91,7 +98,7 @@ class Algo(abc.ABC):
 
         return pred, model
 
-    def _execute_predict(self, model_paths):
+    def predict(self, model_paths):
         """Predict method wrapper."""
         # load data from opener
         logging.info('loading data from opener')
@@ -104,7 +111,7 @@ class Algo(abc.ABC):
 
         # get predictions
         logging.info('predicting')
-        pred = self.predict(X, y, models)
+        pred = self._interface.predict(X, y, models)
 
         # save prediction
         logging.info('saving prediction')
@@ -115,13 +122,14 @@ class Algo(abc.ABC):
 
 def _generate_cli(algo):
     """Helper to generate a command line interface client."""
-    logging.basicConfig(filename=algo._workspace.log_path,
+    algo_wrapper = AlgoWrapper(algo())
+    logging.basicConfig(filename=algo_wrapper._workspace.log_path,
                         level=logging.DEBUG)
 
     @click.group()
     @click.pass_context
     def cli(ctx):
-        ctx.obj = algo
+        ctx.obj = algo_wrapper
 
     @cli.command()
     @click.argument('models', nargs=-1)
@@ -131,13 +139,13 @@ def _generate_cli(algo):
                   help='Launch in dry run mode')
     @click.pass_obj
     def train(algo, models, rank, dry_run):
-        algo._execute_train(models, rank, dry_run)
+        algo.train(models, rank, dry_run)
 
     @cli.command()
     @click.argument('models', nargs=-1)
     @click.pass_obj
     def predict(algo, models):
-        algo._execute_predict(models)
+        algo.predict(models)
 
     return cli
 

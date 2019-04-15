@@ -75,7 +75,8 @@ def test_create(dummy_algo_class):
 
 def test_train_no_model(dummy_algo_class):
     a = dummy_algo_class()
-    pred, model = a._execute_train(model_paths=[])
+    wp = algo.AlgoWrapper(a)
+    pred, model = wp.train(model_paths=[])
     assert pred == 'Xy'
     assert model == 1
 
@@ -98,28 +99,30 @@ def test_train_multiple_models(dummy_algo_class, workdir):
     model_filenames = [_create_model(d) for d in model_datas]
 
     a = dummy_algo_class()
+    wp = algo.AlgoWrapper(a)
 
-    pred, model = a._execute_train(model_paths=model_filenames)
+    pred, model = wp.train(model_paths=model_filenames)
     assert pred == 'Xy'
     assert model == 3
 
 
 def test_train_dry_run(dummy_algo_class):
     a = dummy_algo_class()
-    pred, model = a._execute_train(model_paths=[], dry_run=True)
+    wp = algo.AlgoWrapper(a)
+    pred, model = wp.train(model_paths=[], dry_run=True)
     assert pred == 'Xfakeyfake'
     assert model == 1
 
 
 def test_predict(dummy_algo_class):
     a = dummy_algo_class()
-    pred = a._execute_predict(model_paths=[])
+    wp = algo.AlgoWrapper(a)
+    pred = wp.predict(model_paths=[])
     assert pred == ''
 
 
 def test_execute_train(dummy_algo_class, workdir):
-    a = dummy_algo_class()
-    cli = algo._generate_cli(a)
+    cli = algo._generate_cli(dummy_algo_class)
     runner = CliRunner()
 
     output_model_path = workdir / 'model' / 'model'
@@ -135,8 +138,7 @@ def test_execute_train(dummy_algo_class, workdir):
 
 
 def test_execute_predict(dummy_algo_class, workdir):
-    a = dummy_algo_class()
-    cli = algo._generate_cli(a)
+    cli = algo._generate_cli(dummy_algo_class)
     runner = CliRunner()
 
     result = runner.invoke(cli, ['predict'])
