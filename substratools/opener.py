@@ -3,7 +3,7 @@ import inspect
 import importlib
 import sys
 
-from substratools import exceptions
+from substratools import exceptions, workspace
 
 
 class Opener(abc.ABC):
@@ -36,8 +36,33 @@ class Opener(abc.ABC):
         raise NotImplementedError
 
 
-def load_from_module(name='opener'):
-    """Load opener interface based on current working directory."""
+class OpenerWrapper(object):
+    """Internal wrapper to call opener interface."""
+
+    def __init__(self, opener):
+        self._interface = opener
+        self._workspace = workspace.Workspace()
+
+    def get_X(self, dry_run=False):
+        if dry_run:
+            return self._interface.fake_X()
+        else:
+            return self._interface.get_X(self._workspace.data_folder)
+
+    def get_y(self, dry_run=False):
+        if dry_run:
+            return self._interface.fake_y()
+        else:
+            return self._interface.get_y(self._workspace.data_folder)
+
+    def get_pred(self):
+        return self._interface.get_pred(self._workspace.pred_filepath)
+
+    def save_pred(self, y_pred):
+        return self._interface.save_pred(y_pred, self._workspace.pred_filepath)
+
+
+def load_interface_from_module(name):
     try:
         del sys.modules[name]
     except KeyError:
@@ -52,7 +77,8 @@ def load_from_module(name='opener'):
     for name, obj in inspect.getmembers(opener_module):
         if inspect.isclass(obj) and issubclass(obj, Opener):
             opener_class = obj
-            return opener_class()
+            o = opener_class()
+            return o
 
     # backward compatibility; ensure module has the following methods
     required_methods = set(['get_X', 'get_y', 'fake_X', 'fake_y', 'get_pred',
@@ -69,3 +95,12 @@ def load_from_module(name='opener'):
         raise exceptions.InvalidOpener("Method(s) {} not implemented".format(
             ", ".join(["'{}'".format(m) for m in required_methods])))
     return opener_module
+
+
+def load_from_module(name='opener'):
+    """Load opener interface based on current working directory.
+
+    Opener can be defined as an Opener subclass or directly has a module.
+    """
+    interface = load_interface_from_module(name)
+    return OpenerWrapper(interface)

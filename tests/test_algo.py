@@ -25,26 +25,26 @@ def patch_cwd(monkeypatch, workdir):
 @pytest.fixture
 def dummy_opener():
     # fake opener module using a class
-    class OpenerInterface(Opener):
-        def get_X(self):
+    class FakeOpener(Opener):
+        def get_X(self, folder):
             return 'X'
 
-        def get_y(self):
+        def get_y(self, folder):
             return 'y'
 
         def fake_X(self):
-            return self.get_X() + 'fake'
+            return 'Xfake'
 
         def fake_y(self):
-            return self.get_y() + 'fake'
+            return 'yfake'
 
-        def get_pred(self, folder):
+        def get_pred(self, path):
             return 'pred'
 
-        def save_pred(self, pred):
+        def save_pred(self, pred, path):
             return pred
 
-    yield OpenerInterface()
+    yield FakeOpener()
 
 
 @pytest.fixture

@@ -1,41 +1,9 @@
 import abc
 import logging
-import os
 
 import click
 
-from substratools import serializers, opener
-
-
-class Workspace(object):
-    """Filesystem workspace for algo execution."""
-    LOG_FILENAME = 'log_model.log'
-
-    def __init__(self, dirpath=None):
-        self._root_path = dirpath if dirpath else os.getcwd()
-
-        self._data_folder = os.path.join(self._root_path, 'data')
-        self._pred_folder = os.path.join(self._root_path, 'pred')
-        self._model_folder = os.path.join(self._root_path, 'model')
-
-        paths = [self._data_folder, self._pred_folder, self._model_folder]
-        for path in paths:
-            try:
-                os.makedirs(path)
-            except FileExistsError:
-                pass
-
-    @property
-    def log_path(self):
-        return os.path.join(self._model_folder, self.LOG_FILENAME)
-
-    def save_model(self, buff, name='model'):
-        with open(os.path.join(self._model_folder, name), 'w') as f:
-            return f.write(buff)
-
-    def load_model(self, name='model'):
-        with open(os.path.join(self._model_folder, name), 'r') as f:
-            return f.read()
+from substratools import serializers, opener, workspace
 
 
 def _validate_serializer(serializer):
@@ -49,10 +17,16 @@ class Algo(abc.ABC):
     OPENER = None
     MODEL_SERIALIZER = serializers.JSON  # default serializer
 
+    _OPENER_WRAPPER = None
+
     def __init__(self):
-        if self.OPENER is None:
-            self.OPENER = opener.load_from_module()
-        self._workspace = Workspace()
+        if self.OPENER:
+            self._OPENER_WRAPPER = opener.OpenerWrapper(self.OPENER)
+        else:
+            self._OPENER_WRAPPER = opener.load_from_module()
+        assert isinstance(self._OPENER_WRAPPER, opener.OpenerWrapper)
+
+        self._workspace = workspace.Workspace()
 
         _validate_serializer(self.MODEL_SERIALIZER)
 
@@ -95,12 +69,8 @@ class Algo(abc.ABC):
         """Train method wrapper."""
         # load data from opener
         logging.info('loading data from opener')
-        if dry_run:
-            X = self.OPENER.fake_X()
-            y = self.OPENER.fake_y()
-        else:
-            X = self.OPENER.get_X()
-            y = self.OPENER.get_y()
+        X = self._OPENER_WRAPPER.get_X(dry_run)
+        y = self._OPENER_WRAPPER.get_y(dry_run)
 
         # load models
         logging.info('loading models')
@@ -117,7 +87,7 @@ class Algo(abc.ABC):
 
         # save prediction
         logging.info('saving prediction')
-        self.OPENER.save_pred(pred)
+        self._OPENER_WRAPPER.save_pred(pred)
 
         return pred, model
 
@@ -125,8 +95,8 @@ class Algo(abc.ABC):
         """Predict method wrapper."""
         # load data from opener
         logging.info('loading data from opener')
-        X = self.OPENER.get_X()
-        y = self.OPENER.get_y()
+        X = self._OPENER_WRAPPER.get_X()
+        y = self._OPENER_WRAPPER.get_y()
 
         # load models
         logging.info('loading models')
@@ -138,7 +108,7 @@ class Algo(abc.ABC):
 
         # save prediction
         logging.info('saving prediction')
-        self.OPENER.save_pred(pred)
+        self._OPENER_WRAPPER.save_pred(pred)
 
         return pred
 

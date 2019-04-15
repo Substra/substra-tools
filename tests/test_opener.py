@@ -57,17 +57,17 @@ def get_y():
 
 def test_load_opener_as_module(tmp_cwd):
     script = """
-def get_X():
+def get_X(folder):
     return 'X'
-def get_y():
+def get_y(folder):
     return 'y'
 def fake_X():
     return 'fakeX'
 def fake_y():
     return 'fakey'
-def get_pred():
+def get_pred(path):
     return 'pred'
-def save_pred():
+def save_pred(y_pred, path):
     return 'pred'
 """
 
@@ -77,21 +77,21 @@ def save_pred():
     assert o.get_X() == 'X'
 
 
-def test_load_opener_as_classt(tmp_cwd):
+def test_load_opener_as_class(tmp_cwd):
     script = """
 from substratools import Opener
 class MyOpener(Opener):
-    def get_X(self):
+    def get_X(self, folder):
         return 'Xclass'
-    def get_y(self):
+    def get_y(self, folder):
         return 'yclass'
     def fake_X(self):
         return 'fakeX'
     def fake_y(self):
         return 'fakey'
-    def get_pred(self):
+    def get_pred(self, path):
         return 'pred'
-    def save_pred(self):
+    def save_pred(self, y_pred, path):
         return 'pred'
 """
 
