@@ -51,5 +51,5 @@ def test_score(dummy_metrics_class):
 
 
 def test_execute(dummy_metrics_class):
-    s = metrics.execute(dummy_metrics_class)
+    s = metrics._execute(dummy_metrics_class())
     assert s == 'ypred'

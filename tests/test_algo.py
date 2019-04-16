@@ -106,7 +106,7 @@ def test_predict(dummy_algo_class):
 
 
 def test_execute_train(dummy_algo_class, workdir):
-    cli = algo._generate_cli(dummy_algo_class)
+    cli = algo._generate_cli(dummy_algo_class())
     runner = CliRunner()
 
     output_model_path = workdir / 'model' / 'model'
@@ -122,7 +122,7 @@ def test_execute_train(dummy_algo_class, workdir):
 
 
 def test_execute_predict(dummy_algo_class, workdir):
-    cli = algo._generate_cli(dummy_algo_class)
+    cli = algo._generate_cli(dummy_algo_class())
     runner = CliRunner()
 
     result = runner.invoke(cli, ['predict'])

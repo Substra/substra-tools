@@ -1,7 +1,7 @@
 import abc
 import json
 
-from substratools import opener, workspace
+from substratools import opener, workspace, utils
 
 
 class Metrics(abc.ABC):
@@ -44,7 +44,13 @@ class MetricsWrapper(object):
         return x
 
 
-def execute(metrics_class):
-    """Launch metrics script."""
-    wp = MetricsWrapper(metrics_class())
+def _execute(interface):
+    """Launch metrics script from interface."""
+    wp = MetricsWrapper(interface)
     return wp.score()
+
+
+def execute(module_name):
+    """Launch metrics script."""
+    interface = utils.load_interface_from_module('metrics', Metrics)
+    return _execute(interface)
