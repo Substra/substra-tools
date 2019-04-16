@@ -1,10 +1,8 @@
 import abc
 import inspect
-import importlib
-import sys
 import types
 
-from substratools import exceptions, workspace
+from substratools import exceptions, workspace, utils
 
 
 class Opener(abc.ABC):
@@ -95,28 +93,6 @@ class OpenerWrapper(object):
         return self._interface.save_pred(y_pred, self._workspace.pred_filepath)
 
 
-def _load_interface_from_module(name):
-    try:
-        del sys.modules[name]
-    except KeyError:
-        pass
-
-    try:
-        opener_module = importlib.import_module(name)
-    except ModuleNotFoundError:
-        raise exceptions.OpenerModuleNotFound()
-
-    # check if opener has an Opener class
-    for name, obj in inspect.getmembers(opener_module):
-        if inspect.isclass(obj) and issubclass(obj, Opener):
-            opener_class = obj
-            o = opener_class()
-            return o
-
-    # backward compatibility; accept module
-    return opener_module
-
-
 def load_from_module(name='opener'):
     """Load opener interface based on current working directory.
 
@@ -124,5 +100,5 @@ def load_from_module(name='opener'):
 
     Return an OpenerWrapper instance.
     """
-    interface = _load_interface_from_module(name)
+    interface = utils.load_interface_from_module(name, Opener)
     return OpenerWrapper(interface)

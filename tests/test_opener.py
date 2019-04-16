@@ -37,7 +37,7 @@ def write_opener(code):
 
 
 def test_load_opener_not_found(tmp_cwd):
-    with pytest.raises(exceptions.OpenerModuleNotFound):
+    with pytest.raises(ModuleNotFoundError):
         opener.load_from_module()
 
 
