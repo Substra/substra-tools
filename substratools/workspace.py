@@ -20,7 +20,7 @@ class Workspace(object):
         for path in paths:
             try:
                 os.makedirs(path)
-            except FileExistsError:
+            except (FileExistsError, PermissionError):
                 pass
 
     @property
