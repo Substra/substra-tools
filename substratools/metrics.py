@@ -50,7 +50,7 @@ def _execute(interface):
     return wp.score()
 
 
-def execute(module_name):
+def execute(module_name='metrics'):
     """Launch metrics script."""
     interface = utils.load_interface_from_module('metrics', Metrics)
     return _execute(interface)
