@@ -1,5 +1,6 @@
 import abc
 import logging
+import os
 
 import click
 
@@ -8,8 +9,8 @@ from substratools import serializers, opener, workspace
 
 def _validate_serializer(serializer):
     assert isinstance(serializer, serializers.Serializer)
-    assert callable(serializer.loads)
-    assert callable(serializer.dumps)
+    assert callable(serializer.load)
+    assert callable(serializer.dump)
 
 
 class Algo(abc.ABC):
@@ -63,15 +64,18 @@ class AlgoWrapper(object):
     def _load_models(self, model_names):
         """Load models in-memory from names."""
         # load models from workspace and deserialize them
-        model_names = model_names if model_names else []
-        model_buffers = [self._workspace.load_model(name)
-                         for name in model_names]
-        return [self.MODEL_SERIALIZER.loads(buff) for buff in model_buffers]
+        models = []
+        for name in model_names:
+            path = os.path.join(self._workspace.model_folder, name)
+            with open(path, 'r') as f:
+                m = self.MODEL_SERIALIZER.load(f)
+            models.append(m)
+        return models
 
     def _save_model(self, model):
         """Save model object to workspace."""
-        model_buff = self.MODEL_SERIALIZER.dumps(model)
-        self._workspace.save_model(model_buff)
+        with open(self._workspace.output_model_filepath, 'w') as f:
+            self.MODEL_SERIALIZER.dump(model, f)
 
     def train(self, model_names, rank=0, dry_run=False):
         """Train method wrapper."""

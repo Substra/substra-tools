@@ -2,7 +2,6 @@ from collections import namedtuple
 import json
 
 
-Serializer = namedtuple('Serializer', ['loads', 'dumps'])
+Serializer = namedtuple('Serializer', ['load', 'dump'])
 
-# TODO use load/dump by default
-JSON = Serializer(json.loads, json.dumps)
+JSON = Serializer(json.load, json.dump)
