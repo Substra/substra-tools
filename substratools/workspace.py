@@ -2,7 +2,7 @@ import os
 
 DEFAULT_MODEL_FILENAME = 'model'
 DEFAULT_PRED_FILENAME = 'pred'
-DEFAULT_SCORE_FILENAME = 'pref.json'
+DEFAULT_SCORE_FILENAME = 'perf.json'
 
 
 class Workspace(object):
