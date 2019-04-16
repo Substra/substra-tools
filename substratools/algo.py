@@ -164,7 +164,7 @@ def execute(interface, sysargs=None):
     cli = _generate_cli(algo_wrapper)
 
     sysargs = sysargs if sysargs is not None else sys.argv[1:]
+    logging.debug('launching command with: {}'.format(sysargs))
     args = cli.parse_args(sysargs)
-    logging.debug(f'launching command with: {args}')
     args.func(args)
     return args

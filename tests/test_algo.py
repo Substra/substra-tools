@@ -53,20 +53,8 @@ def dummy_algo_class(dummy_opener):
     yield DummyAlgo
 
 
-def test_create(dummy_algo_class):
-    # check we can instantiate a dummy algo class
-    dummy_algo_class()
-
-
-def test_train_no_model(dummy_algo_class):
-    a = dummy_algo_class()
-    wp = algo.AlgoWrapper(a)
-    pred, model = wp.train([])
-    assert pred == 'Xy'
-    assert model == 1
-
-
-def test_train_multiple_models(dummy_algo_class, workdir):
+@pytest.fixture
+def create_models(workdir):
     model_a = {'name': 'a'}
     model_b = {'name': 'b'}
 
@@ -82,6 +70,25 @@ def test_train_multiple_models(dummy_algo_class, workdir):
 
     model_datas = [model_a, model_b]
     model_filenames = [_create_model(d) for d in model_datas]
+
+    return model_datas, model_filenames
+
+
+def test_create(dummy_algo_class):
+    # check we can instantiate a dummy algo class
+    dummy_algo_class()
+
+
+def test_train_no_model(dummy_algo_class):
+    a = dummy_algo_class()
+    wp = algo.AlgoWrapper(a)
+    pred, model = wp.train([])
+    assert pred == 'Xy'
+    assert model == 1
+
+
+def test_train_multiple_models(dummy_algo_class, workdir, create_models):
+    _, model_filenames = create_models
 
     a = dummy_algo_class()
     wp = algo.AlgoWrapper(a)
@@ -115,6 +122,30 @@ def test_execute_train(dummy_algo_class, workdir):
     assert output_model_path.exists()
 
     algo.execute(dummy_algo_class(), sysargs=['train', '--dry-run'])
+
+
+def test_execute_train_multiple_models(dummy_algo_class, workdir,
+                                       create_models):
+    _, model_filenames = create_models
+
+    output_model_path = workdir / 'model' / 'model'
+    assert not output_model_path.exists()
+    pred_path = workdir / 'pred' / 'pred'
+    assert not pred_path.exists()
+
+    command = ['train']
+    command.extend(model_filenames)
+
+    algo.execute(dummy_algo_class(), sysargs=command)
+    assert output_model_path.exists()
+    with open(output_model_path, 'r') as f:
+        model = json.load(f)
+    assert model == 3
+
+    assert pred_path.exists()
+    with open(pred_path, 'r') as f:
+        pred = json.load(f)
+    assert pred == 'Xy'
 
 
 def test_execute_predict(dummy_algo_class, workdir):
