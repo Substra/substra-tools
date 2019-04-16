@@ -3,7 +3,6 @@ import json
 from substratools import algo, Opener
 
 import pytest
-from click.testing import CliRunner
 
 
 @pytest.fixture
@@ -23,10 +22,12 @@ def dummy_opener():
             return 'yfake'
 
         def get_pred(self, path):
-            return 'pred'
+            with open(path, 'r') as f:
+                return json.load(f)
 
         def save_pred(self, pred, path):
-            return pred
+            with open(path, 'w') as f:
+                json.dump(pred, f)
 
     yield FakeOpener()
 
@@ -106,25 +107,18 @@ def test_predict(dummy_algo_class):
 
 
 def test_execute_train(dummy_algo_class, workdir):
-    cli = algo._generate_cli(dummy_algo_class())
-    runner = CliRunner()
 
     output_model_path = workdir / 'model' / 'model'
-
     assert not output_model_path.exists()
 
-    result = runner.invoke(cli, ['train'])
-    assert result.exit_code == 0
+    algo.execute(dummy_algo_class(), sysargs=['train'])
     assert output_model_path.exists()
 
-    result = runner.invoke(cli, ['train', '--dry-run'])
-    assert result.exit_code == 0
+    algo.execute(dummy_algo_class(), sysargs=['train', '--dry-run'])
 
 
 def test_execute_predict(dummy_algo_class, workdir):
-    cli = algo._generate_cli(dummy_algo_class())
-    runner = CliRunner()
-
-    result = runner.invoke(cli, ['predict'])
-    print(result.exception)
-    assert result.exit_code == 0
+    pred_path = workdir / 'pred' / 'pred'
+    assert not pred_path.exists()
+    algo.execute(dummy_algo_class(), sysargs=['predict'])
+    assert pred_path.exists()

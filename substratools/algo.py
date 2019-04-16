@@ -1,8 +1,9 @@
+# coding: utf8
 import abc
+import argparse
 import logging
 import os
-
-import click
+import sys
 
 from substratools import serializers, opener, workspace
 
@@ -126,37 +127,44 @@ class AlgoWrapper(object):
         return pred
 
 
-def _generate_cli(interface):
+def _generate_cli(algo_wrapper):
     """Helper to generate a command line interface client."""
+
+    def _train(args):
+        algo_wrapper.train(args.models, args.rank, args.dry_run)
+
+    def _predict(args):
+        algo_wrapper.predict(args.models)
+
+    parser = argparse.ArgumentParser()
+    parsers = parser.add_subparsers()
+
+    train_parser = parsers.add_parser('train')
+    train_parser.add_argument(
+        'models', type=str, nargs='*')
+    train_parser.add_argument(
+        '-d', '--dry-run', action='store_true', default=False)
+    train_parser.add_argument(
+        '-r', '--rank', type=int, default=0)
+    train_parser.set_defaults(func=_train)
+
+    predict_parser = parsers.add_parser('predict')
+    predict_parser.add_argument(
+        'models', type=str, nargs='*')
+    predict_parser.set_defaults(func=_predict)
+    return parser
+
+
+def execute(interface, sysargs=None):
+    """Launch algo command line interface."""
     algo_wrapper = AlgoWrapper(interface)
     logging.basicConfig(filename=algo_wrapper._workspace.log_path,
                         level=logging.DEBUG)
 
-    @click.group()
-    @click.pass_context
-    def cli(ctx):
-        ctx.obj = algo_wrapper
+    cli = _generate_cli(algo_wrapper)
 
-    @cli.command()
-    @click.argument('models', nargs=-1)
-    @click.option('-r', '--rank', type=click.INT, default=0,
-                  help='Rank of the fltask')
-    @click.option('-d', '--dry-run', is_flag=True,
-                  help='Launch in dry run mode')
-    @click.pass_obj
-    def train(algo, models, rank, dry_run):
-        algo.train(models, rank, dry_run)
-
-    @cli.command()
-    @click.argument('models', nargs=-1)
-    @click.pass_obj
-    def predict(algo, models):
-        algo.predict(models)
-
-    return cli
-
-
-def execute(interface):
-    """Launch algo command line interface."""
-    cli = _generate_cli(interface)
-    cli()
+    sysargs = sysargs if sysargs is not None else sys.argv[1:]
+    args = cli.parse_args(sysargs)
+    logging.debug(f'launching command with: {args}')
+    args.func(args)
+    return args
