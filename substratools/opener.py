@@ -31,11 +31,14 @@ class Opener(abc.ABC):
     @abc.abstractmethod
     def get_pred(self, path):
         """Get predictions from path."""
+        # TODO use a Serializer to define get/save pred?
+        # FIXME should be consistent with load/save model from Algo
         raise NotImplementedError
 
     @abc.abstractmethod
     def save_pred(self, y_pred, path):
         """Save predictions to path."""
+        # TODO use a Serializer to define get/save pred?
         raise NotImplementedError
 
 
