@@ -5,11 +5,6 @@ import sys
 
 def load_interface_from_module(module_name, interface_class):
     try:
-        del sys.modules[module_name]
-    except KeyError:
-        pass
-
-    try:
         module = importlib.import_module(module_name)
     except ModuleNotFoundError:
         raise

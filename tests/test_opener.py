@@ -1,9 +1,11 @@
+import imp
 import os
 import sys
 
 import pytest
 
-from substratools import opener, exceptions
+from substratools import exceptions
+from substratools.opener import load_from_module, OpenerWrapper
 
 
 @pytest.fixture
@@ -15,30 +17,20 @@ def tmp_cwd(tmp_path):
     old_dir = os.getcwd()
     os.chdir(new_dir)
 
-    # add cwd to syspath
-    sys.path.insert(0, new_dir)
+    yield new_dir
 
-    # reload syspath
-    import importlib
-    import site
-    importlib.reload(site)
-    importlib.invalidate_caches()
-
-    yield
-
-    # cleanup
-    sys.path.pop(0)
     os.chdir(old_dir)
 
 
-def write_opener(code):
-    with open('opener.py', 'w') as f:
-        f.write(code)
+def import_opener(code):
+    module = imp.new_module('opener')
+    sys.modules['opener'] = module
+    exec(code, module.__dict__)
 
 
 def test_load_opener_not_found(tmp_cwd):
     with pytest.raises(ModuleNotFoundError):
-        opener.load_from_module()
+        load_from_module()
 
 
 def test_load_invalid_opener(tmp_cwd):
@@ -49,10 +41,10 @@ def get_y():
     raise NotImplementedError
 """
 
-    write_opener(invalid_script)
+    import_opener(invalid_script)
 
     with pytest.raises(exceptions.InvalidOpener):
-        opener.load_from_module()
+        load_from_module()
 
 
 def test_load_opener_as_module(tmp_cwd):
@@ -73,9 +65,9 @@ def save_pred(y_pred, path):
     return 'pred'
 """
 
-    write_opener(script)
+    import_opener(script)
 
-    o = opener.load_from_module()
+    o = load_from_module()
     assert o.get_X() == 'X'
 
 
@@ -97,12 +89,12 @@ class MyOpener(Opener):
         return 'pred'
 """
 
-    write_opener(script)
+    import_opener(script)
 
-    o = opener.load_from_module()
+    o = load_from_module()
     assert o.get_X() == 'Xclass'
 
 
 def test_opener_wrapper_invalid_interface():
     with pytest.raises(exceptions.InvalidOpener):
-        opener.OpenerWrapper(opener='invalid')
+        OpenerWrapper(opener='invalid')
