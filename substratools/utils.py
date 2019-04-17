@@ -1,6 +1,16 @@
+import imp
 import importlib
 import inspect
+import logging
 import sys
+
+
+def import_module(module_name, code):
+    if module_name in sys.modules:
+        logging.warning(f'Module {module_name} will be overwritten')
+    module = imp.new_module(module_name)
+    sys.modules[module_name] = module
+    exec(code, module.__dict__)
 
 
 def load_interface_from_module(module_name, interface_class):

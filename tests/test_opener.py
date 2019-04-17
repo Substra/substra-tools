@@ -1,11 +1,10 @@
-import imp
 import os
-import sys
 
 import pytest
 
 from substratools import exceptions
 from substratools.opener import load_from_module, OpenerWrapper
+from substratools.utils import import_module
 
 
 @pytest.fixture
@@ -22,12 +21,6 @@ def tmp_cwd(tmp_path):
     os.chdir(old_dir)
 
 
-def import_opener(code):
-    module = imp.new_module('opener')
-    sys.modules['opener'] = module
-    exec(code, module.__dict__)
-
-
 def test_load_opener_not_found(tmp_cwd):
     with pytest.raises(ModuleNotFoundError):
         load_from_module()
@@ -41,7 +34,7 @@ def get_y():
     raise NotImplementedError
 """
 
-    import_opener(invalid_script)
+    import_module('opener', invalid_script)
 
     with pytest.raises(exceptions.InvalidOpener):
         load_from_module()
@@ -65,7 +58,7 @@ def save_pred(y_pred, path):
     return 'pred'
 """
 
-    import_opener(script)
+    import_module('opener', script)
 
     o = load_from_module()
     assert o.get_X() == 'X'
@@ -89,7 +82,7 @@ class MyOpener(Opener):
         return 'pred'
 """
 
-    import_opener(script)
+    import_module('opener', script)
 
     o = load_from_module()
     assert o.get_X() == 'Xclass'
