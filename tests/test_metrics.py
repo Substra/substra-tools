@@ -1,55 +1,41 @@
-from substratools import metrics, Opener
+import json
+
+from substratools import metrics
+from substratools.workspace import Workspace
 
 import pytest
 
 
-@pytest.fixture
-def dummy_opener():
-    # fake opener module using a class
-    class FakeOpener(Opener):
-        def get_X(self, folder):
-            pass
-
-        def get_y(self, folder):
-            return 'y'
-
-        def fake_X(self):
-            pass
-
-        def fake_y(self):
-            pass
-
-        def get_pred(self, path):
-            return 'pred'
-
-        def save_pred(self, pred, path):
-            pass
-
-    yield FakeOpener()
+@pytest.fixture()
+def write_pred_file():
+    workspace = Workspace()
+    data = {'key': 'pred'}
+    with open(workspace.pred_filepath, 'w') as f:
+        json.dump(data, f)
+    return workspace.pred_filepath, data
 
 
-@pytest.fixture
-def dummy_metrics_class(dummy_opener):
-    class DummyMetrics(metrics.Metrics):
-        OPENER = dummy_opener
-
-        def score(self, y_true, y_pred):
-            return y_true + y_pred
-
-    return DummyMetrics
+@pytest.fixture(autouse=True)
+def setup(valid_opener, write_pred_file):
+    pass
 
 
-def test_create(dummy_metrics_class):
-    dummy_metrics_class()
+class DummyMetrics(metrics.Metrics):
+    def score(self, y_true, y_pred):
+        return y_true + y_pred['key']
 
 
-def test_score(dummy_metrics_class):
-    m = dummy_metrics_class()
+def test_create():
+    DummyMetrics()
+
+
+def test_score():
+    m = DummyMetrics()
     wp = metrics.MetricsWrapper(m)
     s = wp.score()
     assert s == 'ypred'
 
 
-def test_execute(dummy_metrics_class):
-    s = metrics._execute(dummy_metrics_class())
+def test_execute():
+    s = metrics._execute(DummyMetrics())
     assert s == 'ypred'

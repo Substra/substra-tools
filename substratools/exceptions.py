@@ -1,4 +1,4 @@
 
 
-class InvalidOpener(Exception):
+class InvalidInterface(Exception):
     pass

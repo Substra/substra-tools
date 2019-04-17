@@ -16,7 +16,6 @@ def _validate_serializer(serializer):
 
 class Algo(abc.ABC):
     """Abstract base class for defining algo to run on the platform."""
-    OPENER = None
     MODEL_SERIALIZER = serializers.JSON  # default serializer
 
     @abc.abstractmethod
@@ -42,22 +41,14 @@ class Algo(abc.ABC):
 
 class AlgoWrapper(object):
     """Algo wrapper to execute an algo instance on the platform."""
-    MODEL_SERIALIZER = None
-    _OPENER_WRAPPER = None
 
     def __init__(self, interface):
         assert isinstance(interface, Algo)
-
-        # validate or load default opener
-        if interface.OPENER:
-            self._OPENER_WRAPPER = opener.OpenerWrapper(interface.OPENER)
-        else:
-            self._OPENER_WRAPPER = opener.load_from_module()
-        assert isinstance(self._OPENER_WRAPPER, opener.OpenerWrapper)
+        self._opener_wrapper = opener.load_from_module()
 
         # validate model serializer
         _validate_serializer(interface.MODEL_SERIALIZER)
-        self.MODEL_SERIALIZER = interface.MODEL_SERIALIZER
+        self._model_serializer = interface.MODEL_SERIALIZER
 
         self._interface = interface
         self._workspace = workspace.Workspace()
@@ -69,21 +60,21 @@ class AlgoWrapper(object):
         for name in model_names:
             path = os.path.join(self._workspace.model_folder, name)
             with open(path, 'r') as f:
-                m = self.MODEL_SERIALIZER.load(f)
+                m = self._model_serializer.load(f)
             models.append(m)
         return models
 
     def _save_model(self, model):
         """Save model object to workspace."""
         with open(self._workspace.output_model_filepath, 'w') as f:
-            self.MODEL_SERIALIZER.dump(model, f)
+            self._model_serializer.dump(model, f)
 
     def train(self, model_names, rank=0, dry_run=False):
         """Train method wrapper."""
         # load data from opener
         logging.info('loading data from opener')
-        X = self._OPENER_WRAPPER.get_X(dry_run)
-        y = self._OPENER_WRAPPER.get_y(dry_run)
+        X = self._opener_wrapper.get_X(dry_run)
+        y = self._opener_wrapper.get_y(dry_run)
 
         # load models
         logging.info('loading models')
@@ -101,7 +92,7 @@ class AlgoWrapper(object):
 
         # save prediction
         logging.info('saving prediction')
-        self._OPENER_WRAPPER.save_pred(pred)
+        self._opener_wrapper.save_pred(pred)
 
         return pred, model
 
@@ -109,8 +100,8 @@ class AlgoWrapper(object):
         """Predict method wrapper."""
         # load data from opener
         logging.info('loading data from opener')
-        X = self._OPENER_WRAPPER.get_X()
-        y = self._OPENER_WRAPPER.get_y()
+        X = self._opener_wrapper.get_X()
+        y = self._opener_wrapper.get_y()
 
         # load models
         logging.info('loading models')
@@ -122,7 +113,7 @@ class AlgoWrapper(object):
 
         # save prediction
         logging.info('saving prediction')
-        self._OPENER_WRAPPER.save_pred(pred)
+        self._opener_wrapper.save_pred(pred)
 
         return pred
 

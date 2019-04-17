@@ -3,7 +3,7 @@ import os
 import pytest
 
 from substratools import exceptions
-from substratools.opener import load_from_module, OpenerWrapper
+from substratools.opener import load_from_module
 from substratools.utils import import_module
 
 
@@ -36,7 +36,7 @@ def get_y():
 
     import_module('opener', invalid_script)
 
-    with pytest.raises(exceptions.InvalidOpener):
+    with pytest.raises(exceptions.InvalidInterface):
         load_from_module()
 
 
@@ -86,8 +86,3 @@ class MyOpener(Opener):
 
     o = load_from_module()
     assert o.get_X() == 'Xclass'
-
-
-def test_opener_wrapper_invalid_interface():
-    with pytest.raises(exceptions.InvalidOpener):
-        OpenerWrapper(opener='invalid')

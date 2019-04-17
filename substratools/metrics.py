@@ -5,8 +5,6 @@ from substratools import opener, workspace, utils
 
 
 class Metrics(abc.ABC):
-    OPENER = None
-
     @abc.abstractmethod
     def score(self, y_true, y_pred):
         """Returns the macro-average recall.
@@ -17,16 +15,11 @@ class Metrics(abc.ABC):
 
 
 class MetricsWrapper(object):
-    _OPENER_WRAPPER = None
 
     def __init__(self, interface):
         assert isinstance(interface, Metrics)
 
-        if interface.OPENER:
-            self._OPENER_WRAPPER = opener.OpenerWrapper(interface.OPENER)
-        else:
-            self._OPENER_WRAPPER = opener.load_from_module()
-        assert isinstance(self._OPENER_WRAPPER, opener.OpenerWrapper)
+        self._opener_wrapper = opener.load_from_module()
 
         self._workspace = workspace.Workspace()
         self._interface = interface
@@ -37,8 +30,8 @@ class MetricsWrapper(object):
 
     def score(self):
         """Load labels and predictions and save score results."""
-        y = self._OPENER_WRAPPER.get_y()
-        y_pred = self._OPENER_WRAPPER.get_pred()
+        y = self._opener_wrapper.get_y()
+        y_pred = self._opener_wrapper.get_pred()
         x = self._interface.score(y, y_pred)
         self._save_score(x)
         return x

@@ -1,56 +1,29 @@
 import json
 
-from substratools import algo, Opener
+from substratools import algo
 
 import pytest
 
 
-@pytest.fixture
-def dummy_opener():
-    # fake opener module using a class
-    class FakeOpener(Opener):
-        def get_X(self, folder):
-            return 'X'
-
-        def get_y(self, folder):
-            return 'y'
-
-        def fake_X(self):
-            return 'Xfake'
-
-        def fake_y(self):
-            return 'yfake'
-
-        def get_pred(self, path):
-            with open(path, 'r') as f:
-                return json.load(f)
-
-        def save_pred(self, pred, path):
-            with open(path, 'w') as f:
-                json.dump(pred, f)
-
-    yield FakeOpener()
+@pytest.fixture(autouse=True)
+def setup(valid_opener):
+    pass
 
 
-@pytest.fixture
-def dummy_algo_class(dummy_opener):
-    class DummyAlgo(algo.Algo):
-        OPENER = dummy_opener
+class DummyAlgo(algo.Algo):
 
-        def train(self, X, y, models, rank):
-            for m in models:
-                assert isinstance(m, dict)
-                assert 'name' in m
+    def train(self, X, y, models, rank):
+        for m in models:
+            assert isinstance(m, dict)
+            assert 'name' in m
 
-            pred = X + y
-            model = len(models) + 1
-            return pred, model
+        pred = X + y
+        model = len(models) + 1
+        return pred, model
 
-        def predict(self, X, y, models):
-            pred = ''.join([m['name'] for m in models])
-            return pred
-
-    yield DummyAlgo
+    def predict(self, X, y, models):
+        pred = ''.join([m['name'] for m in models])
+        return pred
 
 
 @pytest.fixture
@@ -74,23 +47,23 @@ def create_models(workdir):
     return model_datas, model_filenames
 
 
-def test_create(dummy_algo_class):
+def test_create():
     # check we can instantiate a dummy algo class
-    dummy_algo_class()
+    DummyAlgo()
 
 
-def test_train_no_model(dummy_algo_class):
-    a = dummy_algo_class()
+def test_train_no_model():
+    a = DummyAlgo()
     wp = algo.AlgoWrapper(a)
     pred, model = wp.train([])
     assert pred == 'Xy'
     assert model == 1
 
 
-def test_train_multiple_models(dummy_algo_class, workdir, create_models):
+def test_train_multiple_models(workdir, create_models):
     _, model_filenames = create_models
 
-    a = dummy_algo_class()
+    a = DummyAlgo()
     wp = algo.AlgoWrapper(a)
 
     pred, model = wp.train(model_filenames)
@@ -98,34 +71,33 @@ def test_train_multiple_models(dummy_algo_class, workdir, create_models):
     assert model == 3
 
 
-def test_train_dry_run(dummy_algo_class):
-    a = dummy_algo_class()
+def test_train_dry_run():
+    a = DummyAlgo()
     wp = algo.AlgoWrapper(a)
     pred, model = wp.train([], dry_run=True)
     assert pred == 'Xfakeyfake'
     assert model == 1
 
 
-def test_predict(dummy_algo_class):
-    a = dummy_algo_class()
+def test_predict():
+    a = DummyAlgo()
     wp = algo.AlgoWrapper(a)
     pred = wp.predict([])
     assert pred == ''
 
 
-def test_execute_train(dummy_algo_class, workdir):
+def test_execute_train(workdir):
 
     output_model_path = workdir / 'model' / 'model'
     assert not output_model_path.exists()
 
-    algo.execute(dummy_algo_class(), sysargs=['train'])
+    algo.execute(DummyAlgo(), sysargs=['train'])
     assert output_model_path.exists()
 
-    algo.execute(dummy_algo_class(), sysargs=['train', '--dry-run'])
+    algo.execute(DummyAlgo(), sysargs=['train', '--dry-run'])
 
 
-def test_execute_train_multiple_models(dummy_algo_class, workdir,
-                                       create_models):
+def test_execute_train_multiple_models(workdir, create_models):
     _, model_filenames = create_models
 
     output_model_path = workdir / 'model' / 'model'
@@ -136,7 +108,7 @@ def test_execute_train_multiple_models(dummy_algo_class, workdir,
     command = ['train']
     command.extend(model_filenames)
 
-    algo.execute(dummy_algo_class(), sysargs=command)
+    algo.execute(DummyAlgo(), sysargs=command)
     assert output_model_path.exists()
     with open(output_model_path, 'r') as f:
         model = json.load(f)
@@ -148,8 +120,8 @@ def test_execute_train_multiple_models(dummy_algo_class, workdir,
     assert pred == 'Xy'
 
 
-def test_execute_predict(dummy_algo_class, workdir):
+def test_execute_predict(workdir):
     pred_path = workdir / 'pred' / 'pred'
     assert not pred_path.exists()
-    algo.execute(dummy_algo_class(), sysargs=['predict'])
+    algo.execute(DummyAlgo(), sysargs=['predict'])
     assert pred_path.exists()

@@ -1,11 +1,19 @@
-import json
 import shutil
 import os
 
-from substratools import Opener, Algo, Metrics
+from substratools import Algo, Metrics
 from substratools.algo import AlgoWrapper
 from substratools.metrics import MetricsWrapper
+from substratools.utils import import_module
 
+import pytest
+
+
+@pytest.fixture
+def dummy_opener():
+    script = """
+import json
+from substratools import Opener
 
 class DummyOpener(Opener):
     def get_X(self, folder):
@@ -27,11 +35,11 @@ class DummyOpener(Opener):
     def save_pred(self, pred, path):
         with open(path, 'w') as f:
             json.dump(pred, f)
+"""
+    import_module('opener', script)
 
 
 class DummyAlgo(Algo):
-    OPENER = DummyOpener()
-
     def train(self, X, y, models, rank):
         total = sum([m['i'] for m in models])
         pred = {'sum': len(models)}
@@ -43,13 +51,11 @@ class DummyAlgo(Algo):
 
 
 class DummyMetrics(Metrics):
-    OPENER = DummyOpener()
-
     def score(self, y, pred):
         return pred
 
 
-def test_workflow(workdir):
+def test_workflow(workdir, dummy_opener):
     algo_wp = AlgoWrapper(DummyAlgo())
 
     models_path = algo_wp._workspace.model_folder

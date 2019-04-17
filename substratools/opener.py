@@ -1,8 +1,7 @@
 import abc
-import inspect
 import types
 
-from substratools import exceptions, workspace, utils
+from substratools import workspace, utils
 
 
 class Opener(abc.ABC):
@@ -48,28 +47,8 @@ class OpenerWrapper(object):
     """Internal wrapper to call opener interface."""
 
     def __init__(self, opener):
-        # validate opener
-        if isinstance(opener, Opener):
-            pass
-
-        elif isinstance(opener, types.ModuleType):
-            missing_functions = REQUIRED_FUNCTIONS.copy()
-            for name, obj in inspect.getmembers(opener):
-                if not inspect.isfunction(obj):
-                    continue
-                try:
-                    missing_functions.remove(name)
-                except KeyError:
-                    pass
-
-            if missing_functions:
-                message = "Method(s) {} not implemented".format(
-                    ", ".join(["'{}'".format(m) for m in missing_functions]))
-                raise exceptions.InvalidOpener(message)
-
-        else:
-            raise exceptions.InvalidOpener(
-                "Opener must be a module or an Opener instance")
+        assert isinstance(opener, Opener) or \
+            isinstance(opener, types.ModuleType)
 
         self._interface = opener
         self._workspace = workspace.Workspace()
@@ -100,5 +79,8 @@ def load_from_module(name='opener'):
 
     Return an OpenerWrapper instance.
     """
-    interface = utils.load_interface_from_module(name, Opener)
+    interface = utils.load_interface_from_module(
+        name,
+        interface_class=Opener,
+        interface_signature=REQUIRED_FUNCTIONS)
     return OpenerWrapper(interface)
