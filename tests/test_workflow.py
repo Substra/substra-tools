@@ -1,5 +1,6 @@
-import shutil
+import json
 import os
+import shutil
 
 from substratools import Algo, Metrics
 from substratools.algo import AlgoWrapper
@@ -48,6 +49,14 @@ class DummyAlgo(Algo):
 
     def predict(self, X, y, models):
         return {'sum': sum([m['i'] for m in models])}
+
+    def load_model(self, path):
+        with open(path, 'r') as f:
+            return json.load(f)
+
+    def save_model(self, model, path):
+        with open(path, 'w') as f:
+            json.dump(model, f)
 
 
 class DummyMetrics(Metrics):

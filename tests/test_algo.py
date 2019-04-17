@@ -25,6 +25,14 @@ class DummyAlgo(algo.Algo):
         pred = ''.join([m['name'] for m in models])
         return pred
 
+    def load_model(self, path):
+        with open(path, 'r') as f:
+            return json.load(f)
+
+    def save_model(self, model, path):
+        with open(path, 'w') as f:
+            json.dump(model, f)
+
 
 @pytest.fixture
 def create_models(workdir):

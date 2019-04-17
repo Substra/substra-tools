@@ -5,18 +5,11 @@ import logging
 import os
 import sys
 
-from substratools import serializers, opener, workspace
-
-
-def _validate_serializer(serializer):
-    assert isinstance(serializer, serializers.Serializer)
-    assert callable(serializer.load)
-    assert callable(serializer.dump)
+from substratools import opener, workspace
 
 
 class Algo(abc.ABC):
     """Abstract base class for defining algo to run on the platform."""
-    MODEL_SERIALIZER = serializers.JSON  # default serializer
 
     @abc.abstractmethod
     def train(self, X, y, models, rank):
@@ -38,6 +31,16 @@ class Algo(abc.ABC):
         """Train model dry run mode."""
         return self.train(X, y, models, rank=0)
 
+    @abc.abstractmethod
+    def load_model(self, path):
+        """Load model from path."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def save_model(self, model, path):
+        """Save model to path."""
+        raise NotImplementedError
+
 
 class AlgoWrapper(object):
     """Algo wrapper to execute an algo instance on the platform."""
@@ -45,10 +48,6 @@ class AlgoWrapper(object):
     def __init__(self, interface):
         assert isinstance(interface, Algo)
         self._opener_wrapper = opener.load_from_module()
-
-        # validate model serializer
-        _validate_serializer(interface.MODEL_SERIALIZER)
-        self._model_serializer = interface.MODEL_SERIALIZER
 
         self._interface = interface
         self._workspace = workspace.Workspace()
@@ -59,15 +58,14 @@ class AlgoWrapper(object):
         models = []
         for name in model_names:
             path = os.path.join(self._workspace.model_folder, name)
-            with open(path, 'r') as f:
-                m = self._model_serializer.load(f)
+            m = self._interface.load_model(path)
             models.append(m)
         return models
 
     def _save_model(self, model):
         """Save model object to workspace."""
-        with open(self._workspace.output_model_filepath, 'w') as f:
-            self._model_serializer.dump(model, f)
+        self._interface.save_model(model,
+                                   self._workspace.output_model_filepath)
 
     def train(self, model_names, rank=0, dry_run=False):
         """Train method wrapper."""
