@@ -13,17 +13,18 @@ def setup(valid_opener):
 class DummyAlgo(algo.Algo):
 
     def train(self, X, y, models, rank):
+        new_model = {'value': ''}
         for m in models:
             assert isinstance(m, dict)
-            assert 'name' in m
+            assert 'value' in m
+            new_model['value'] += m['value']
 
         pred = X + y
-        model = len(models) + 1
-        return pred, model
+        return pred, new_model
 
-    def predict(self, X, y, models):
-        pred = ''.join([m['name'] for m in models])
-        return pred
+    def predict(self, X, y, model):
+        pred = model['value']
+        return X + y + pred
 
     def load_model(self, path):
         with open(path, 'r') as f:
@@ -36,14 +37,14 @@ class DummyAlgo(algo.Algo):
 
 @pytest.fixture
 def create_models(workdir):
-    model_a = {'name': 'a'}
-    model_b = {'name': 'b'}
+    model_a = {'value': 'a'}
+    model_b = {'value': 'b'}
 
     model_dir = workdir / "model"
     model_dir.mkdir()
 
     def _create_model(model_data):
-        model_name = model_data['name']
+        model_name = model_data['value']
         filename = f"{model_name}.json"
         path = model_dir / filename
         path.write_text(json.dumps(model_data))
@@ -65,7 +66,7 @@ def test_train_no_model():
     wp = algo.AlgoWrapper(a)
     pred, model = wp.train([])
     assert pred == 'Xy'
-    assert model == 1
+    assert model['value'] == ''
 
 
 def test_train_multiple_models(workdir, create_models):
@@ -76,7 +77,7 @@ def test_train_multiple_models(workdir, create_models):
 
     pred, model = wp.train(model_filenames)
     assert pred == 'Xy'
-    assert model == 3
+    assert model['value'] == 'ab'
 
 
 def test_train_dry_run():
@@ -84,14 +85,16 @@ def test_train_dry_run():
     wp = algo.AlgoWrapper(a)
     pred, model = wp.train([], dry_run=True)
     assert pred == 'Xfakeyfake'
-    assert model == 1
+    assert model['value'] == ''
 
 
-def test_predict():
+def test_predict(workdir, create_models):
+    _, model_filenames = create_models
+
     a = DummyAlgo()
     wp = algo.AlgoWrapper(a)
-    pred = wp.predict([])
-    assert pred == ''
+    pred = wp.predict(model_filenames[0])
+    assert pred == 'Xya'
 
 
 def test_execute_train(workdir):
@@ -120,7 +123,7 @@ def test_execute_train_multiple_models(workdir, create_models):
     assert output_model_path.exists()
     with open(output_model_path, 'r') as f:
         model = json.load(f)
-    assert model == 3
+    assert model['value'] == 'ab'
 
     assert pred_path.exists()
     with open(pred_path, 'r') as f:
@@ -128,8 +131,29 @@ def test_execute_train_multiple_models(workdir, create_models):
     assert pred == 'Xy'
 
 
-def test_execute_predict(workdir):
+def test_execute_predict(workdir, create_models):
+    _, model_filenames = create_models
+    model_name = 'model'
+    output_model_path = workdir / 'model' / model_name
+    pred_path = workdir / 'pred' / 'pred'
+
+    # first train models
+    assert not pred_path.exists()
+    command = ['train']
+    command.extend(model_filenames)
+    algo.execute(DummyAlgo(), sysargs=command)
+    assert output_model_path.exists()
+    assert pred_path.exists()
+    with open(pred_path, 'r') as f:
+        pred = json.load(f)
+    assert pred == 'Xy'
+    pred_path.unlink()
+
+    # do predict on output model
     pred_path = workdir / 'pred' / 'pred'
     assert not pred_path.exists()
-    algo.execute(DummyAlgo(), sysargs=['predict'])
+    algo.execute(DummyAlgo(), sysargs=['predict', model_name])
     assert pred_path.exists()
+    with open(pred_path, 'r') as f:
+        pred = json.load(f)
+    assert pred == 'Xyab'

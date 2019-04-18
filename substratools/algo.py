@@ -20,8 +20,8 @@ class Algo(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def predict(self, X, y, models):
-        """Load models and save predictions made on train data.
+    def predict(self, X, y, model):
+        """Load model and save predictions made on train data.
 
         Must return predictions.
         """
@@ -94,7 +94,7 @@ class AlgoWrapper(object):
 
         return pred, model
 
-    def predict(self, model_names):
+    def predict(self, model_name):
         """Predict method wrapper."""
         # load data from opener
         logging.info('loading data from opener')
@@ -103,11 +103,11 @@ class AlgoWrapper(object):
 
         # load models
         logging.info('loading models')
-        models = self._load_models(model_names)
+        models = self._load_models([model_name])
 
         # get predictions
         logging.info('predicting')
-        pred = self._interface.predict(X, y, models)
+        pred = self._interface.predict(X, y, models[0])
 
         # save prediction
         logging.info('saving prediction')
@@ -123,7 +123,7 @@ def _generate_cli(algo_wrapper):
         algo_wrapper.train(args.models, args.rank, args.dry_run)
 
     def _predict(args):
-        algo_wrapper.predict(args.models)
+        algo_wrapper.predict(args.model)
 
     parser = argparse.ArgumentParser()
     parsers = parser.add_subparsers()
@@ -139,7 +139,7 @@ def _generate_cli(algo_wrapper):
 
     predict_parser = parsers.add_parser('predict')
     predict_parser.add_argument(
-        'models', type=str, nargs='*')
+        'model', type=str)
     predict_parser.set_defaults(func=_predict)
     return parser
 

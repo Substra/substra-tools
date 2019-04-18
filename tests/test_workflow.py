@@ -47,8 +47,8 @@ class DummyAlgo(Algo):
         new_model = {'i': len(models) + 1, 'total': total}
         return pred, new_model
 
-    def predict(self, X, y, models):
-        return {'sum': sum([m['i'] for m in models])}
+    def predict(self, X, y, model):
+        return {'sum': model['i']}
 
     def load_model(self, path):
         with open(path, 'r') as f:
@@ -97,10 +97,10 @@ def test_workflow(workdir, dummy_opener):
     # predict
     model_3_name = 'model3'
     shutil.move(output_model_path, os.path.join(models_path, model_3_name))
-    pred = algo_wp.predict([model_1_name, model_2_name, model_3_name])
-    assert pred == {'sum': 6}
+    pred = algo_wp.predict(model_3_name)
+    assert pred == {'sum': 3}
 
     # metrics
     metrics_wp = MetricsWrapper(DummyMetrics())
     score = metrics_wp.score()
-    assert score == {'sum': 6}
+    assert score == {'sum': 3}
