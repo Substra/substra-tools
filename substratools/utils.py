@@ -9,7 +9,7 @@ from substratools import exceptions
 
 def import_module(module_name, code):
     if module_name in sys.modules:
-        logging.warning(f'Module {module_name} will be overwritten')
+        logging.warning("Module {} will be overwritten".format(module_name))
     module = imp.new_module(module_name)
     sys.modules[module_name] = module
     exec(code, module.__dict__)
@@ -31,7 +31,8 @@ def load_interface_from_module(module_name, interface_class,
     if interface_signature is None:
         class_name = interface_class.__name__
         raise exceptions.InvalidInterface(
-            f"Expecting {class_name} subclass in {module_name}")
+            "Expecting {} subclass in {}".format(
+                class_name, module_name))
 
     missing_functions = interface_signature.copy()
     for name, obj in inspect.getmembers(module):

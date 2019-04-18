@@ -45,7 +45,7 @@ def create_models(workdir):
 
     def _create_model(model_data):
         model_name = model_data['value']
-        filename = f"{model_name}.json"
+        filename = "{}.json".format(model_name)
         path = model_dir / filename
         path.write_text(json.dumps(model_data))
         return filename
