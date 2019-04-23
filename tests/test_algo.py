@@ -13,18 +13,18 @@ def setup(valid_opener):
 class DummyAlgo(algo.Algo):
 
     def train(self, X, y, models, rank):
-        new_model = {'value': ''}
+        new_model = {'value': 0}
         for m in models:
             assert isinstance(m, dict)
             assert 'value' in m
             new_model['value'] += m['value']
-
-        pred = X + y
+        new_value = new_model['value']
+        pred = list(range(new_value, new_value + 3))
         return pred, new_model
 
     def predict(self, X, y, model):
         pred = model['value']
-        return X + y + pred
+        return y * pred
 
     def load_model(self, path):
         with open(path, 'r') as f:
@@ -37,8 +37,8 @@ class DummyAlgo(algo.Algo):
 
 @pytest.fixture
 def create_models(workdir):
-    model_a = {'value': 'a'}
-    model_b = {'value': 'b'}
+    model_a = {'value': 1}
+    model_b = {'value': 2}
 
     model_dir = workdir / "model"
     model_dir.mkdir()
@@ -65,8 +65,8 @@ def test_train_no_model():
     a = DummyAlgo()
     wp = algo.AlgoWrapper(a)
     pred, model = wp.train([])
-    assert pred == 'Xy'
-    assert model['value'] == ''
+    assert pred == [0, 1, 2]
+    assert model['value'] == 0
 
 
 def test_train_multiple_models(workdir, create_models):
@@ -76,16 +76,16 @@ def test_train_multiple_models(workdir, create_models):
     wp = algo.AlgoWrapper(a)
 
     pred, model = wp.train(model_filenames)
-    assert pred == 'Xy'
-    assert model['value'] == 'ab'
+    assert pred == [3, 4, 5]
+    assert model['value'] == 3
 
 
 def test_train_dry_run():
     a = DummyAlgo()
     wp = algo.AlgoWrapper(a)
     pred, model = wp.train([], dry_run=True)
-    assert pred == 'Xfakeyfake'
-    assert model['value'] == ''
+    assert pred == [0, 1, 2]
+    assert model['value'] == 0
 
 
 def test_predict(workdir, create_models):
@@ -94,7 +94,7 @@ def test_predict(workdir, create_models):
     a = DummyAlgo()
     wp = algo.AlgoWrapper(a)
     pred = wp.predict(model_filenames[0])
-    assert pred == 'Xya'
+    assert pred == [0, 1, 2]
 
 
 def test_execute_train(workdir):
@@ -123,12 +123,12 @@ def test_execute_train_multiple_models(workdir, create_models):
     assert output_model_path.exists()
     with open(output_model_path, 'r') as f:
         model = json.load(f)
-    assert model['value'] == 'ab'
+    assert model['value'] == 3
 
     assert pred_path.exists()
     with open(pred_path, 'r') as f:
         pred = json.load(f)
-    assert pred == 'Xy'
+    assert pred == [3, 4, 5]
 
 
 def test_execute_predict(workdir, create_models):
@@ -146,7 +146,7 @@ def test_execute_predict(workdir, create_models):
     assert pred_path.exists()
     with open(pred_path, 'r') as f:
         pred = json.load(f)
-    assert pred == 'Xy'
+    assert pred == [3, 4, 5]
     pred_path.unlink()
 
     # do predict on output model
@@ -156,4 +156,4 @@ def test_execute_predict(workdir, create_models):
     assert pred_path.exists()
     with open(pred_path, 'r') as f:
         pred = json.load(f)
-    assert pred == 'Xyab'
+    assert pred == [0, 1, 2, 0, 1, 2, 0, 1, 2]

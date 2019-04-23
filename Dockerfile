@@ -6,7 +6,7 @@ RUN pip3 install pillow pandas numpy sklearn
 
 ADD ./setup.py /tmp
 ADD ./substratools /tmp/substratools
-RUN cd /tmp && pip install -e .
+RUN cd /tmp && pip install .
 
 RUN mkdir -p /sandbox/opener
 

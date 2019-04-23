@@ -32,13 +32,13 @@ class FakeOpener(Opener):
         return 'X'
 
     def get_y(self, folder):
-        return 'y'
+        return list(range(0, 3))
 
     def fake_X(self):
         return 'Xfake'
 
     def fake_y(self):
-        return 'yfake'
+        return [0] * 3
 
     def get_pred(self, path):
         with open(path, 'r') as f:
