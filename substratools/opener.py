@@ -5,6 +5,10 @@ import types
 from substratools import workspace, utils
 
 
+REQUIRED_FUNCTIONS = set([
+    'get_X', 'get_y', 'fake_X', 'fake_y', 'get_pred', 'save_pred'])
+
+
 class Opener(abc.ABC):
     """Dataset opener abstract base class."""
 
@@ -35,10 +39,6 @@ class Opener(abc.ABC):
     def save_pred(self, y_pred, path):
         """Save predictions to path."""
         raise NotImplementedError
-
-
-REQUIRED_FUNCTIONS = set([
-    'get_X', 'get_y', 'fake_X', 'fake_y', 'get_pred', 'save_pred'])
 
 
 class OpenerWrapper(object):

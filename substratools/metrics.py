@@ -4,6 +4,9 @@ import json
 from substratools import opener, workspace, utils
 
 
+REQUIRED_FUNCTIONS = set(['score'])
+
+
 class Metrics(abc.ABC):
     @abc.abstractmethod
     def score(self, y_true, y_pred):
@@ -17,8 +20,6 @@ class Metrics(abc.ABC):
 class MetricsWrapper(object):
 
     def __init__(self, interface):
-        assert isinstance(interface, Metrics)
-
         self._opener_wrapper = opener.load_from_module()
 
         self._workspace = workspace.Workspace()
@@ -45,5 +46,8 @@ def _execute(interface, dry_run):
 
 def execute(module_name='metrics', dry_run=False):
     """Launch metrics script."""
-    interface = utils.load_interface_from_module('metrics', Metrics)
+    interface = utils.load_interface_from_module(
+        module_name,
+        interface_class=Metrics,
+        interface_signature=REQUIRED_FUNCTIONS)
     return _execute(interface, dry_run)
