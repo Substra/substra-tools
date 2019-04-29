@@ -49,7 +49,7 @@ pipeline {
         stage('Build') {
           agent {
             kubernetes {
-              label 'substratools-kaniko-substratools'
+              label 'substratools-kaniko'
               yamlFile '.cicd/agent-kaniko.yaml'
             }
           }
