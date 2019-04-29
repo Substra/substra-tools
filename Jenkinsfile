@@ -42,5 +42,22 @@ pipeline {
         }
       }
     }
+
+    stage('Build substratools') {
+      agent {
+        kubernetes {
+          label 'substratools-kaniko-substratools'
+          yamlFile '.cicd/agent-kaniko.yaml'
+        }
+      }
+
+      steps {
+        container(name:'kaniko', shell:'/busybox/sh') {
+          sh '''#!/busybox/sh
+             /kaniko/executor -f `pwd`/docker/substratools/Dockerfile -c `pwd` -d "eu.gcr.io/substra-208412/substratools:$GIT_COMMIT"
+          '''
+        }
+      }
+    }
   }
 }
