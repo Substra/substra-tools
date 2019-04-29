@@ -54,7 +54,7 @@ pipeline {
       steps {
         container(name:'kaniko', shell:'/busybox/sh') {
           sh '''#!/busybox/sh
-            /kaniko/executor -f `pwd`/Dockerfile -c `pwd` -d "eu.gcr.io/substra-208412/substratools:$GIT_COMMIT"
+            /kaniko/executor -c `pwd` -d "eu.gcr.io/substra-208412/substratools:$GIT_COMMIT"
           '''
         }
       }
