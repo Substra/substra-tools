@@ -1,5 +1,9 @@
+from . import algo, metrics, opener
 from .algo import Algo
-from .model import SubstraModel
+from .metrics import Metrics
+from .opener import Opener
 
 
-__all__ = [Algo, SubstraModel]
+__all__ = [algo, Algo,
+           metrics, Metrics,
+           opener, Opener]

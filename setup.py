@@ -8,7 +8,6 @@ setup(
     author='Camille',
     packages=find_packages(),
     install_requires=[
-        'click',
         'numpy',
         'sklearn'],
     classifiers=[
