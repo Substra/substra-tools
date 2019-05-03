@@ -94,12 +94,12 @@ class AlgoWrapper(object):
 
         return pred, model
 
-    def predict(self, model_name):
+    def predict(self, model_name, dry_run=False):
         """Predict method wrapper."""
         # load data from opener
         logging.info('loading data from opener')
-        X = self._opener_wrapper.get_X()
-        y = self._opener_wrapper.get_y()
+        X = self._opener_wrapper.get_X(dry_run)
+        y = self._opener_wrapper.get_y(dry_run)
 
         # load models
         logging.info('loading models')
@@ -140,6 +140,8 @@ def _generate_cli(algo_wrapper):
     predict_parser = parsers.add_parser('predict')
     predict_parser.add_argument(
         'model', type=str)
+    predict_parser.add_argument(
+        '-d', '--dry-run', action='store_true', default=False)
     predict_parser.set_defaults(func=_predict)
     return parser
 

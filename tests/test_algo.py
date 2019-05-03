@@ -88,13 +88,17 @@ def test_train_dry_run():
     assert model['value'] == 0
 
 
-def test_predict(workdir, create_models):
+@pytest.mark.parametrize("dry_run,expected_pred", [
+    (False, [0, 1, 2]),
+    (True, [0, 0, 0]),
+])
+def test_predict(dry_run, expected_pred, workdir, create_models):
     _, model_filenames = create_models
 
     a = DummyAlgo()
     wp = algo.AlgoWrapper(a)
-    pred = wp.predict(model_filenames[0])
-    assert pred == [0, 1, 2]
+    pred = wp.predict(model_filenames[0], dry_run=dry_run)
+    assert pred == expected_pred
 
 
 def test_execute_train(workdir):
