@@ -56,6 +56,14 @@ def test_execute(load_metrics_module):
     assert s == 15
 
 
-def test_execute_dryrun(load_metrics_module):
-    s = metrics.execute(dry_run=True)
-    assert s == 0
+@pytest.mark.parametrize("dry_run_mode,expected_score", [
+    (False, 15),
+    (True, 0),
+    (metrics.DryRunMode.DISABLED, 15),
+    (metrics.DryRunMode.FAKE_Y, 12),
+    (metrics.DryRunMode.FAKE_Y_PRED, 0),
+])
+def test_execute_dryrun_modes(dry_run_mode, expected_score,
+                              load_metrics_module):
+    s = metrics.execute(dry_run=dry_run_mode)
+    assert s == expected_score
