@@ -123,7 +123,7 @@ def _generate_cli(algo_wrapper):
         algo_wrapper.train(args.models, args.rank, args.dry_run)
 
     def _predict(args):
-        algo_wrapper.predict(args.model)
+        algo_wrapper.predict(args.model, args.dry_run)
 
     parser = argparse.ArgumentParser()
     parsers = parser.add_subparsers()
