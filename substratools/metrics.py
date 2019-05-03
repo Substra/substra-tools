@@ -16,6 +16,7 @@ class DryRunMode(enum.IntEnum):
     @classmethod
     def from_value(cls, val):
         if isinstance(val, bool):
+            # for backward compatibility with boolean dry_run values
             return cls.DISABLED if not val else cls.FAKE_Y_PRED
         return cls(val)
 
