@@ -1,10 +1,24 @@
 import abc
+import enum
 import json
 
 from substratools import opener, workspace, utils
 
 
 REQUIRED_FUNCTIONS = set(['score'])
+
+
+class DryRunMode(enum.IntEnum):
+    DISABLED = 0
+    FAKE_Y = 1
+    FAKE_Y_PRED = 2
+
+    @classmethod
+    def from_value(cls, val):
+        if isinstance(val, bool):
+            # for backward compatibility with boolean dry_run values
+            return cls.DISABLED if not val else cls.FAKE_Y_PRED
+        return cls(val)
 
 
 class Metrics(abc.ABC):
@@ -31,8 +45,22 @@ class MetricsWrapper(object):
 
     def score(self, dry_run=False):
         """Load labels and predictions and save score results."""
-        y = self._opener_wrapper.get_y(dry_run=dry_run)
-        y_pred = y if dry_run else self._opener_wrapper.get_pred()
+        mode = DryRunMode.from_value(dry_run)
+        if mode == DryRunMode.DISABLED:
+            y = self._opener_wrapper.get_y()
+            y_pred = self._opener_wrapper.get_pred()
+
+        elif mode == DryRunMode.FAKE_Y:
+            y = self._opener_wrapper.get_y(dry_run=True)
+            y_pred = self._opener_wrapper.get_pred()
+
+        elif mode == DryRunMode.FAKE_Y_PRED:
+            y = self._opener_wrapper.get_y(dry_run=True)
+            y_pred = y
+
+        else:
+            raise AssertionError
+
         x = self._interface.score(y, y_pred)
         self._save_score(x)
         return x
