@@ -54,8 +54,9 @@ class OpenerWrapper(object):
     @property
     def data_folder_paths(self):
         rootpath = self._workspace.data_folder
-        folders = [os.path.join(rootpath, subfolder)
-                   for subfolder in os.listdir(rootpath)]
+        folders = [os.path.join(rootpath, subfolder_name)
+                   for subfolder_name in os.listdir(rootpath)
+                   if os.path.isdir(os.path.join(rootpath, subfolder_name))]
         return folders
 
     def get_X(self, dry_run=False):
