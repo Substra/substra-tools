@@ -22,7 +22,7 @@ def tmp_cwd(tmp_path):
 
 
 def test_load_opener_not_found(tmp_cwd):
-    with pytest.raises(ModuleNotFoundError):
+    with pytest.raises(ImportError):
         load_from_module()
 
 
