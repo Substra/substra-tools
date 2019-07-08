@@ -19,7 +19,8 @@ def load_interface_from_module(module_name, interface_class,
                                interface_signature=None):
     try:
         module = importlib.import_module(module_name)
-    except ImportError:  # XXX don't use ModuleNotFoundError for python3.5 compatibility
+    except ImportError:
+        # XXX don't use ModuleNotFoundError for py3.5 compatibility
         raise
 
     # check interface

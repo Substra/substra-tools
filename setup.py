@@ -26,6 +26,6 @@ setup(
         'Topic :: Scientific/Engineering'
     ],
     setup_requires=['pytest-runner'],
-    tests_require=['pytest', 'pytest-cov', 'pytest-mock'],
+    tests_require=['flake8', 'pytest', 'pytest-cov', 'pytest-mock'],
     zip_safe=False
 )
