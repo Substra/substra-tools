@@ -25,7 +25,7 @@ setup(
         'Programming Language :: Python :: 3',
         'Topic :: Scientific/Engineering'
     ],
-    setup_requires=["pytest-runner"],
-    tests_require=["pytest", "pytest-cov"],
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest', 'pytest-cov', 'pytest-mock'],
     zip_safe=False
 )
