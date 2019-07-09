@@ -20,7 +20,7 @@ class Algo(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def predict(self, X, y, model):
+    def predict(self, X, model):
         """Load model and save predictions made on train data.
 
         Must return predictions.
@@ -99,7 +99,6 @@ class AlgoWrapper(object):
         # load data from opener
         logging.info('loading data from opener')
         X = self._opener_wrapper.get_X(dry_run)
-        y = self._opener_wrapper.get_y(dry_run)
 
         # load models
         logging.info('loading models')
@@ -107,7 +106,7 @@ class AlgoWrapper(object):
 
         # get predictions
         logging.info('predicting')
-        pred = self._interface.predict(X, y, models[0])
+        pred = self._interface.predict(X, models[0])
 
         # save prediction
         logging.info('saving prediction')

@@ -22,9 +22,9 @@ class DummyAlgo(algo.Algo):
         pred = list(range(new_value, new_value + 3))
         return pred, new_model
 
-    def predict(self, X, y, model):
+    def predict(self, X, model):
         pred = model['value']
-        return y * pred
+        return X * pred
 
     def load_model(self, path):
         with open(path, 'r') as f:
@@ -89,8 +89,8 @@ def test_train_dry_run():
 
 
 @pytest.mark.parametrize("dry_run,expected_pred", [
-    (False, [0, 1, 2]),
-    (True, [0, 0, 0]),
+    (False, 'X'),
+    (True, 'Xfake'),
 ])
 def test_predict(dry_run, expected_pred, workdir, create_models):
     _, model_filenames = create_models
@@ -160,4 +160,4 @@ def test_execute_predict(workdir, create_models):
     assert pred_path.exists()
     with open(pred_path, 'r') as f:
         pred = json.load(f)
-    assert pred == [0, 1, 2, 0, 1, 2, 0, 1, 2]
+    assert pred == 'XXX'

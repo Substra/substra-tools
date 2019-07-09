@@ -47,7 +47,7 @@ class DummyAlgo(Algo):
         new_model = {'i': len(models) + 1, 'total': total}
         return pred, new_model
 
-    def predict(self, X, y, model):
+    def predict(self, X, model):
         return {'sum': model['i']}
 
     def load_model(self, path):
