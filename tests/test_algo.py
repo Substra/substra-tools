@@ -1,4 +1,5 @@
 import json
+import shutil
 
 from substratools import algo
 
@@ -110,6 +111,10 @@ def test_execute_train(workdir):
     assert output_model_path.exists()
 
     algo.execute(DummyAlgo(), sysargs=['train', '--dry-run'])
+    assert output_model_path.exists()
+
+    algo.execute(DummyAlgo(), sysargs=['train', '--debug'])
+    assert output_model_path.exists()
 
 
 def test_execute_train_multiple_models(workdir, create_models):
@@ -154,9 +159,22 @@ def test_execute_predict(workdir, create_models):
     pred_path.unlink()
 
     # do predict on output model
-    pred_path = workdir / 'pred' / 'pred'
     assert not pred_path.exists()
     algo.execute(DummyAlgo(), sysargs=['predict', model_name])
+    assert pred_path.exists()
+    with open(pred_path, 'r') as f:
+        pred = json.load(f)
+    assert pred == 'XXX'
+    pred_path.unlink()
+
+    # do predict with different model paths
+    input_models_dir = workdir / 'other_models'
+    input_models_dir.mkdir()
+    input_model_path = input_models_dir / 'supermodel'
+    shutil.move(output_model_path, input_model_path)
+    assert not pred_path.exists()
+    algo.execute(DummyAlgo(), sysargs=[
+        'predict', 'supermodel', '--models-path', str(input_models_dir)])
     assert pred_path.exists()
     with open(pred_path, 'r') as f:
         pred = json.load(f)
