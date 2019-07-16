@@ -3,7 +3,6 @@ pipeline {
     timestamps ()
     timeout(time: 1, unit: 'HOURS')
     buildDiscarder(logRotator(numToKeepStr: '5'))
-    skipDefaultCheckout true
   }
 
   agent none
@@ -38,11 +37,8 @@ pipeline {
           }
 
           steps {
-            dir("substratools") {
-              checkout scm
-              sh "pip install -e .[test]"
-              sh "python setup.py test"
-            }
+            sh "pip install -e .[test]"
+            sh "python setup.py test"
           }
         }
 
@@ -56,7 +52,6 @@ pipeline {
 
           steps {
             container(name:'kaniko', shell:'/busybox/sh') {
-              checkout scm
               sh '''#!/busybox/sh
                 /kaniko/executor -f `pwd`/Dockerfile -c `pwd` -d "eu.gcr.io/substra-208412/substratools:$GIT_COMMIT"
               '''
