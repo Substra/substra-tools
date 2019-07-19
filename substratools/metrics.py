@@ -73,11 +73,11 @@ class MetricsWrapper(object):
         mode = DryRunMode.from_value(dry_run)
         if mode == DryRunMode.DISABLED:
             y = self._opener_wrapper.get_y()
-            y_pred = self._opener_wrapper.get_pred()
+            y_pred = self._opener_wrapper.get_predictions()
 
         elif mode == DryRunMode.FAKE_Y:
             y = self._opener_wrapper.get_y(dry_run=True)
-            y_pred = self._opener_wrapper.get_pred()
+            y_pred = self._opener_wrapper.get_predictions()
 
         elif mode == DryRunMode.FAKE_Y_PRED:
             y = self._opener_wrapper.get_y(dry_run=True)

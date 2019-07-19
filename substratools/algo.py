@@ -195,7 +195,7 @@ class AlgoWrapper(object):
 
         # save predictions
         logging.info('saving predictions')
-        self._opener_wrapper.save_pred(pred)
+        self._opener_wrapper.save_predictions(pred)
 
         return pred, model
 
@@ -217,7 +217,7 @@ class AlgoWrapper(object):
 
         # save predictions
         logging.info('saving predictions')
-        self._opener_wrapper.save_pred(pred)
+        self._opener_wrapper.save_predictions(pred)
 
         return pred
 

@@ -6,7 +6,13 @@ from substratools import workspace, utils
 
 
 REQUIRED_FUNCTIONS = set([
-    'get_X', 'get_y', 'fake_X', 'fake_y', 'get_pred', 'save_pred'])
+    'get_X',
+    'get_y',
+    'fake_X',
+    'fake_y',
+    'get_predictions',
+    'save_predictions',
+])
 
 
 class Opener(abc.ABC):
@@ -19,8 +25,8 @@ class Opener(abc.ABC):
     - #Opener.get_y()
     - #Opener.fake_X()
     - #Opener.fake_y()
-    - #Opener.get_pred()
-    - #Opener.save_pred()
+    - #Opener.get_predictions()
+    - #Opener.save_predictions()
 
     # Example
 
@@ -51,11 +57,11 @@ class Opener(abc.ABC):
         def fake_y(self):
             return []  # compute random fake data
 
-        def save_pred(self, y_pred, path):
+        def save_predictions(self, y_pred, path):
             with open(path, 'w') as fp:
                 y_pred.to_csv(fp, index=False)
 
-        def get_pred(self, path):
+        def get_predictions(self, path):
             return pd.read_csv(path)
     ```
     """
@@ -109,7 +115,7 @@ class Opener(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_pred(self, path):
+    def get_predictions(self, path):
         """Read file and return predictions vector.
 
         # Arguments
@@ -123,7 +129,7 @@ class Opener(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def save_pred(self, y_pred, path):
+    def save_predictions(self, y_pred, path):
         """Write predictions vector to file.
 
         # Arguments
@@ -164,11 +170,12 @@ class OpenerWrapper(object):
         else:
             return self._interface.get_y(self.data_folder_paths)
 
-    def get_pred(self):
-        return self._interface.get_pred(self._workspace.pred_filepath)
+    def get_predictions(self):
+        return self._interface.get_predictions(self._workspace.pred_filepath)
 
-    def save_pred(self, y_pred):
-        return self._interface.save_pred(y_pred, self._workspace.pred_filepath)
+    def save_predictions(self, y_pred):
+        return self._interface.save_predictions(
+            y_pred, self._workspace.pred_filepath)
 
 
 def load_from_module(name='opener'):

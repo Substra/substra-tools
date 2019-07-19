@@ -174,8 +174,8 @@ following abstract methods:
 - `Opener.get_y()`
 - `Opener.fake_X()`
 - `Opener.fake_y()`
-- `Opener.get_pred()`
-- `Opener.save_pred()`
+- `Opener.get_predictions()`
+- `Opener.save_predictions()`
 
 __Example__
 
@@ -207,11 +207,11 @@ class DummyOpener(tools.Opener):
     def fake_y(self):
         return []  # compute random fake data
 
-    def save_pred(self, y_pred, path):
+    def save_predictions(self, y_pred, path):
         with open(path, 'w') as fp:
             y_pred.to_csv(fp, index=False)
 
-    def get_pred(self, path):
+    def get_predictions(self, path):
         return pd.read_csv(path)
 ```
 
@@ -269,9 +269,9 @@ __Returns__
 
 `data`: data labels object.
 
-## get_pred
+## get_predictions
 ```python
-Opener.get_pred(self, path)
+Opener.get_predictions(self, path)
 ```
 Read file and return predictions vector.
 
@@ -285,9 +285,9 @@ __Returns__
 
 `predictions`: predictions vector.
 
-## save_pred
+## save_predictions
 ```python
-Opener.save_pred(self, y_pred, path)
+Opener.save_predictions(self, y_pred, path)
 ```
 Write predictions vector to file.
 
