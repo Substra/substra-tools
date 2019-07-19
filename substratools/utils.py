@@ -7,10 +7,10 @@ import sys
 from substratools import exceptions
 
 
-def configure_logging(path, debug_mode=False):
+def configure_logging(path=None, debug_mode=False):
     kwargs = {}
     level = logging.DEBUG
-    if not debug_mode:
+    if path and not debug_mode:
         kwargs['filename'] = path
 
     logging.basicConfig(level=level, **kwargs)

@@ -150,10 +150,6 @@ def _generate_cli():
         help="Define output perf file path",
     )
     parser.add_argument(
-        '--log-path', default=None,
-        help="Define log filename path",
-    )
-    parser.add_argument(
         '--opener-path', default=None,
         help="Define path to opener python script",
     )
@@ -179,14 +175,13 @@ def execute(interface=None, sysargs=None):
     workspace = Workspace(
         input_data_folder_path=args.data_samples_path,
         input_predictions_path=args.input_predictions_path,
-        log_path=args.log_path,
         output_perf_path=args.output_perf_path,
     )
     opener_wrapper = opener.load_from_module(
         path=args.opener_path,
         workspace=workspace,
     )
-    utils.configure_logging(workspace.log_path, debug_mode=args.debug)
+    utils.configure_logging(debug_mode=args.debug)
     metrics_wrapper = MetricsWrapper(
         interface,
         workspace=workspace,
