@@ -31,7 +31,7 @@ class DummyAlgo(tools.Algo):
         new_model = None
         return predictions, new_model
 
-    def predict(self, X, y, model):
+    def predict(self, X, model):
         predictions = 0
         return predictions
 

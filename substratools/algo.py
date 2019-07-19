@@ -37,7 +37,7 @@ class Algo(abc.ABC):
             new_model = None
             return predictions, new_model
 
-        def predict(self, X, y, model):
+        def predict(self, X, model):
             predictions = 0
             return predictions
 
@@ -94,7 +94,7 @@ class Algo(abc.ABC):
     def _train_dry_run(self, *args, **kwargs):
         """Train model dry run mode.
 
-        This methods is called by the algorithm wrapper when the dry run mode
+        This method is called by the algorithm wrapper when the dry run mode
         is enabled. In dry run mode, `X` and `y` input args have been replaced
         by the opener fake data.
 
@@ -106,7 +106,7 @@ class Algo(abc.ABC):
     def _predict_dry_run(self, *args, **kwargs):
         """Predict model dry run mode.
 
-        This methods is called by the algorithm wrapper when the dry run mode
+        This method is called by the algorithm wrapper when the dry run mode
         is enabled. In dry run mode, `X` input arg has been replaced by
         the opener fake data.
 
