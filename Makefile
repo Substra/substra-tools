@@ -12,4 +12,4 @@ build: pyclean
 	docker tag $(IMAGE):$(TAG) $(IMAGE):latest
 
 test: build
-	python setup.py test
+	python3 setup.py test
