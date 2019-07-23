@@ -2,6 +2,7 @@ import imp
 import importlib
 import inspect
 import logging
+import os
 import sys
 
 from substratools import exceptions
@@ -30,7 +31,9 @@ def import_module(module_name, code):
 
 
 def import_module_from_path(path, module_name):
+    assert os.path.exists(path), "path '{}' not found".format(path)
     spec = importlib.util.spec_from_file_location(module_name, path)
+    assert spec, "could not load spec from path '{}'".format(path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module

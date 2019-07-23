@@ -98,7 +98,9 @@ class MetricsWrapper(object):
         self._interface = interface
 
     def _save_score(self, score):
-        with open(self._workspace.output_perf_path, 'w') as f:
+        path = self._workspace.output_perf_path
+        logger.info("saving score to '{}'".format(path))
+        with open(path, 'w') as f:
             json.dump({'all': score}, f)
 
     def score(self, dry_run=False):
@@ -157,6 +159,10 @@ def _generate_cli():
         '--debug', action='store_true', default=False,
         help="Enable debug mode (logs printed in stdout)",
     )
+    parser.add_argument(
+        '--log-path', default='pred/metrics.log',
+        help="Define log filename path",
+    )
     return parser
 
 
@@ -175,13 +181,14 @@ def execute(interface=None, sysargs=None):
     workspace = Workspace(
         input_data_folder_path=args.data_samples_path,
         input_predictions_path=args.input_predictions_path,
+        log_path=args.log_path,
         output_perf_path=args.output_perf_path,
     )
     opener_wrapper = opener.load_from_module(
         path=args.opener_path,
         workspace=workspace,
     )
-    utils.configure_logging(debug_mode=args.debug)
+    utils.configure_logging(path=workspace.log_path, debug_mode=args.debug)
     metrics_wrapper = MetricsWrapper(
         interface,
         workspace=workspace,
