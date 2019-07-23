@@ -22,8 +22,8 @@ def patch_cwd(monkeypatch, workdir):
 
 
 @pytest.fixture()
-def valid_opener():
-    script = """
+def valid_opener_code():
+    return """
 import json
 from substratools import Opener
 
@@ -48,6 +48,10 @@ class FakeOpener(Opener):
         with open(path, 'w') as f:
             json.dump(pred, f)
 """
-    import_module('opener', script)
+
+
+@pytest.fixture()
+def valid_opener(valid_opener_code):
+    import_module('opener', valid_opener_code)
     yield
     del sys.modules['opener']

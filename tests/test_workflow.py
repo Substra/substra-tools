@@ -67,7 +67,7 @@ class DummyMetrics(Metrics):
 def test_workflow(workdir, dummy_opener):
     algo_wp = AlgoWrapper(DummyAlgo())
 
-    models_path = algo_wp._workspace.model_folder
+    models_path = algo_wp._workspace.input_models_folder_path
 
     # loop 1 (no input)
     pred, model = algo_wp.train([])

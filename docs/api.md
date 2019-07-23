@@ -46,6 +46,24 @@ if __name__ == '__main__':
     tools.algo.execute(DummyAlgo())
 ```
 
+__How to test locally an algo script__
+
+
+The algo script can be directly tested through it's command line interface.
+For instance to train an algo using fake data, run the following command:
+
+```sh
+python <script_path> train --dry-run --debug
+```
+
+To see all the available options for the train and predict commands, run:
+
+```sh
+python <script_path> train --help
+python <script_path> predict --help
+```
+
+
 ## train
 ```python
 Algo.train(self, X, y, models, rank)
@@ -131,6 +149,11 @@ Abstract base class for defining the objective metrics.
 To define a new metrics, subclass this class and implement the
 unique following abstract method `Metrics.score()`.
 
+To add an objective to the Substra Platform, the line
+`tools.algo.execute(<MetricsClass>())` must be added to the main of the
+metrics python script. It defines the metrics command line interface and
+thus enables the Substra Platform to execute it.
+
 __Example__
 
 
@@ -142,7 +165,28 @@ import substratools as tools
 class AccuracyMetrics(tools.Metrics):
     def score(self, y_true, y_pred):
         return accuracy_score(y_true, y_pred)
+
+if __name__ == '__main__':
+     tools.metrics.execute(AccuracyMetrics())
 ```
+
+__How to test locally a metrics script__
+
+
+The metrics script can be directly tested through it's command line
+interface.  For instance to get the metrics from fake data, run the
+following command:
+
+```sh
+python <script_path> --dry-run --debug
+```
+
+To see all the available options for metrics commands, run:
+
+```sh
+python <script_path> --help
+```
+
 
 ## score
 ```python

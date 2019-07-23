@@ -88,6 +88,15 @@ class MyOpener(Opener):
     assert o.get_X() == 'Xclass'
 
 
+def test_load_opener_from_path(tmp_cwd, valid_opener_code):
+    dirpath = tmp_cwd / 'myopener'
+    dirpath.mkdir()
+    path = dirpath / 'my_opener.py'
+    path.write_text(valid_opener_code)
+    o = load_from_module(path=path)
+    assert o.get_X() == 'X'
+
+
 def test_opener_check_folders(tmp_cwd):
     script = """
 from substratools import Opener
@@ -112,7 +121,7 @@ class MyOpener(Opener):
     o = load_from_module()
 
     # create some data folders
-    data_root_path = o._workspace.data_folder
+    data_root_path = o._workspace.input_data_folder_path
     data_paths = [os.path.join(data_root_path, str(i)) for i in range(5)]
     [os.makedirs(p) for p in data_paths]
 

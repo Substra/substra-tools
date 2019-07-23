@@ -8,6 +8,7 @@ ADD ./setup.py /tmp
 ADD ./substratools /tmp/substratools
 RUN cd /tmp && pip install .
 
-RUN mkdir -p /sandbox/opener
+RUN mkdir -p /sandbox
+ENV PYTHONPATH /sandbox
 
 WORKDIR /sandbox

@@ -5,7 +5,11 @@ import logging
 import os
 import sys
 
-from substratools import opener, workspace
+from substratools import opener, utils
+from substratools.workspace import Workspace
+
+
+logger = logging.getLogger(__name__)
 
 
 class Algo(abc.ABC):
@@ -51,6 +55,23 @@ class Algo(abc.ABC):
     if __name__ == '__main__':
         tools.algo.execute(DummyAlgo())
     ```
+
+    # How to test locally an algo script
+
+    The algo script can be directly tested through it's command line interface.
+    For instance to train an algo using fake data, run the following command:
+
+    ```sh
+    python <script_path> train --dry-run --debug
+    ```
+
+    To see all the available options for the train and predict commands, run:
+
+    ```sh
+    python <script_path> train --help
+    python <script_path> predict --help
+    ```
+
     """
 
     @abc.abstractmethod
@@ -150,51 +171,50 @@ class Algo(abc.ABC):
 class AlgoWrapper(object):
     """Algo wrapper to execute an algo instance on the platform."""
 
-    def __init__(self, interface):
+    def __init__(self, interface, workspace=None, opener_wrapper=None):
         assert isinstance(interface, Algo)
-        self._opener_wrapper = opener.load_from_module()
-
+        self._workspace = workspace or Workspace()
+        self._opener_wrapper = opener_wrapper or \
+            opener.load_from_module(workspace=self._workspace)
         self._interface = interface
-        self._workspace = workspace.Workspace()
 
     def _load_models(self, model_names):
         """Load models in-memory from names."""
         # load models from workspace and deserialize them
         models = []
+        models_path = self._workspace.input_models_folder_path
+        logger.info("loading models from '{}'".format(models_path))
         for name in model_names:
-            path = os.path.join(self._workspace.model_folder, name)
+            path = os.path.join(models_path, name)
             m = self._interface.load_model(path)
             models.append(m)
         return models
 
     def _save_model(self, model):
         """Save model object to workspace."""
-        self._interface.save_model(model,
-                                   self._workspace.output_model_filepath)
+        path = self._workspace.output_model_path
+        logger.info("saving output model to '{}'".format(path))
+        self._interface.save_model(model, path)
 
     def train(self, model_names, rank=0, dry_run=False):
         """Train method wrapper."""
         # load data from opener
-        logging.info('loading data from opener')
         X = self._opener_wrapper.get_X(dry_run)
         y = self._opener_wrapper.get_y(dry_run)
 
         # load models
-        logging.info('loading models')
         models = self._load_models(model_names)
 
         # train new model
-        logging.info('training')
+        logger.info("launching training task")
         method = (self._interface.train if not dry_run else
                   self._interface._train_dry_run)
         pred, model = method(X, y, models, rank)
 
         # serialize output model and save it to workspace
-        logging.info('saving output model')
         self._save_model(model)
 
         # save predictions
-        logging.info('saving predictions')
         self._opener_wrapper.save_predictions(pred)
 
         return pred, model
@@ -202,66 +222,122 @@ class AlgoWrapper(object):
     def predict(self, model_name, dry_run=False):
         """Predict method wrapper."""
         # load data from opener
-        logging.info('loading data from opener')
         X = self._opener_wrapper.get_X(dry_run)
 
         # load models
-        logging.info('loading models')
         models = self._load_models([model_name])
 
         # get predictions
-        logging.info('predicting')
+        logger.info("launching predict task")
         method = (self._interface.predict if not dry_run else
                   self._interface._predict_dry_run)
         pred = method(X, models[0])
 
         # save predictions
-        logging.info('saving predictions')
         self._opener_wrapper.save_predictions(pred)
-
         return pred
 
 
-def _generate_cli(algo_wrapper):
+def _generate_cli(interface):
     """Helper to generate a command line interface client."""
 
-    def _train(args):
-        algo_wrapper.train(args.models, args.rank, args.dry_run)
+    def _algo_from_args(args):
+        workspace = Workspace(
+            input_data_folder_path=args.data_samples_path,
+            input_models_folder_path=args.models_path,
+            log_path=args.log_path,
+            output_model_path=args.output_model_path,
+            output_predictions_path=args.output_predictions_path,
+        )
+        opener_wrapper = opener.load_from_module(
+            path=args.opener_path,
+            workspace=workspace,
+        )
+        utils.configure_logging(workspace.log_path, debug_mode=args.debug)
+        return AlgoWrapper(
+            interface,
+            workspace=workspace,
+            opener_wrapper=opener_wrapper,
+        )
 
-    def _predict(args):
-        algo_wrapper.predict(args.model, args.dry_run)
+    def _parser_add_default_arguments(_parser):
+        _parser.add_argument(
+            '-d', '--dry-run', action='store_true', default=False,
+            help="Enable dry run mode",
+        )
+        _parser.add_argument(
+            '--data-samples-path', default=None,
+            help="Define train/test data samples folder path",
+        )
+        _parser.add_argument(
+            '--models-path', default=None,
+            help="Define models folder path",
+        )
+        _parser.add_argument(
+            '--output-model-path', default=None,
+            help="Define output model file path",
+        )
+        _parser.add_argument(
+            '--output-predictions-path', default=None,
+            help="Define output predictions file path",
+        )
+        _parser.add_argument(
+            '--log-path', default=None,
+            help="Define log filename path",
+        )
+        _parser.add_argument(
+            '--opener-path', default=None,
+            help="Define path to opener python script",
+        )
+        _parser.add_argument(
+            '--debug', action='store_true', default=False,
+            help="Enable debug mode (logs printed in stdout)",
+        )
+
+    def _train(args):
+        algo_wrapper = _algo_from_args(args)
+        algo_wrapper.train(
+            args.models,
+            args.rank,
+            args.dry_run,
+        )
 
     parser = argparse.ArgumentParser()
     parsers = parser.add_subparsers()
-
     train_parser = parsers.add_parser('train')
     train_parser.add_argument(
-        'models', type=str, nargs='*')
+        'models', type=str, nargs='*',
+        help="Model names (must be located in default models folder)"
+    )
     train_parser.add_argument(
-        '-d', '--dry-run', action='store_true', default=False)
-    train_parser.add_argument(
-        '-r', '--rank', type=int, default=0)
+        '-r', '--rank', type=int, default=0,
+        help="Define machine learning task rank",
+    )
+    _parser_add_default_arguments(train_parser)
     train_parser.set_defaults(func=_train)
+
+    def _predict(args):
+        algo_wrapper = _algo_from_args(args)
+        algo_wrapper.predict(
+            args.model,
+            args.dry_run,
+        )
 
     predict_parser = parsers.add_parser('predict')
     predict_parser.add_argument(
-        'model', type=str)
-    predict_parser.add_argument(
-        '-d', '--dry-run', action='store_true', default=False)
+        'model', type=str,
+        help="Model name (must be located in default models folder)"
+    )
+    _parser_add_default_arguments(predict_parser)
     predict_parser.set_defaults(func=_predict)
+
     return parser
 
 
 def execute(interface, sysargs=None):
     """Launch algo command line interface."""
-    algo_wrapper = AlgoWrapper(interface)
-    logging.basicConfig(filename=algo_wrapper._workspace.log_path,
-                        level=logging.DEBUG)
-
-    cli = _generate_cli(algo_wrapper)
-
+    cli = _generate_cli(interface)
     sysargs = sysargs if sysargs is not None else sys.argv[1:]
-    logging.debug('launching command with: {}'.format(sysargs))
     args = cli.parse_args(sysargs)
     args.func(args)
     return args

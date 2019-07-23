@@ -1,8 +1,12 @@
 import abc
+import logging
 import os
 import types
 
-from substratools import workspace, utils
+from substratools import utils
+from substratools.workspace import Workspace
+
+logger = logging.getLogger(__name__)
 
 
 REQUIRED_FUNCTIONS = set([
@@ -143,16 +147,16 @@ class Opener(abc.ABC):
 class OpenerWrapper(object):
     """Internal wrapper to call opener interface."""
 
-    def __init__(self, opener):
-        assert isinstance(opener, Opener) or \
-            isinstance(opener, types.ModuleType)
+    def __init__(self, interface, workspace=None):
+        assert isinstance(interface, Opener) or \
+            isinstance(interface, types.ModuleType)
 
-        self._interface = opener
-        self._workspace = workspace.Workspace()
+        self._workspace = workspace or Workspace()
+        self._interface = interface
 
     @property
     def data_folder_paths(self):
-        rootpath = self._workspace.data_folder
+        rootpath = self._workspace.input_data_folder_path
         folders = [os.path.join(rootpath, subfolder_name)
                    for subfolder_name in os.listdir(rootpath)
                    if os.path.isdir(os.path.join(rootpath, subfolder_name))]
@@ -160,33 +164,42 @@ class OpenerWrapper(object):
 
     def get_X(self, dry_run=False):
         if dry_run:
+            logger.info("loading X from fake data")
             return self._interface.fake_X()
         else:
+            logger.info("loading X from '{}'".format(self.data_folder_paths))
             return self._interface.get_X(self.data_folder_paths)
 
     def get_y(self, dry_run=False):
         if dry_run:
+            logger.info("loading y from fake data")
             return self._interface.fake_y()
         else:
+            logger.info("loading y from '{}'".format(self.data_folder_paths))
             return self._interface.get_y(self.data_folder_paths)
 
     def get_predictions(self):
-        return self._interface.get_predictions(self._workspace.pred_filepath)
+        path = self._workspace.input_predictions_path
+        logger.info("loading predictions from '{}'".format(path))
+        return self._interface.get_predictions(path)
 
     def save_predictions(self, y_pred):
-        return self._interface.save_predictions(
-            y_pred, self._workspace.pred_filepath)
+        path = self._workspace.output_predictions_path
+        logger.info("saving predictions to '{}'".format(path))
+        return self._interface.save_predictions(y_pred, path)
 
 
-def load_from_module(name='opener'):
-    """Load opener interface based on current working directory.
+def load_from_module(path=None, workspace=None):
+    """Load opener interface from path or from python environment.
 
     Opener can be defined as an Opener subclass or directly has a module.
 
     Return an OpenerWrapper instance.
     """
     interface = utils.load_interface_from_module(
-        name,
+        'opener',
         interface_class=Opener,
-        interface_signature=REQUIRED_FUNCTIONS)
-    return OpenerWrapper(interface)
+        interface_signature=REQUIRED_FUNCTIONS,
+        path=path,
+    )
+    return OpenerWrapper(interface, workspace=workspace)
