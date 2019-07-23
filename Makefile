@@ -1,4 +1,4 @@
-.PHONY: pyclean build test
+.PHONY: pyclean build test doc
 
 IMAGE = eu.gcr.io/substra-208412/substratools
 TAG = $(shell git log -1 --pretty=format:"%H")
@@ -11,5 +11,8 @@ build: pyclean
 	docker build -t $(IMAGE):$(TAG) .
 	docker tag $(IMAGE):$(TAG) $(IMAGE):latest
 
-test: build
-	python3 setup.py test
+test:
+	python setup.py test
+
+doc:
+	pydocmd simple substratools.Algo+ substratools.Metrics+ substratools.Opener+> docs/api.md

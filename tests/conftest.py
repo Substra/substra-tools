@@ -40,11 +40,11 @@ class FakeOpener(Opener):
     def fake_y(self):
         return [0] * 3
 
-    def get_pred(self, path):
+    def get_predictions(self, path):
         with open(path, 'r') as f:
             return json.load(f)
 
-    def save_pred(self, pred, path):
+    def save_predictions(self, pred, path):
         with open(path, 'w') as f:
             json.dump(pred, f)
 """

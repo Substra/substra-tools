@@ -37,8 +37,13 @@ pipeline {
           }
 
           steps {
+            sh "pip install -r requirements.txt"
+            sh "pip install flake8"
+            sh "flake8"
             sh "pip install -e .[test]"
             sh "python setup.py test"
+            sh "pydocmd simple substratools.Algo+ substratools.Metrics+ substratools.Opener+> docs/api.md.tmp  && cmp --silent docs/api.md docs/api.md.tmp"
+            sh "rm -rf docs/*.tmp"
           }
         }
 

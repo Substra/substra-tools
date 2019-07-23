@@ -9,36 +9,141 @@ from substratools import opener, workspace
 
 
 class Algo(abc.ABC):
-    """Abstract base class for defining algo to run on the platform."""
+    """Abstract base class for defining algo to run on the platform.
+
+    To define a new algo script, subclass this class and implement the
+    following abstract methods:
+
+    - #Algo.train()
+    - #Algo.predict()
+    - #Algo.load_model()
+    - #Algo.save_model()
+
+    To add an algo to the Substra Platform, the line
+    `tools.algo.execute(<AlgoClass>())` must be added to the main of the algo
+    python script. It defines the algo command line interface and thus enables
+    the Substra Platform to execute it.
+
+    # Example
+
+    ```python
+    import json
+    import substratools as tools
+
+
+    class DummyAlgo(tools.Algo):
+        def train(self, X, y, models, rank):
+            predictions = 0
+            new_model = None
+            return predictions, new_model
+
+        def predict(self, X, model):
+            predictions = 0
+            return predictions
+
+        def load_model(self, path):
+            return json.load(path)
+
+        def save_model(self, model, path):
+            json.dump(model, path)
+
+
+    if __name__ == '__main__':
+        tools.algo.execute(DummyAlgo())
+    ```
+    """
 
     @abc.abstractmethod
     def train(self, X, y, models, rank):
-        """Train algorithm and produce new model.
+        """Train model and produce new model from train data.
 
-        Must return a tuple (predictions, model).
+        This task corresponds to the creation of a traintuple on the Substra
+        Platform.
+
+        # Arguments
+
+        X: training data samples loaded with `Opener.get_X()`.
+        y: training data samples labels loaded with `Opener.get_y()`.
+        models: list of models loaded with `Algo.load_model()`.
+        rank: rank of the training task.
+
+        # Returns
+
+        tuple: (predictions, model).
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def predict(self, X, y, model):
-        """Load model and save predictions made on train data.
+    def predict(self, X, model):
+        """Get predictions from test data.
 
-        Must return predictions.
+        This task corresponds to the creation of a testtuple on the Substra
+        Platform.
+
+        # Arguments
+
+        X: testing data samples loaded with `Opener.get_X()`.
+        model: input model load with `Algo.load_model()` used for predictions.
+
+        # Returns
+
+        predictions: predictions object.
         """
         raise NotImplementedError
 
-    def dry_run(self, X, y, models, rank):
-        """Train model dry run mode."""
-        return self.train(X, y, models, rank=0)
+    def _train_dry_run(self, *args, **kwargs):
+        """Train model dry run mode.
+
+        This method is called by the algorithm wrapper when the dry run mode
+        is enabled. In dry run mode, `X` and `y` input args have been replaced
+        by the opener fake data.
+
+        By default, it only calls directly `Algo.train()` method. Override this
+        method if you want to implement a different behaviour.
+        """
+        return self.train(*args, **kwargs)
+
+    def _predict_dry_run(self, *args, **kwargs):
+        """Predict model dry run mode.
+
+        This method is called by the algorithm wrapper when the dry run mode
+        is enabled. In dry run mode, `X` input arg has been replaced by
+        the opener fake data.
+
+        By default, it only calls directly `Algo.predict()` method. Override
+        this method if you want to implement a different behaviour.
+        """
+        return self.predict(*args, **kwargs)
 
     @abc.abstractmethod
     def load_model(self, path):
-        """Load model from path."""
+        """Deserialize model from file.
+
+        This method will be executed before the call to the methods
+        `Algo.train()` and `Algo.predict()` to deserialize the model objects.
+
+        # Arguments
+
+        path: path of the model to load.
+
+        # Returns
+
+        model: the deserialized model object.
+        """
         raise NotImplementedError
 
     @abc.abstractmethod
     def save_model(self, model, path):
-        """Save model to path."""
+        """Serialize model in file.
+
+        This method will be executed after the call to the methods
+        `Algo.train()` and `Algo.predict()` to save the model objects.
+
+        # Arguments
+
+        path: path of file to write.
+        model: the model to serialize.
+        """
         raise NotImplementedError
 
 
@@ -81,16 +186,16 @@ class AlgoWrapper(object):
         # train new model
         logging.info('training')
         method = (self._interface.train if not dry_run else
-                  self._interface.dry_run)
+                  self._interface._train_dry_run)
         pred, model = method(X, y, models, rank)
 
         # serialize output model and save it to workspace
         logging.info('saving output model')
         self._save_model(model)
 
-        # save prediction
-        logging.info('saving prediction')
-        self._opener_wrapper.save_pred(pred)
+        # save predictions
+        logging.info('saving predictions')
+        self._opener_wrapper.save_predictions(pred)
 
         return pred, model
 
@@ -99,7 +204,6 @@ class AlgoWrapper(object):
         # load data from opener
         logging.info('loading data from opener')
         X = self._opener_wrapper.get_X(dry_run)
-        y = self._opener_wrapper.get_y(dry_run)
 
         # load models
         logging.info('loading models')
@@ -107,11 +211,13 @@ class AlgoWrapper(object):
 
         # get predictions
         logging.info('predicting')
-        pred = self._interface.predict(X, y, models[0])
+        method = (self._interface.predict if not dry_run else
+                  self._interface._predict_dry_run)
+        pred = method(X, models[0])
 
-        # save prediction
-        logging.info('saving prediction')
-        self._opener_wrapper.save_pred(pred)
+        # save predictions
+        logging.info('saving predictions')
+        self._opener_wrapper.save_predictions(pred)
 
         return pred
 

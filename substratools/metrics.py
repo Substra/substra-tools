@@ -22,11 +22,36 @@ class DryRunMode(enum.IntEnum):
 
 
 class Metrics(abc.ABC):
+    """Abstract base class for defining the objective metrics.
+
+    To define a new metrics, subclass this class and implement the
+    unique following abstract method #Metrics.score().
+
+    # Example
+
+    ```python
+    from sklearn.metrics import accuracy_score
+    import substratools as tools
+
+
+    class AccuracyMetrics(tools.Metrics):
+        def score(self, y_true, y_pred):
+            return accuracy_score(y_true, y_pred)
+    ```
+    """
+
     @abc.abstractmethod
     def score(self, y_true, y_pred):
-        """Returns the macro-average recall.
+        """Compute model perf from actual and predicted values.
 
-        Must return a float.
+        # Arguments
+
+        y_true: actual values.
+        y_pred: predicted values.
+
+        # Returns
+
+        perf (float): performance of the model.
         """
         raise NotImplementedError
 
@@ -48,11 +73,11 @@ class MetricsWrapper(object):
         mode = DryRunMode.from_value(dry_run)
         if mode == DryRunMode.DISABLED:
             y = self._opener_wrapper.get_y()
-            y_pred = self._opener_wrapper.get_pred()
+            y_pred = self._opener_wrapper.get_predictions()
 
         elif mode == DryRunMode.FAKE_Y:
             y = self._opener_wrapper.get_y(dry_run=True)
-            y_pred = self._opener_wrapper.get_pred()
+            y_pred = self._opener_wrapper.get_predictions()
 
         elif mode == DryRunMode.FAKE_Y_PRED:
             y = self._opener_wrapper.get_y(dry_run=True)

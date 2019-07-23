@@ -52,9 +52,9 @@ def fake_X():
     return 'fakeX'
 def fake_y():
     return 'fakey'
-def get_pred(path):
+def get_predictions(path):
     return 'pred'
-def save_pred(y_pred, path):
+def save_predictions(y_pred, path):
     return 'pred'
 """
 
@@ -76,9 +76,9 @@ class MyOpener(Opener):
         return 'fakeX'
     def fake_y(self):
         return 'fakey'
-    def get_pred(self, path):
+    def get_predictions(self, path):
         return 'pred'
-    def save_pred(self, y_pred, path):
+    def save_predictions(self, y_pred, path):
         return 'pred'
 """
 
@@ -101,9 +101,9 @@ class MyOpener(Opener):
         return 'fakeX'
     def fake_y(self):
         return 'fakey'
-    def get_pred(self, path):
+    def get_predictions(self, path):
         return 'pred'
-    def save_pred(self, y_pred, path):
+    def save_predictions(self, y_pred, path):
         return 'pred'
 """
 
