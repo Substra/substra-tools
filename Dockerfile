@@ -1,4 +1,4 @@
-FROM nvidia/cuda:9.0-base
+FROM nvidia/cuda:9.2-base-ubuntu18.04
 
 RUN apt-get update; apt-get install -y build-essential libssl-dev python3 python3-dev python3-pip
 
