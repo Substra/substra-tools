@@ -62,7 +62,7 @@ class Algo(abc.ABC):
     For instance to train an algo using fake data, run the following command:
 
     ```sh
-    python <script_path> train --dry-run --debug
+    python <script_path> train --fake-data --debug
     ```
 
     To see all the available options for the train and predict commands, run:
@@ -112,23 +112,23 @@ class Algo(abc.ABC):
         """
         raise NotImplementedError
 
-    def _train_dry_run(self, *args, **kwargs):
-        """Train model dry run mode.
+    def _train_fake_data(self, *args, **kwargs):
+        """Train model fake data mode.
 
-        This method is called by the algorithm wrapper when the dry run mode
-        is enabled. In dry run mode, `X` and `y` input args have been replaced
-        by the opener fake data.
+        This method is called by the algorithm wrapper when the fake data mode
+        is enabled. In fake data mode, `X` and `y` input args have been
+        replaced by the opener fake data.
 
         By default, it only calls directly `Algo.train()` method. Override this
         method if you want to implement a different behaviour.
         """
         return self.train(*args, **kwargs)
 
-    def _predict_dry_run(self, *args, **kwargs):
-        """Predict model dry run mode.
+    def _predict_fake_data(self, *args, **kwargs):
+        """Predict model fake data mode.
 
-        This method is called by the algorithm wrapper when the dry run mode
-        is enabled. In dry run mode, `X` input arg has been replaced by
+        This method is called by the algorithm wrapper when the fake data mode
+        is enabled. In fake data mode, `X` input arg has been replaced by
         the opener fake data.
 
         By default, it only calls directly `Algo.predict()` method. Override
@@ -196,19 +196,19 @@ class AlgoWrapper(object):
         logger.info("saving output model to '{}'".format(path))
         self._interface.save_model(model, path)
 
-    def train(self, model_names, rank=0, dry_run=False):
+    def train(self, model_names, rank=0, fake_data=False):
         """Train method wrapper."""
         # load data from opener
-        X = self._opener_wrapper.get_X(dry_run)
-        y = self._opener_wrapper.get_y(dry_run)
+        X = self._opener_wrapper.get_X(fake_data)
+        y = self._opener_wrapper.get_y(fake_data)
 
         # load models
         models = self._load_models(model_names)
 
         # train new model
         logger.info("launching training task")
-        method = (self._interface.train if not dry_run else
-                  self._interface._train_dry_run)
+        method = (self._interface.train if not fake_data else
+                  self._interface._train_fake_data)
         pred, model = method(X, y, models, rank)
 
         # serialize output model and save it to workspace
@@ -219,18 +219,18 @@ class AlgoWrapper(object):
 
         return pred, model
 
-    def predict(self, model_name, dry_run=False):
+    def predict(self, model_name, fake_data=False):
         """Predict method wrapper."""
         # load data from opener
-        X = self._opener_wrapper.get_X(dry_run)
+        X = self._opener_wrapper.get_X(fake_data)
 
         # load models
         models = self._load_models([model_name])
 
         # get predictions
         logger.info("launching predict task")
-        method = (self._interface.predict if not dry_run else
-                  self._interface._predict_dry_run)
+        method = (self._interface.predict if not fake_data else
+                  self._interface._predict_fake_data)
         pred = method(X, models[0])
 
         # save predictions
@@ -262,8 +262,8 @@ def _generate_cli(interface):
 
     def _parser_add_default_arguments(_parser):
         _parser.add_argument(
-            '-d', '--dry-run', action='store_true', default=False,
-            help="Enable dry run mode",
+            '-d', '--fake-data', action='store_true', default=False,
+            help="Enable fake data mode",
         )
         _parser.add_argument(
             '--data-samples-path', default=None,
@@ -299,7 +299,7 @@ def _generate_cli(interface):
         algo_wrapper.train(
             args.models,
             args.rank,
-            args.dry_run,
+            args.fake_data,
         )
 
     parser = argparse.ArgumentParser()
@@ -320,7 +320,7 @@ def _generate_cli(interface):
         algo_wrapper = _algo_from_args(args)
         algo_wrapper.predict(
             args.model,
-            args.dry_run,
+            args.fake_data,
         )
 
     predict_parser = parsers.add_parser('predict')

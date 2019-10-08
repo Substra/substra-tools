@@ -162,16 +162,16 @@ class OpenerWrapper(object):
                    if os.path.isdir(os.path.join(rootpath, subfolder_name))]
         return folders
 
-    def get_X(self, dry_run=False):
-        if dry_run:
+    def get_X(self, fake_data=False):
+        if fake_data:
             logger.info("loading X from fake data")
             return self._interface.fake_X()
         else:
             logger.info("loading X from '{}'".format(self.data_folder_paths))
             return self._interface.get_X(self.data_folder_paths)
 
-    def get_y(self, dry_run=False):
-        if dry_run:
+    def get_y(self, fake_data=False):
+        if fake_data:
             logger.info("loading y from fake data")
             return self._interface.fake_y()
         else:

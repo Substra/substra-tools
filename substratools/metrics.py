@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 REQUIRED_FUNCTIONS = set(['score'])
 
 
-class DryRunMode(enum.IntEnum):
+class FakeDataMode(enum.IntEnum):
     DISABLED = 0
     FAKE_Y = 1
     FAKE_Y_PRED = 2
@@ -20,13 +20,13 @@ class DryRunMode(enum.IntEnum):
     @classmethod
     def from_value(cls, val):
         if isinstance(val, bool):
-            # for backward compatibility with boolean dry_run values
+            # for backward compatibility with boolean fake_data values
             return cls.DISABLED if not val else cls.FAKE_Y_PRED
         return cls(val)
 
     @classmethod
     def from_str(cls, val):
-        return DryRunMode[val]
+        return FakeDataMode[val]
 
 
 class Metrics(abc.ABC):
@@ -62,7 +62,7 @@ class Metrics(abc.ABC):
     following command:
 
     ```sh
-    python <script_path> --dry-run --debug
+    python <script_path> --fake-data --debug
     ```
 
     To see all the available options for metrics commands, run:
@@ -103,19 +103,19 @@ class MetricsWrapper(object):
         with open(path, 'w') as f:
             json.dump({'all': score}, f)
 
-    def score(self, dry_run=False):
+    def score(self, fake_data=False):
         """Load labels and predictions and save score results."""
-        mode = DryRunMode.from_value(dry_run)
-        if mode == DryRunMode.DISABLED:
+        mode = FakeDataMode.from_value(fake_data)
+        if mode == FakeDataMode.DISABLED:
             y = self._opener_wrapper.get_y()
             y_pred = self._opener_wrapper.get_predictions()
 
-        elif mode == DryRunMode.FAKE_Y:
-            y = self._opener_wrapper.get_y(dry_run=True)
+        elif mode == FakeDataMode.FAKE_Y:
+            y = self._opener_wrapper.get_y(fake_data=True)
             y_pred = self._opener_wrapper.get_predictions()
 
-        elif mode == DryRunMode.FAKE_Y_PRED:
-            y = self._opener_wrapper.get_y(dry_run=True)
+        elif mode == FakeDataMode.FAKE_Y_PRED:
+            y = self._opener_wrapper.get_y(fake_data=True)
             y_pred = y
 
         else:
@@ -131,13 +131,13 @@ class MetricsWrapper(object):
 def _generate_cli():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '-d', '--dry-run', action='store_true', default=False,
-        help="Enable dry run mode (fake y)",
+        '-d', '--fake-data', action='store_true', default=False,
+        help="Enable fake data mode (fake y)",
     )
     parser.add_argument(
-        '--dry-run-mode', default=DryRunMode.DISABLED.name,
-        choices=[e.name for e in DryRunMode],
-        help="Set dry run mode",
+        '--fake-data-mode', default=FakeDataMode.DISABLED.name,
+        choices=[e.name for e in FakeDataMode],
+        help="Set fake data mode",
     )
     parser.add_argument(
         '--data-samples-path', default=None,
@@ -194,7 +194,7 @@ def execute(interface=None, sysargs=None):
         workspace=workspace,
         opener_wrapper=opener_wrapper,
     )
-    dry_run = args.dry_run or DryRunMode.from_str(args.dry_run_mode)
+    fake_data = args.fake_data or FakeDataMode.from_str(args.fake_data_mode)
     return metrics_wrapper.score(
-        dry_run,
+        fake_data,
     )

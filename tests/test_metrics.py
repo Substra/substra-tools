@@ -56,14 +56,14 @@ def test_execute(load_metrics_module):
     assert s == 15
 
 
-@pytest.mark.parametrize("dry_run_mode,expected_score", [
+@pytest.mark.parametrize("fake_data_mode,expected_score", [
     ([], 15),
-    (['--dry-run'], 0),
-    (['--dry-run-mode', metrics.DryRunMode.DISABLED.name], 15),
-    (['--dry-run-mode', metrics.DryRunMode.FAKE_Y.name], 12),
-    (['--dry-run-mode', metrics.DryRunMode.FAKE_Y_PRED.name], 0),
+    (['--fake-data'], 0),
+    (['--fake-data-mode', metrics.FakeDataMode.DISABLED.name], 15),
+    (['--fake-data-mode', metrics.FakeDataMode.FAKE_Y.name], 12),
+    (['--fake-data-mode', metrics.FakeDataMode.FAKE_Y_PRED.name], 0),
 ])
-def test_execute_dryrun_modes(dry_run_mode, expected_score,
-                              load_metrics_module):
-    s = metrics.execute(sysargs=dry_run_mode)
+def test_execute_fake_data_modes(fake_data_mode, expected_score,
+                                 load_metrics_module):
+    s = metrics.execute(sysargs=fake_data_mode)
     assert s == expected_score
