@@ -53,7 +53,7 @@ The algo script can be directly tested through it's command line interface.
 For instance to train an algo using fake data, run the following command:
 
 ```sh
-python <script_path> train --dry-run --debug
+python <script_path> train --fake-data --debug
 ```
 
 To see all the available options for the train and predict commands, run:
@@ -178,7 +178,7 @@ interface.  For instance to get the metrics from fake data, run the
 following command:
 
 ```sh
-python <script_path> --dry-run --debug
+python <script_path> --fake-data --debug
 ```
 
 To see all the available options for metrics commands, run:
