@@ -1,6 +1,6 @@
 .PHONY: pyclean build test doc
 
-IMAGE = eu.gcr.io/substra-208412/substratools
+IMAGE = eu.gcr.io/substra-208412/substra-tools
 
 ifeq ($(TAG),)
 	TAG := $(shell git describe --always --tags)

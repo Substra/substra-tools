@@ -1,4 +1,4 @@
-# Substratools
+# Substra-tools
 
 Python package defining base classes for assets submitted on the platform:
 - Objective: metrics script
@@ -22,7 +22,7 @@ pip install .
 
 - [API](docs/api.md)
 
-## Build substratools image
+## Build substra-tools image
 
 This is required to launch the substra framework for development. The image is
 currently based on Python 3.6.
@@ -37,7 +37,7 @@ currently based on Python 3.6.
 ### Build from source
 
 ```sh
-docker build -t eu.gcr.io/substra-208412/substratools .
+docker build -t eu.gcr.io/substra-208412/substra-tools .
 ```
 
 ## Contributing
