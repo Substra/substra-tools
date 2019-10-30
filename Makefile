@@ -17,4 +17,4 @@ test:
 	python setup.py test
 
 doc:
-	pydocmd simple substratools.Algo+ substratools.Metrics+ substratools.Opener+> docs/api.md
+	pydocmd simple substratools.Algo+ substratools.CompositeAlgo+ substratools.Metrics+ substratools.Opener+> docs/api.md
