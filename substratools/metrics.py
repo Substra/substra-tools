@@ -6,7 +6,7 @@ import logging
 import sys
 
 from substratools import opener, utils
-from substratools.workspace import Workspace
+from substratools.workspace import MetricsWorkspace
 
 logger = logging.getLogger(__name__)
 REQUIRED_FUNCTIONS = set(['score'])
@@ -92,7 +92,7 @@ class Metrics(abc.ABC):
 class MetricsWrapper(object):
 
     def __init__(self, interface, workspace=None, opener_wrapper=None):
-        self._workspace = workspace or Workspace()
+        self._workspace = workspace or MetricsWorkspace()
         self._opener_wrapper = opener_wrapper or \
             opener.load_from_module(workspace=self._workspace)
         self._interface = interface
@@ -178,7 +178,7 @@ def execute(interface=None, sysargs=None):
     sysargs = sysargs if sysargs is not None else sys.argv[1:]
     args = cli.parse_args(sysargs)
 
-    workspace = Workspace(
+    workspace = MetricsWorkspace(
         input_data_folder_path=args.data_samples_path,
         input_predictions_path=args.input_predictions_path,
         log_path=args.log_path,

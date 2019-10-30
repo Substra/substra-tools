@@ -4,7 +4,7 @@ import os
 import types
 
 from substratools import utils
-from substratools.workspace import Workspace
+from substratools.workspace import OpenerWorkspace
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +151,7 @@ class OpenerWrapper(object):
         assert isinstance(interface, Opener) or \
             isinstance(interface, types.ModuleType)
 
-        self._workspace = workspace or Workspace()
+        self._workspace = workspace or OpenerWorkspace()
         self._interface = interface
 
     @property

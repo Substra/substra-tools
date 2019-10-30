@@ -2,7 +2,7 @@ import json
 import sys
 
 from substratools import metrics
-from substratools.workspace import Workspace
+from substratools.workspace import MetricsWorkspace
 from substratools.utils import import_module
 
 import pytest
@@ -10,7 +10,7 @@ import pytest
 
 @pytest.fixture()
 def write_pred_file():
-    workspace = Workspace()
+    workspace = MetricsWorkspace()
     data = list(range(3, 6))
     with open(workspace.output_predictions_path, 'w') as f:
         json.dump(data, f)
