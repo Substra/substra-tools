@@ -140,6 +140,99 @@ __Arguments__
 - __path__: path of file to write.
 - __model__: the model to serialize.
 
+# CompositeAlgo
+```python
+CompositeAlgo(self, /, *args, **kwargs)
+```
+Abstract base class for defining a composite algo to run on the platform.
+
+To define a new composite algo script, subclass this class and implement the
+following abstract methods:
+
+- `CompositeAlgo.train()`
+- `CompositeAlgo.predict()`
+- `CompositeAlgo.load_model()`
+- `CompositeAlgo.save_model()`
+
+To add a composite algo to the Substra Platform, the line
+`tools.algo.execute(<AlgoClass>())` must be added to the main of the algo
+python script. It defines the composite algo command line interface and thus enables
+the Substra Platform to execute it.
+
+__Example__
+
+
+```python
+import json
+import substratools as tools
+
+
+class DummyCompositeAlgo(tools.CompositeAlgo):
+    def train(self, X, y, head_model, trunk_model, rank):
+        predictions = 0
+        new_head_model = None
+        new_trunk_model = None
+        return predictions, new_head_model, new_trunk_model
+
+    def predict(self, X, head_model, trunk_model):
+        predictions = 0
+        return predictions
+
+    def load_model(self, path):
+        return json.load(path)
+
+    def save_model(self, model, path):
+        json.dump(model, path)
+
+
+if __name__ == '__main__':
+    tools.algo.execute(DummyCompositeAlgo())
+```
+
+## train
+```python
+CompositeAlgo.train(self, X, y, head_model, trunk_model, rank)
+```
+Train model and produce new composite models from train data.
+
+This task corresponds to the creation of a composite traintuple on the Substra
+Platform.
+
+__Arguments__
+
+
+- __X__: training data samples loaded with `Opener.get_X()`.
+- __y__: training data samples labels loaded with `Opener.get_y()`.
+- __head_model__: head model loaded with `Algo.load_model()` (may be None).
+- __trunk_model__: trunk model loaded with `Algo.load_model()` (may be None).
+- __rank__: rank of the training task.
+
+__Returns__
+
+
+`tuple`: (predictions, head_model, trunk_model).
+
+## predict
+```python
+CompositeAlgo.predict(self, X, head_model, trunk_model)
+```
+Get predictions from test data.
+
+This task corresponds to the creation of a composite testtuple on the Substra
+Platform.
+
+__Arguments__
+
+
+- __X__: testing data samples loaded with `Opener.get_X()`.
+- __head_model__: head model loaded with `Algo.load_model()`.
+- __trunk_model__: trunk model loaded with `Algo.load_model()`.
+
+__Returns__
+
+
+`predictions`: predictions object.
+
 # Metrics
 ```python
 Metrics(self, /, *args, **kwargs)
