@@ -164,7 +164,6 @@ def test_execute_train_multiple_models(workdir, create_models):
         '--output-head-model-filename', output_head_model_filename,
         '--output-trunk-model-filename', output_trunk_model_filename,
     ]
-    print(command)
 
     algo.execute(DummyCompositeAlgo(), sysargs=command)
     assert output_head_model_path.exists()
