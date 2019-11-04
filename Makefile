@@ -1,6 +1,7 @@
 .PHONY: pyclean build test doc
 
 IMAGE = eu.gcr.io/substra-208412/substra-tools
+DOCS_FILEPATH = docs/api.md
 
 ifeq ($(TAG),)
 	TAG := $(shell git describe --always --tags)
@@ -17,4 +18,4 @@ test:
 	python setup.py test
 
 doc:
-	pydocmd simple substratools.Algo+ substratools.CompositeAlgo+ substratools.Metrics+ substratools.Opener+> docs/api.md
+	pydocmd simple substratools.Algo+ substratools.CompositeAlgo+ substratools.Metrics+ substratools.Opener+> $(DOCS_FILEPATH)
