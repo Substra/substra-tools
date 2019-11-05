@@ -1,7 +1,10 @@
-.PHONY: pyclean build test
+.PHONY: pyclean build test doc
 
-IMAGE = eu.gcr.io/substra-208412/substratools
-TAG = $(shell git log -1 --pretty=format:"%H")
+IMAGE = eu.gcr.io/substra-208412/substra-tools
+
+ifeq ($(TAG),)
+	TAG := $(shell git describe --always --tags)
+endif
 
 pyclean:
 	find . -type f -name "*.py[co]" -delete
@@ -9,7 +12,9 @@ pyclean:
 
 build: pyclean
 	docker build -t $(IMAGE):$(TAG) .
-	docker tag $(IMAGE):$(TAG) $(IMAGE):latest
 
-test: build
+test:
 	python setup.py test
+
+doc:
+	pydocmd simple substratools.Algo+ substratools.Metrics+ substratools.Opener+> docs/api.md

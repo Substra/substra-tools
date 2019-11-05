@@ -1,4 +1,5 @@
 import json
+import shutil
 
 from substratools import algo
 
@@ -22,9 +23,9 @@ class DummyAlgo(algo.Algo):
         pred = list(range(new_value, new_value + 3))
         return pred, new_model
 
-    def predict(self, X, y, model):
+    def predict(self, X, model):
         pred = model['value']
-        return y * pred
+        return X * pred
 
     def load_model(self, path):
         with open(path, 'r') as f:
@@ -80,24 +81,24 @@ def test_train_multiple_models(workdir, create_models):
     assert model['value'] == 3
 
 
-def test_train_dry_run():
+def test_train_fake_data():
     a = DummyAlgo()
     wp = algo.AlgoWrapper(a)
-    pred, model = wp.train([], dry_run=True)
+    pred, model = wp.train([], fake_data=True)
     assert pred == [0, 1, 2]
     assert model['value'] == 0
 
 
-@pytest.mark.parametrize("dry_run,expected_pred", [
-    (False, [0, 1, 2]),
-    (True, [0, 0, 0]),
+@pytest.mark.parametrize("fake_data,expected_pred", [
+    (False, 'X'),
+    (True, 'Xfake'),
 ])
-def test_predict(dry_run, expected_pred, workdir, create_models):
+def test_predict(fake_data, expected_pred, workdir, create_models):
     _, model_filenames = create_models
 
     a = DummyAlgo()
     wp = algo.AlgoWrapper(a)
-    pred = wp.predict(model_filenames[0], dry_run=dry_run)
+    pred = wp.predict(model_filenames[0], fake_data=fake_data)
     assert pred == expected_pred
 
 
@@ -109,7 +110,11 @@ def test_execute_train(workdir):
     algo.execute(DummyAlgo(), sysargs=['train'])
     assert output_model_path.exists()
 
-    algo.execute(DummyAlgo(), sysargs=['train', '--dry-run'])
+    algo.execute(DummyAlgo(), sysargs=['train', '--fake-data'])
+    assert output_model_path.exists()
+
+    algo.execute(DummyAlgo(), sysargs=['train', '--debug'])
+    assert output_model_path.exists()
 
 
 def test_execute_train_multiple_models(workdir, create_models):
@@ -154,10 +159,23 @@ def test_execute_predict(workdir, create_models):
     pred_path.unlink()
 
     # do predict on output model
-    pred_path = workdir / 'pred' / 'pred'
     assert not pred_path.exists()
     algo.execute(DummyAlgo(), sysargs=['predict', model_name])
     assert pred_path.exists()
     with open(pred_path, 'r') as f:
         pred = json.load(f)
-    assert pred == [0, 1, 2, 0, 1, 2, 0, 1, 2]
+    assert pred == 'XXX'
+    pred_path.unlink()
+
+    # do predict with different model paths
+    input_models_dir = workdir / 'other_models'
+    input_models_dir.mkdir()
+    input_model_path = input_models_dir / 'supermodel'
+    shutil.move(output_model_path, input_model_path)
+    assert not pred_path.exists()
+    algo.execute(DummyAlgo(), sysargs=[
+        'predict', 'supermodel', '--models-path', str(input_models_dir)])
+    assert pred_path.exists()
+    with open(pred_path, 'r') as f:
+        pred = json.load(f)
+    assert pred == 'XXX'

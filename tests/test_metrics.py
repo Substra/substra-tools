@@ -12,9 +12,9 @@ import pytest
 def write_pred_file():
     workspace = Workspace()
     data = list(range(3, 6))
-    with open(workspace.pred_filepath, 'w') as f:
+    with open(workspace.output_predictions_path, 'w') as f:
         json.dump(data, f)
-    return workspace.pred_filepath, data
+    return workspace.output_predictions_path, data
 
 
 @pytest.fixture
@@ -56,14 +56,14 @@ def test_execute(load_metrics_module):
     assert s == 15
 
 
-@pytest.mark.parametrize("dry_run_mode,expected_score", [
-    (False, 15),
-    (True, 0),
-    (metrics.DryRunMode.DISABLED, 15),
-    (metrics.DryRunMode.FAKE_Y, 12),
-    (metrics.DryRunMode.FAKE_Y_PRED, 0),
+@pytest.mark.parametrize("fake_data_mode,expected_score", [
+    ([], 15),
+    (['--fake-data'], 0),
+    (['--fake-data-mode', metrics.FakeDataMode.DISABLED.name], 15),
+    (['--fake-data-mode', metrics.FakeDataMode.FAKE_Y.name], 12),
+    (['--fake-data-mode', metrics.FakeDataMode.FAKE_Y_PRED.name], 0),
 ])
-def test_execute_dryrun_modes(dry_run_mode, expected_score,
-                              load_metrics_module):
-    s = metrics.execute(dry_run=dry_run_mode)
+def test_execute_fake_data_modes(fake_data_mode, expected_score,
+                                 load_metrics_module):
+    s = metrics.execute(sysargs=fake_data_mode)
     assert s == expected_score

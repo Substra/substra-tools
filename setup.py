@@ -18,14 +18,12 @@ setup(
     description='Python tools to submit algo on the Substra platform',
     author='Camille',
     packages=find_packages(),
-    install_requires=[
-        'numpy',
-        'sklearn'],
+    install_requires=[],
     classifiers=[
         'Programming Language :: Python :: 3',
         'Topic :: Scientific/Engineering'
     ],
-    setup_requires=["pytest-runner"],
-    tests_require=["pytest", "pytest-cov"],
+    setup_requires=['pytest-runner'],
+    tests_require=['flake8', 'pytest', 'pytest-cov', 'pytest-mock'],
     zip_safe=False
 )

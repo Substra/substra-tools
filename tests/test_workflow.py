@@ -29,11 +29,11 @@ class DummyOpener(Opener):
     def fake_y(self):
         raise NotImplementedError
 
-    def get_pred(self, path):
+    def get_predictions(self, path):
         with open(path, 'r') as f:
             return json.load(f)
 
-    def save_pred(self, pred, path):
+    def save_predictions(self, pred, path):
         with open(path, 'w') as f:
             json.dump(pred, f)
 """
@@ -47,7 +47,7 @@ class DummyAlgo(Algo):
         new_model = {'i': len(models) + 1, 'total': total}
         return pred, new_model
 
-    def predict(self, X, y, model):
+    def predict(self, X, model):
         return {'sum': model['i']}
 
     def load_model(self, path):
@@ -67,7 +67,7 @@ class DummyMetrics(Metrics):
 def test_workflow(workdir, dummy_opener):
     algo_wp = AlgoWrapper(DummyAlgo())
 
-    models_path = algo_wp._workspace.model_folder
+    models_path = algo_wp._workspace.input_models_folder_path
 
     # loop 1 (no input)
     pred, model = algo_wp.train([])

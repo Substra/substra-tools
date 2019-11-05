@@ -1,21 +1,15 @@
-FROM nvidia/cuda:9.0-base
+FROM nvidia/cuda:9.2-base-ubuntu18.04
 
-RUN apt-get update && \
-    apt-get install -y build-essential libssl-dev zlib1g-dev wget && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN cd /opt && \
-    wget https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz && \
-    tar -xvf Python-3.6.9.tgz && rm Python-3.6.9.tgz
-RUN cd /opt/Python-3.6.9 ; ./configure ; make ; make install
+RUN apt-get update; apt-get install -y build-essential libssl-dev python3 python3-dev python3-pip
 
 RUN pip3 install --upgrade pip
-RUN pip3 install pillow pandas numpy sklearn lifelines
+RUN pip3 install pillow==6.1.0 pandas==0.24.2 numpy==1.16.4 scikit-learn==0.21.2 lifelines==0.22.1 scipy==1.2.1
 
 ADD ./setup.py /tmp
 ADD ./substratools /tmp/substratools
 RUN cd /tmp && pip install .
 
-RUN mkdir -p /sandbox/opener
+RUN mkdir -p /sandbox
+ENV PYTHONPATH /sandbox
 
 WORKDIR /sandbox
