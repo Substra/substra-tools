@@ -155,7 +155,7 @@ following abstract methods:
 - `CompositeAlgo.save_model()`
 
 To add a composite algo to the Substra Platform, the line
-`tools.algo.execute(<AlgoClass>())` must be added to the main of the algo
+`tools.algo.execute(<CompositeAlgoClass>())` must be added to the main of the algo
 python script. It defines the composite algo command line interface and thus enables
 the Substra Platform to execute it.
 
@@ -203,8 +203,8 @@ __Arguments__
 
 - __X__: training data samples loaded with `Opener.get_X()`.
 - __y__: training data samples labels loaded with `Opener.get_y()`.
-- __head_model__: head model loaded with `Algo.load_model()` (may be None).
-- __trunk_model__: trunk model loaded with `Algo.load_model()` (may be None).
+- __head_model__: head model loaded with `CompositeAlgo.load_model()` (may be None).
+- __trunk_model__: trunk model loaded with `CompositeAlgo.load_model()` (may be None).
 - __rank__: rank of the training task.
 
 __Returns__
@@ -225,8 +225,8 @@ __Arguments__
 
 
 - __X__: testing data samples loaded with `Opener.get_X()`.
-- __head_model__: head model loaded with `Algo.load_model()`.
-- __trunk_model__: trunk model loaded with `Algo.load_model()`.
+- __head_model__: head model loaded with `CompositeAlgo.load_model()`.
+- __trunk_model__: trunk model loaded with `CompositeAlgo.load_model()`.
 
 __Returns__
 
