@@ -233,6 +233,102 @@ __Returns__
 
 `predictions`: predictions object.
 
+# AggregateAlgo
+```python
+AggregateAlgo(self, /, *args, **kwargs)
+```
+Abstract base class for defining an aggregate algo to run on the platform.
+
+To define a new aggregate algo script, subclass this class and implement the
+following abstract methods:
+
+- `AggregateAlgo.aggregate()`
+- `AggregateAlgo.load_model()`
+- `AggregateAlgo.save_model()`
+
+To add a aggregate algo to the Substra Platform, the line
+`tools.algo.execute(<AggregateAlgoClass>())` must be added to the main of the algo
+python script. It defines the aggregate algo command line interface and thus enables
+the Substra Platform to execute it.
+
+__Example__
+
+
+```python
+import json
+import substratools as tools
+
+
+class DummyAggregateAlgo(tools.AggregateAlgo):
+    def aggregate(self, models, rank):
+        new_model = None
+        return new_model
+
+    def load_model(self, path):
+        return json.load(path)
+
+    def save_model(self, model, path):
+        json.dump(model, path)
+
+
+if __name__ == '__main__':
+    tools.algo.execute(DummyAggregateAlgo())
+```
+
+## aggregate
+```python
+AggregateAlgo.aggregate(self, models, rank)
+```
+Aggregate models and produce a new model.
+
+This task corresponds to the creation of an aggregate tuple on the Substra
+Platform.
+
+__Arguments__
+
+
+- __models__: list of models loaded with `AggregateAlgo.load_model()`.
+- __rank__: rank of the aggregate task.
+
+__Returns__
+
+
+`model`: aggregated model.
+
+## load_model
+```python
+AggregateAlgo.load_model(self, path)
+```
+Deserialize model from file.
+
+This method will be executed before the call to the method `Algo.aggregate()`
+to deserialize the model objects.
+
+__Arguments__
+
+
+- __path__: path of the model to load.
+
+__Returns__
+
+
+`model`: the deserialized model object.
+
+## save_model
+```python
+AggregateAlgo.save_model(self, model, path)
+```
+Serialize model in file.
+
+This method will be executed after the call to the method `Algo.aggregate()`
+to save the model objects.
+
+__Arguments__
+
+
+- __path__: path of file to write.
+- __model__: the model to serialize.
+
 # Metrics
 ```python
 Metrics(self, /, *args, **kwargs)
