@@ -181,3 +181,35 @@ class CompositeAlgoWorkspace(OpenerWorkspace):
         for d in dirs:
             if d:
                 makedir_safe(d)
+
+
+class AggregateAlgoWorkspace(Workspace):
+    """Filesystem workspace for aggregate algo execution."""
+
+    def __init__(self,
+                 dirpath=None,
+                 input_models_folder_path=None,
+                 output_model_path=None,
+                 log_path=None, ):
+        super().__init__(dirpath=dirpath)
+
+        self.input_models_folder_path = input_models_folder_path or \
+            self._get_default_path(DEFAULT_INPUT_MODELS_FOLDER_PATH)
+
+        self.output_model_path = output_model_path or \
+            self._get_default_path(DEFAULT_OUTPUT_MODEL_PATH)
+
+        self.log_path = log_path or \
+            self._get_default_path(DEFAULT_LOG_PATH)
+
+        dirs = [
+            self.input_models_folder_path,
+        ]
+        paths = [
+            self.output_model_path,
+            self.log_path,
+        ]
+        dirs.extend([os.path.dirname(p) for p in paths])
+        for d in dirs:
+            if d:
+                makedir_safe(d)
