@@ -18,4 +18,4 @@ test:
 	python setup.py test
 
 doc:
-	pydocmd simple substratools.Algo+ substratools.CompositeAlgo+ substratools.Metrics+ substratools.Opener+> $(DOCS_FILEPATH)
+	pydocmd simple substratools.Algo+ substratools.CompositeAlgo+  substratools.AggregateAlgo+ substratools.Metrics+ substratools.Opener+> $(DOCS_FILEPATH)
