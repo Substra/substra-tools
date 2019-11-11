@@ -6,7 +6,8 @@ import os
 import sys
 
 from substratools import opener, utils
-from substratools.workspace import AlgoWorkspace, CompositeAlgoWorkspace
+from substratools.workspace import (AlgoWorkspace, CompositeAlgoWorkspace,
+                                    AggregateAlgoWorkspace)
 
 
 logger = logging.getLogger(__name__)
@@ -608,10 +609,194 @@ def _generate_composite_algo_cli(interface):
     return parser
 
 
+class AggregateAlgo(abc.ABC):
+    """Abstract base class for defining an aggregate algo to run on the platform.
+
+    To define a new aggregate algo script, subclass this class and implement the
+    following abstract methods:
+
+    - #AggregateAlgo.aggregate()
+    - #AggregateAlgo.load_model()
+    - #AggregateAlgo.save_model()
+
+    To add a aggregate algo to the Substra Platform, the line
+    `tools.algo.execute(<AggregateAlgoClass>())` must be added to the main of the algo
+    python script. It defines the aggregate algo command line interface and thus enables
+    the Substra Platform to execute it.
+
+    # Example
+
+    ```python
+    import json
+    import substratools as tools
+
+
+    class DummyAggregateAlgo(tools.AggregateAlgo):
+        def aggregate(self, models, rank):
+            new_model = None
+            return new_model
+
+        def load_model(self, path):
+            return json.load(path)
+
+        def save_model(self, model, path):
+            json.dump(model, path)
+
+
+    if __name__ == '__main__':
+        tools.algo.execute(DummyAggregateAlgo())
+    ```
+    """
+
+    @abc.abstractmethod
+    def aggregate(self, models, rank):
+        """Aggregate models and produce a new model.
+
+        This task corresponds to the creation of an aggregate tuple on the Substra
+        Platform.
+
+        # Arguments
+
+        models: list of models loaded with `AggregateAlgo.load_model()`.
+        rank: rank of the aggregate task.
+
+        # Returns
+
+        model: aggregated model.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def load_model(self, path):
+        """Deserialize model from file.
+
+        This method will be executed before the call to the method `Algo.aggregate()`
+        to deserialize the model objects.
+
+        # Arguments
+
+        path: path of the model to load.
+
+        # Returns
+
+        model: the deserialized model object.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def save_model(self, model, path):
+        """Serialize model in file.
+
+        This method will be executed after the call to the method `Algo.aggregate()`
+        to save the model objects.
+
+        # Arguments
+
+        path: path of file to write.
+        model: the model to serialize.
+        """
+        raise NotImplementedError
+
+
+class AggregateAlgoWrapper(object):
+    """Aggregate algo wrapper to execute an aggregate algo instance on the platform."""
+    _DEFAULT_WORKSPACE_CLASS = AggregateAlgoWorkspace
+
+    def __init__(self, interface, workspace=None):
+        assert isinstance(interface, AggregateAlgo)
+        self._workspace = workspace or self._DEFAULT_WORKSPACE_CLASS()
+        self._interface = interface
+
+    def _load_models(self, model_names):
+        """Load models in-memory from names."""
+        # load models from workspace and deserialize them
+        models = []
+        models_path = self._workspace.input_models_folder_path
+        logger.info("loading models from '{}'".format(models_path))
+        for name in model_names:
+            path = os.path.join(models_path, name)
+            m = self._interface.load_model(path)
+            models.append(m)
+        return models
+
+    def aggregate(self, model_names, rank=0):
+        """Aggregate method wrapper."""
+        # load models
+        models = self._load_models(model_names)
+
+        # train new model
+        logger.info("launching aggregate task")
+        model = self._interface.aggregate(models, rank)
+
+        # serialize output model and save it to workspace
+        logger.info("saving output model to '{}'".format(
+            self._workspace.output_model_path))
+        self._interface.save_model(model, self._workspace.output_model_path)
+        return model
+
+
+def _generate_aggregate_algo_cli(interface):
+    """Helper to generate a command line interface client."""
+
+    def _algo_from_args(args):
+        workspace = AggregateAlgoWorkspace(
+            input_models_folder_path=args.models_path,
+            log_path=args.log_path,
+            output_model_path=args.output_model_path,
+        )
+        utils.configure_logging(workspace.log_path, debug_mode=args.debug)
+        return AggregateAlgoWrapper(
+            interface,
+            workspace=workspace,
+        )
+
+    def _parser_add_default_arguments(_parser):
+        _parser.add_argument(
+            '--models-path', default=None,
+            help="Define models folder path",
+        )
+        _parser.add_argument(
+            '--output-model-path', default=None,
+            help="Define output model file path",
+        )
+        _parser.add_argument(
+            '--log-path', default=None,
+            help="Define log filename path",
+        )
+        _parser.add_argument(
+            '--debug', action='store_true', default=False,
+            help="Enable debug mode (logs printed in stdout)",
+        )
+
+    def _aggregate(args):
+        algo_wrapper = _algo_from_args(args)
+        algo_wrapper.aggregate(
+            args.models,
+            args.rank,
+        )
+
+    parser = argparse.ArgumentParser()
+    parsers = parser.add_subparsers()
+    aggregate_parser = parsers.add_parser('aggregate')
+    aggregate_parser.add_argument(
+        'models', type=str, nargs='*',
+        help="Model names (must be located in default models folder)"
+    )
+    aggregate_parser.add_argument(
+        '-r', '--rank', type=int, default=0,
+        help="Define machine learning task rank",
+    )
+    _parser_add_default_arguments(aggregate_parser)
+    aggregate_parser.set_defaults(func=_aggregate)
+
+    return parser
+
+
 def execute(interface, sysargs=None):
     """Launch algo command line interface."""
-
-    if isinstance(interface, CompositeAlgo):
+    if isinstance(interface, AggregateAlgo):
+        generator = _generate_aggregate_algo_cli
+    elif isinstance(interface, CompositeAlgo):
         generator = _generate_composite_algo_cli
     else:
         generator = _generate_algo_cli
