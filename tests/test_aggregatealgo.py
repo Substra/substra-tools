@@ -73,6 +73,7 @@ def test_execute_aggregate(workdir):
     algo.execute(DummyAggregateAlgo(), sysargs=['aggregate'])
     assert output_model_path.exists()
 
+    output_model_path.unlink()
     algo.execute(DummyAggregateAlgo(), sysargs=['aggregate', '--debug'])
     assert output_model_path.exists()
 
