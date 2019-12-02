@@ -13,6 +13,6 @@ branches:
 script:
   - pip install flake8
   - flake8
-  - python setup.py test
-  - pydocmd simple substratools.Algo+ substratools.Metrics+ substratools.Opener+> docs/api.md.tmp
+  - make test
+  - make doc DOCS_FILEPATH=docs/api.md.tmp
   - cmp --silent docs/api.md docs/api.md.tmp
