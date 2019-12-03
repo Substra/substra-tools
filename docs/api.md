@@ -151,8 +151,10 @@ following abstract methods:
 
 - `CompositeAlgo.train()`
 - `CompositeAlgo.predict()`
-- `CompositeAlgo.load_model()`
-- `CompositeAlgo.save_model()`
+- `CompositeAlgo.load_head_model()`
+- `CompositeAlgo.save_head_model()`
+- `CompositeAlgo.load_trunk_model()`
+- `CompositeAlgo.save_trunk_model()`
 
 To add a composite algo to the Substra Platform, the line
 `tools.algo.execute(<CompositeAlgoClass>())` must be added to the main of the algo
@@ -178,10 +180,16 @@ class DummyCompositeAlgo(tools.CompositeAlgo):
         predictions = 0
         return predictions
 
-    def load_model(self, path):
+    def load_head_model(self, path):
         return json.load(path)
 
-    def save_model(self, model, path):
+    def save_head_model(self, model, path):
+        json.dump(model, path)
+
+    def load_trunk_model(self, path):
+        return json.load(path)
+
+    def save_trunk_model(self, model, path):
         json.dump(model, path)
 
 
@@ -203,8 +211,8 @@ __Arguments__
 
 - __X__: training data samples loaded with `Opener.get_X()`.
 - __y__: training data samples labels loaded with `Opener.get_y()`.
-- __head_model__: head model loaded with `CompositeAlgo.load_model()` (may be None).
-- __trunk_model__: trunk model loaded with `CompositeAlgo.load_model()` (may be None).
+- __head_model__: head model loaded with `CompositeAlgo.load_head_model()` (may be None).
+- __trunk_model__: trunk model loaded with `CompositeAlgo.load_trunk_model()` (may be None).
 - __rank__: rank of the training task.
 
 __Returns__
@@ -225,13 +233,81 @@ __Arguments__
 
 
 - __X__: testing data samples loaded with `Opener.get_X()`.
-- __head_model__: head model loaded with `CompositeAlgo.load_model()`.
-- __trunk_model__: trunk model loaded with `CompositeAlgo.load_model()`.
+- __head_model__: head model loaded with `CompositeAlgo.load_head_model()`.
+- __trunk_model__: trunk model loaded with `CompositeAlgo.load_trunk_model()`.
 
 __Returns__
 
 
 `predictions`: predictions object.
+
+## load_head_model
+```python
+CompositeAlgo.load_head_model(self, path)
+```
+Deserialize head model from file.
+
+This method will be executed before the call to the methods
+`Algo.train()` and `Algo.predict()` to deserialize the model objects.
+
+__Arguments__
+
+
+- __path__: path of the model to load.
+
+__Returns__
+
+
+`model`: the deserialized model object.
+
+## save_head_model
+```python
+CompositeAlgo.save_head_model(self, model, path)
+```
+Serialize head model in file.
+
+This method will be executed after the call to the methods
+`Algo.train()` and `Algo.predict()` to save the model objects.
+
+__Arguments__
+
+
+- __path__: path of file to write.
+- __model__: the model to serialize.
+
+## load_trunk_model
+```python
+CompositeAlgo.load_trunk_model(self, path)
+```
+Deserialize trunk model from file.
+
+This method will be executed before the call to the methods
+`Algo.train()` and `Algo.predict()` to deserialize the model objects.
+
+__Arguments__
+
+
+- __path__: path of the model to load.
+
+__Returns__
+
+
+`model`: the deserialized model object.
+
+## save_trunk_model
+```python
+CompositeAlgo.save_trunk_model(self, model, path)
+```
+Serialize trunk model in file.
+
+This method will be executed after the call to the methods
+`Algo.train()` and `Algo.predict()` to save the model objects.
+
+__Arguments__
+
+
+- __path__: path of file to write.
+- __model__: the model to serialize.
 
 # AggregateAlgo
 ```python
