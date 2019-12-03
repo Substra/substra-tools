@@ -16,10 +16,15 @@ setup(
     name='substratools',
     version=about['__version__'],
     description='Python tools to submit algo on the Substra platform',
-    author='Camille',
+    author='Owkin',
+    author_email='fldev@owkin.com',
+    license='Apache 2.0',
     packages=find_packages(),
     install_requires=[],
     classifiers=[
+        'Intended Audience :: Developers',
+        'Natural Language :: English',
+        'Operating System :: OS Independent',
         'Programming Language :: Python :: 3',
         'Topic :: Scientific/Engineering'
     ],
