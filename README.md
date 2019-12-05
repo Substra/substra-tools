@@ -27,17 +27,16 @@ pip install .
 This is required to launch the substra framework for development. The image is
 currently based on Python 3.6.
 
-### Pull from private docker registry
+### Pull from public docker registry
 
-- Install Google Cloud SDK: https://cloud.google.com/sdk/install
-- Authenticate with your google account: `gcloud auth login`
-- Configure docker to use your google credentials for google based docker registery: `gcloud auth configure-docker`
-- Pull image: `docker pull eu.gcr.io/substra-208412/substra-tools`
+```sh
+docker pull substrafoundation/substra-tools
+```
 
 ### Build from source
 
 ```sh
-docker build -t eu.gcr.io/substra-208412/substra-tools .
+docker build -t substrafoundation/substra-tools .
 ```
 
 ## Contributing
