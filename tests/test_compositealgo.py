@@ -36,11 +36,23 @@ class DummyCompositeAlgo(algo.CompositeAlgo):
         pred = list(range(head_model['value'], trunk_model['value']))
         return pred
 
-    def load_model(self, path):
+    def load_head_model(self, path):
+        return self._load_model(path)
+
+    def save_head_model(self, model, path):
+        return self._save_model(model, path)
+
+    def load_trunk_model(self, path):
+        return self._load_model(path)
+
+    def save_trunk_model(self, model, path):
+        return self._save_model(model, path)
+
+    def _load_model(self, path):
         with open(path, 'r') as f:
             return json.load(f)
 
-    def save_model(self, model, path):
+    def _save_model(self, model, path):
         with open(path, 'w') as f:
             json.dump(model, f)
 

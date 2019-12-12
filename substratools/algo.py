@@ -173,10 +173,11 @@ class Algo(abc.ABC):
 
 class AlgoWrapper(object):
     """Algo wrapper to execute an algo instance on the platform."""
+    _INTERFACE_CLASS = Algo
     _DEFAULT_WORKSPACE_CLASS = AlgoWorkspace
 
     def __init__(self, interface, workspace=None, opener_wrapper=None):
-        assert isinstance(interface, Algo)
+        assert isinstance(interface, self._INTERFACE_CLASS)
         self._workspace = workspace or self._DEFAULT_WORKSPACE_CLASS()
         self._opener_wrapper = opener_wrapper or \
             opener.load_from_module(workspace=self._workspace)
@@ -334,7 +335,7 @@ def _generate_algo_cli(interface):
     return parser
 
 
-class CompositeAlgo(Algo):
+class CompositeAlgo(abc.ABC):
     """Abstract base class for defining a composite algo to run on the platform.
 
     To define a new composite algo script, subclass this class and implement the
@@ -342,8 +343,10 @@ class CompositeAlgo(Algo):
 
     - #CompositeAlgo.train()
     - #CompositeAlgo.predict()
-    - #CompositeAlgo.load_model()
-    - #CompositeAlgo.save_model()
+    - #CompositeAlgo.load_head_model()
+    - #CompositeAlgo.save_head_model()
+    - #CompositeAlgo.load_trunk_model()
+    - #CompositeAlgo.save_trunk_model()
 
     To add a composite algo to the Substra Platform, the line
     `tools.algo.execute(<CompositeAlgoClass>())` must be added to the main of the algo
@@ -368,10 +371,16 @@ class CompositeAlgo(Algo):
             predictions = 0
             return predictions
 
-        def load_model(self, path):
+        def load_head_model(self, path):
             return json.load(path)
 
-        def save_model(self, model, path):
+        def save_head_model(self, model, path):
+            json.dump(model, path)
+
+        def load_trunk_model(self, path):
+            return json.load(path)
+
+        def save_trunk_model(self, model, path):
             json.dump(model, path)
 
 
@@ -391,8 +400,8 @@ class CompositeAlgo(Algo):
 
         X: training data samples loaded with `Opener.get_X()`.
         y: training data samples labels loaded with `Opener.get_y()`.
-        head_model: head model loaded with `CompositeAlgo.load_model()` (may be None).
-        trunk_model: trunk model loaded with `CompositeAlgo.load_model()` (may be None).
+        head_model: head model loaded with `CompositeAlgo.load_head_model()` (may be None).
+        trunk_model: trunk model loaded with `CompositeAlgo.load_trunk_model()` (may be None).
         rank: rank of the training task.
 
         # Returns
@@ -411,8 +420,8 @@ class CompositeAlgo(Algo):
         # Arguments
 
         X: testing data samples loaded with `Opener.get_X()`.
-        head_model: head model loaded with `CompositeAlgo.load_model()`.
-        trunk_model: trunk model loaded with `CompositeAlgo.load_model()`.
+        head_model: head model loaded with `CompositeAlgo.load_head_model()`.
+        trunk_model: trunk model loaded with `CompositeAlgo.load_trunk_model()`.
 
         # Returns
 
@@ -420,9 +429,96 @@ class CompositeAlgo(Algo):
         """
         raise NotImplementedError
 
+    def _train_fake_data(self, *args, **kwargs):
+        """Train model fake data mode.
+
+        This method is called by the algorithm wrapper when the fake data mode
+        is enabled. In fake data mode, `X` and `y` input args have been
+        replaced by the opener fake data.
+
+        By default, it only calls directly `Algo.train()` method. Override this
+        method if you want to implement a different behaviour.
+        """
+        return self.train(*args, **kwargs)
+
+    def _predict_fake_data(self, *args, **kwargs):
+        """Predict model fake data mode.
+
+        This method is called by the algorithm wrapper when the fake data mode
+        is enabled. In fake data mode, `X` input arg has been replaced by
+        the opener fake data.
+
+        By default, it only calls directly `Algo.predict()` method. Override
+        this method if you want to implement a different behaviour.
+        """
+        return self.predict(*args, **kwargs)
+
+    @abc.abstractmethod
+    def load_head_model(self, path):
+        """Deserialize head model from file.
+
+        This method will be executed before the call to the methods
+        `Algo.train()` and `Algo.predict()` to deserialize the model objects.
+
+        # Arguments
+
+        path: path of the model to load.
+
+        # Returns
+
+        model: the deserialized model object.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def save_head_model(self, model, path):
+        """Serialize head model in file.
+
+        This method will be executed after the call to the methods
+        `Algo.train()` and `Algo.predict()` to save the model objects.
+
+        # Arguments
+
+        path: path of file to write.
+        model: the model to serialize.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def load_trunk_model(self, path):
+        """Deserialize trunk model from file.
+
+        This method will be executed before the call to the methods
+        `Algo.train()` and `Algo.predict()` to deserialize the model objects.
+
+        # Arguments
+
+        path: path of the model to load.
+
+        # Returns
+
+        model: the deserialized model object.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def save_trunk_model(self, model, path):
+        """Serialize trunk model in file.
+
+        This method will be executed after the call to the methods
+        `Algo.train()` and `Algo.predict()` to save the model objects.
+
+        # Arguments
+
+        path: path of file to write.
+        model: the model to serialize.
+        """
+        raise NotImplementedError
+
 
 class CompositeAlgoWrapper(AlgoWrapper):
     """Algo wrapper to execute an algo instance on the platform."""
+    _INTERFACE_CLASS = CompositeAlgo
     _DEFAULT_WORKSPACE_CLASS = CompositeAlgoWorkspace
 
     def _load_head_trunk_models(self, head_filename, trunk_filename):
@@ -431,12 +527,12 @@ class CompositeAlgoWrapper(AlgoWrapper):
         if head_filename:
             head_model_path = os.path.join(self._workspace.input_models_folder_path,
                                            head_filename)
-            head_model = self._interface.load_model(head_model_path)
+            head_model = self._interface.load_head_model(head_model_path)
         trunk_model = None
         if trunk_filename:
             trunk_model_path = os.path.join(self._workspace.input_models_folder_path,
                                             trunk_filename)
-            trunk_model = self._interface.load_model(trunk_model_path)
+            trunk_model = self._interface.load_trunk_model(trunk_model_path)
         return head_model, trunk_model
 
     def train(self, input_head_model_filename=None, input_trunk_model_filename=None,
@@ -459,11 +555,11 @@ class CompositeAlgoWrapper(AlgoWrapper):
         # serialize output head and trunk models and save them to workspace
         output_head_model_path = self._workspace.output_head_model_path
         logger.info("saving output head model to '{}'".format(output_head_model_path))
-        self._interface.save_model(head_model, output_head_model_path)
+        self._interface.save_head_model(head_model, output_head_model_path)
 
         output_trunk_model_path = self._workspace.output_trunk_model_path
         logger.info("saving output trunk model to '{}'".format(output_trunk_model_path))
-        self._interface.save_model(trunk_model, output_trunk_model_path)
+        self._interface.save_trunk_model(trunk_model, output_trunk_model_path)
 
         # save predictions
         self._opener_wrapper.save_predictions(pred)
