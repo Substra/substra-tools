@@ -199,7 +199,7 @@ def load_from_module(path=None, workspace=None):
     interface = utils.load_interface_from_module(
         'opener',
         interface_class=Opener,
-        interface_signature=REQUIRED_FUNCTIONS,
+        interface_signature=None,  # XXX does not support interface for debugging
         path=path,
     )
     return OpenerWrapper(interface, workspace=workspace)

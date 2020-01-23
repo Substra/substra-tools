@@ -8,18 +8,28 @@ import sys
 from substratools import exceptions
 
 
-def configure_logging(path=None, debug_mode=False):
-    kwargs = {}
-    level = logging.DEBUG
-    if path and not debug_mode:
-        kwargs['filename'] = path
+logger = logging.getLogger(__name__)
 
-    logging.basicConfig(level=level, **kwargs)
 
-    if debug_mode:
-        # set root logger level in case the root logger has already handlers
-        # configured for it
-        logging.getLogger('substratools').setLevel(level)
+def configure_logging(path=None, debug_mode=True):
+    level = logging.DEBUG if debug_mode else logging.INFO
+
+    formatter = logging.Formatter('%(name)s - %(message)s')
+
+    h = logging.StreamHandler()
+    h.setLevel(level)
+    h.setFormatter(formatter)
+
+    root = logging.getLogger('substratools')
+    root.setLevel(level)
+    root.addHandler(h)
+
+    if path and debug_mode:
+        fh = logging.FileHandler(path)
+        fh.setLevel(level)
+        fh.setFormatter(formatter)
+
+        root.addHandler(h)
 
 
 def import_module(module_name, code):
@@ -43,9 +53,12 @@ def load_interface_from_module(module_name, interface_class,
                                interface_signature=None, path=None):
     if path:
         module = import_module_from_path(path, module_name)
+        logger.info(f"Module '{module_name}' loaded from path '{path}'")
     else:
         try:
             module = importlib.import_module(module_name)
+            logger.info(
+                f"Module '{module_name}' imported dynamically; module={module}")
         except ImportError:
             # XXX don't use ModuleNotFoundError for python3.5 compatibility
             raise
@@ -58,6 +71,8 @@ def load_interface_from_module(module_name, interface_class,
     # backward compatibility; accep
     if interface_signature is None:
         class_name = interface_class.__name__
+        elements = str(dir(module))
+        logger.info(f"Class '{class_name}' not found from: '{elements}'")
         raise exceptions.InvalidInterface(
             "Expecting {} subclass in {}".format(
                 class_name, module_name))

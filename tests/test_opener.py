@@ -40,6 +40,7 @@ def get_y():
         load_from_module()
 
 
+@pytest.mark.skip(reason="not supported")
 def test_load_opener_as_module(tmp_cwd):
     script = """
 def _helper():
