@@ -63,12 +63,23 @@ def load_interface_from_module(module_name, interface_class,
             # XXX don't use ModuleNotFoundError for python3.5 compatibility
             raise
 
-    # check interface
+    # find interface class
     for name, obj in inspect.getmembers(module):
         if inspect.isclass(obj) and issubclass(obj, interface_class):
             return obj()  # return interface instance
 
-    # backward compatibility; accep
+    # check module is not empty: this is done by checking that there is at least one
+    # non dunder field (__field__)
+    # this check is done for debugging purposes: identifying quickly that the imported
+    # module is incorrect
+    def _is_dunder(field):
+        return field.startswith('__') and field.endswith('__')
+
+    if all([_is_dunder(f) for f in dir(module)]):
+        raise exceptions.EmptyInterface(
+            f"Module '{module_name}' seems empty: members: '{dir(module)}'")
+
+    # backward compatibility; accept methods at module level directly
     if interface_signature is None:
         class_name = interface_class.__name__
         elements = str(dir(module))
