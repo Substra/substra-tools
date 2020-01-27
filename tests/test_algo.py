@@ -19,9 +19,7 @@ class DummyAlgo(algo.Algo):
             assert isinstance(m, dict)
             assert 'value' in m
             new_model['value'] += m['value']
-        new_value = new_model['value']
-        pred = list(range(new_value, new_value + 3))
-        return pred, new_model
+        return new_model
 
     def predict(self, X, model):
         pred = model['value']
@@ -65,8 +63,7 @@ def test_create():
 def test_train_no_model():
     a = DummyAlgo()
     wp = algo.AlgoWrapper(a)
-    pred, model = wp.train([])
-    assert pred == [0, 1, 2]
+    model = wp.train([])
     assert model['value'] == 0
 
 
@@ -76,16 +73,14 @@ def test_train_multiple_models(workdir, create_models):
     a = DummyAlgo()
     wp = algo.AlgoWrapper(a)
 
-    pred, model = wp.train(model_filenames)
-    assert pred == [3, 4, 5]
+    model = wp.train(model_filenames)
     assert model['value'] == 3
 
 
 def test_train_fake_data():
     a = DummyAlgo()
     wp = algo.AlgoWrapper(a)
-    pred, model = wp.train([], fake_data=True)
-    assert pred == [0, 1, 2]
+    model = wp.train([], fake_data=True)
     assert model['value'] == 0
 
 
@@ -134,10 +129,7 @@ def test_execute_train_multiple_models(workdir, create_models):
         model = json.load(f)
     assert model['value'] == 3
 
-    assert pred_path.exists()
-    with open(pred_path, 'r') as f:
-        pred = json.load(f)
-    assert pred == [3, 4, 5]
+    assert not pred_path.exists()
 
 
 def test_execute_predict(workdir, create_models):
@@ -152,11 +144,6 @@ def test_execute_predict(workdir, create_models):
     command.extend(model_filenames)
     algo.execute(DummyAlgo(), sysargs=command)
     assert output_model_path.exists()
-    assert pred_path.exists()
-    with open(pred_path, 'r') as f:
-        pred = json.load(f)
-    assert pred == [3, 4, 5]
-    pred_path.unlink()
 
     # do predict on output model
     assert not pred_path.exists()

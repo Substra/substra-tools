@@ -27,9 +27,8 @@ import substratools as tools
 
 class DummyAlgo(tools.Algo):
     def train(self, X, y, models, rank):
-        predictions = 0
         new_model = None
-        return predictions, new_model
+        return new_model
 
     def predict(self, X, model):
         predictions = 0
@@ -84,7 +83,7 @@ __Arguments__
 __Returns__
 
 
-`tuple`: (predictions, model).
+`model`: model object.
 
 ## predict
 ```python
@@ -171,10 +170,9 @@ import substratools as tools
 
 class DummyCompositeAlgo(tools.CompositeAlgo):
     def train(self, X, y, head_model, trunk_model, rank):
-        predictions = 0
         new_head_model = None
         new_trunk_model = None
-        return predictions, new_head_model, new_trunk_model
+        return new_head_model, new_trunk_model
 
     def predict(self, X, head_model, trunk_model):
         predictions = 0
@@ -218,7 +216,7 @@ __Arguments__
 __Returns__
 
 
-`tuple`: (predictions, head_model, trunk_model).
+`tuple`: (head_model, trunk_model).
 
 ## predict
 ```python
