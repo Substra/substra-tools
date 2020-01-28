@@ -250,11 +250,11 @@ def _generate_algo_cli(interface):
             output_model_path=args.output_model_path,
             output_predictions_path=args.output_predictions_path,
         )
+        utils.configure_logging(workspace.log_path, debug_mode=args.debug)
         opener_wrapper = opener.load_from_module(
             path=args.opener_path,
             workspace=workspace,
         )
-        utils.configure_logging(workspace.log_path, debug_mode=args.debug)
         return AlgoWrapper(
             interface,
             workspace=workspace,
