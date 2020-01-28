@@ -27,10 +27,7 @@ class DummyCompositeAlgo(algo.CompositeAlgo):
         new_head_model['value'] += 1
         new_trunk_model['value'] -= 1
 
-        # get predictions
-        pred = list(range(new_head_model['value'], new_trunk_model['value']))
-
-        return pred, new_head_model, new_trunk_model
+        return new_head_model, new_trunk_model
 
     def predict(self, X, head_model, trunk_model):
         pred = list(range(head_model['value'], trunk_model['value']))
@@ -97,8 +94,7 @@ def test_create():
 
 
 def test_train_no_model(dummy_wrapper):
-    pred, head_model, trunk_model = dummy_wrapper.train()
-    assert pred == []
+    head_model, trunk_model = dummy_wrapper.train()
     assert head_model['value'] == 1
     assert trunk_model['value'] == -1
 
@@ -106,15 +102,13 @@ def test_train_no_model(dummy_wrapper):
 def test_train_input_head_trunk_models(create_models, dummy_wrapper):
     _, _, head_filename, trunk_filename = create_models
 
-    pred, head_model, trunk_model = dummy_wrapper.train(head_filename, trunk_filename)
-    assert pred == []
+    head_model, trunk_model = dummy_wrapper.train(head_filename, trunk_filename)
     assert head_model['value'] == 2
     assert trunk_model['value'] == -2
 
 
 def test_train_fake_data(dummy_wrapper):
-    pred, head_model, trunk_model = dummy_wrapper.train(fake_data=True)
-    assert pred == []
+    head_model, trunk_model = dummy_wrapper.train(fake_data=True)
     assert head_model['value'] == 1
     assert trunk_model['value'] == -1
 
@@ -188,10 +182,7 @@ def test_execute_train_multiple_models(workdir, create_models):
         trunk_model = json.load(f)
     assert trunk_model['value'] == -2
 
-    assert pred_path.exists()
-    with open(pred_path, 'r') as f:
-        pred = json.load(f)
-    assert pred == []
+    assert not pred_path.exists()
 
 
 def test_execute_predict(workdir, create_models):

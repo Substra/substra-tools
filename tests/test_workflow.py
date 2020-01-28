@@ -43,9 +43,8 @@ class DummyOpener(Opener):
 class DummyAlgo(Algo):
     def train(self, X, y, models, rank):
         total = sum([m['i'] for m in models])
-        pred = {'sum': len(models)}
         new_model = {'i': len(models) + 1, 'total': total}
-        return pred, new_model
+        return new_model
 
     def predict(self, X, model):
         return {'sum': model['i']}
@@ -70,8 +69,7 @@ def test_workflow(workdir, dummy_opener):
     models_path = algo_wp._workspace.input_models_folder_path
 
     # loop 1 (no input)
-    pred, model = algo_wp.train([])
-    assert pred == {'sum': 0}
+    model = algo_wp.train([])
     assert model == {'i': 1, 'total': 0}
     output_model_path = os.path.join(models_path, 'model')
     assert os.path.exists(output_model_path)
@@ -79,8 +77,7 @@ def test_workflow(workdir, dummy_opener):
     # loop 2 (one model as input)
     model_1_name = 'model1'
     shutil.move(output_model_path, os.path.join(models_path, model_1_name))
-    pred, model = algo_wp.train([model_1_name])
-    assert pred == {'sum': 1}
+    model = algo_wp.train([model_1_name])
     assert model == {'i': 2, 'total': 1}
     output_model_path = os.path.join(models_path, 'model')
     assert os.path.exists(output_model_path)
@@ -88,8 +85,7 @@ def test_workflow(workdir, dummy_opener):
     # loop 3 (two models as input)
     model_2_name = 'model2'
     shutil.move(output_model_path, os.path.join(models_path, model_2_name))
-    pred, model = algo_wp.train([model_1_name, model_2_name])
-    assert pred == {'sum': 2}
+    model = algo_wp.train([model_1_name, model_2_name])
     assert model == {'i': 3, 'total': 3}
     output_model_path = os.path.join(models_path, 'model')
     assert os.path.exists(output_model_path)

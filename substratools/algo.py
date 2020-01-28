@@ -40,9 +40,8 @@ class Algo(abc.ABC):
 
     class DummyAlgo(tools.Algo):
         def train(self, X, y, models, rank):
-            predictions = 0
             new_model = None
-            return predictions, new_model
+            return new_model
 
         def predict(self, X, model):
             predictions = 0
@@ -93,7 +92,7 @@ class Algo(abc.ABC):
 
         # Returns
 
-        tuple: (predictions, model).
+        model: model object.
         """
         raise NotImplementedError
 
@@ -123,7 +122,7 @@ class Algo(abc.ABC):
         replaced by the opener fake data.
 
         By default, it only calls directly `Algo.train()` method. Override this
-        method if you want to implement a different behaviour.
+        method if you want to implement a different behavior.
         """
         return self.train(*args, **kwargs)
 
@@ -135,7 +134,7 @@ class Algo(abc.ABC):
         the opener fake data.
 
         By default, it only calls directly `Algo.predict()` method. Override
-        this method if you want to implement a different behaviour.
+        this method if you want to implement a different behavior.
         """
         return self.predict(*args, **kwargs)
 
@@ -208,17 +207,14 @@ class AlgoWrapper(object):
         logger.info("launching training task")
         method = (self._interface.train if not fake_data else
                   self._interface._train_fake_data)
-        pred, model = method(X, y, models, rank)
+        model = method(X, y, models, rank)
 
         # serialize output model and save it to workspace
         logger.info("saving output model to '{}'".format(
             self._workspace.output_model_path))
         self._interface.save_model(model, self._workspace.output_model_path)
 
-        # save predictions
-        self._opener_wrapper.save_predictions(pred)
-
-        return pred, model
+        return model
 
     def predict(self, model_name, fake_data=False):
         """Predict method wrapper."""
@@ -362,10 +358,9 @@ class CompositeAlgo(abc.ABC):
 
     class DummyCompositeAlgo(tools.CompositeAlgo):
         def train(self, X, y, head_model, trunk_model, rank):
-            predictions = 0
             new_head_model = None
             new_trunk_model = None
-            return predictions, new_head_model, new_trunk_model
+            return new_head_model, new_trunk_model
 
         def predict(self, X, head_model, trunk_model):
             predictions = 0
@@ -406,7 +401,7 @@ class CompositeAlgo(abc.ABC):
 
         # Returns
 
-        tuple: (predictions, head_model, trunk_model).
+        tuple: (head_model, trunk_model).
         """
         raise NotImplementedError
 
@@ -437,7 +432,7 @@ class CompositeAlgo(abc.ABC):
         replaced by the opener fake data.
 
         By default, it only calls directly `Algo.train()` method. Override this
-        method if you want to implement a different behaviour.
+        method if you want to implement a different behavior.
         """
         return self.train(*args, **kwargs)
 
@@ -449,7 +444,7 @@ class CompositeAlgo(abc.ABC):
         the opener fake data.
 
         By default, it only calls directly `Algo.predict()` method. Override
-        this method if you want to implement a different behaviour.
+        this method if you want to implement a different behavior.
         """
         return self.predict(*args, **kwargs)
 
@@ -550,7 +545,7 @@ class CompositeAlgoWrapper(AlgoWrapper):
         logger.info("launching training task")
         method = (self._interface.train if not fake_data else
                   self._interface._train_fake_data)
-        pred, head_model, trunk_model = method(X, y, head_model, trunk_model, rank)
+        head_model, trunk_model = method(X, y, head_model, trunk_model, rank)
 
         # serialize output head and trunk models and save them to workspace
         output_head_model_path = self._workspace.output_head_model_path
@@ -561,10 +556,7 @@ class CompositeAlgoWrapper(AlgoWrapper):
         logger.info("saving output trunk model to '{}'".format(output_trunk_model_path))
         self._interface.save_trunk_model(trunk_model, output_trunk_model_path)
 
-        # save predictions
-        self._opener_wrapper.save_predictions(pred)
-
-        return pred, head_model, trunk_model
+        return head_model, trunk_model
 
     def predict(self, input_head_model_filename, input_trunk_model_filename,
                 fake_data=False):
