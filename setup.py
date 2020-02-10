@@ -5,6 +5,8 @@ from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
 
+with open(os.path.join(here, 'README.md'), 'r', 'utf-8') as fp:
+    readme = fp.read()
 
 about = {}
 with open(os.path.join(here, 'substratools', '__version__.py'),
