@@ -76,9 +76,9 @@ class Algo(abc.ABC):
     python <script_path> predict --help
     ```
 
-    # Using Python code
+    # Using a python script
 
-    An algo can be imported and used in python code as would any other class.
+    An algo can be imported and used in python scripts as would any other class.
 
     For example, assuming that you have two local files named `opener.py` and
     `algo.py` (the latter containing an `Algo` class named `MyAlgo`):
@@ -423,9 +423,9 @@ class CompositeAlgo(abc.ABC):
     python <script_path> predict --help
     ```
 
-    # Using Python code
+    # Using a python script
 
-    A composite algo can be imported and used in python code as would any other class.
+    A composite algo can be imported and used in python scripts as would any other class.
 
     For example, assuming that you have two local files named `opener.py` and
     `composite_algo.py` (the latter containing a `CompositeAlgo` class named
@@ -813,9 +813,9 @@ class AggregateAlgo(abc.ABC):
     python <script_path> aggregate --help
     ```
 
-    # Using Python code
+    # Using a python script
 
-    An aggregate algo can be imported and used in python code as would any other class.
+    An aggregate algo can be imported and used in python scripts as would any other class.
 
     For example, assuming that you have a local file named `aggregate_algo.py` containing
     containing an `AggregateAlgo` class named `MyAggregateAlgo`:

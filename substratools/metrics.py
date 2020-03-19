@@ -73,9 +73,9 @@ class Metrics(abc.ABC):
     python <script_path> --help
     ```
 
-    # Using Python code
+    # Using a python script
 
-    A metrics class can be imported and used in python code as would any other class.
+    A metrics class can be imported and used in python scripts as would any other class.
 
     For example, assuming that you have files named `opener.py` and `metrics.py` that contains
     an `Opener` named  `MyOpener` and a `Metrics` called `MyMetrics`:

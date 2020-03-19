@@ -71,7 +71,7 @@ class Opener(abc.ABC):
 
     # How to test locally an opener script
 
-    An opener can be imported and used in python code as would any other class.
+    An opener can be imported and used in python scripts as would any other class.
 
     For example, assuming that you have a local file named `opener.py` that contains
     an `Opener` named  `MyOpener`:

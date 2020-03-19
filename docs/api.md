@@ -65,10 +65,10 @@ python <script_path> train --help
 python <script_path> predict --help
 ```
 
-__Using Python code__
+__Using a python script__
 
 
-An algo can be imported and used in python code as would any other class.
+An algo can be imported and used in python scripts as would any other class.
 
 For example, assuming that you have two local files named `opener.py` and
 `algo.py` (the latter containing an `Algo` class named `MyAlgo`):
@@ -239,10 +239,10 @@ python <script_path> train --help
 python <script_path> predict --help
 ```
 
-__Using Python code__
+__Using a python script__
 
 
-A composite algo can be imported and used in python code as would any other class.
+A composite algo can be imported and used in python scripts as would any other class.
 
 For example, assuming that you have two local files named `opener.py` and
 `composite_algo.py` (the latter containing a `CompositeAlgo` class named
@@ -434,10 +434,10 @@ To see all the available options for the aggregate command, run:
 python <script_path> aggregate --help
 ```
 
-__Using Python code__
+__Using a python script__
 
 
-An aggregate algo can be imported and used in python code as would any other class.
+An aggregate algo can be imported and used in python scripts as would any other class.
 
 For example, assuming that you have a local file named `aggregate_algo.py` containing
 containing an `AggregateAlgo` class named `MyAggregateAlgo`:
@@ -557,10 +557,10 @@ To see all the available options for metrics commands, run:
 python <script_path> --help
 ```
 
-__Using Python code__
+__Using a python script__
 
 
-A metrics class can be imported and used in python code as would any other class.
+A metrics class can be imported and used in python scripts as would any other class.
 
 For example, assuming that you have files named `opener.py` and `metrics.py` that contains
 an `Opener` named  `MyOpener` and a `Metrics` called `MyMetrics`:
@@ -657,7 +657,7 @@ class DummyOpener(tools.Opener):
 __How to test locally an opener script__
 
 
-An opener can be imported and used in python code as would any other class.
+An opener can be imported and used in python scripts as would any other class.
 
 For example, assuming that you have a local file named `opener.py` that contains
 an `Opener` named  `MyOpener`:
