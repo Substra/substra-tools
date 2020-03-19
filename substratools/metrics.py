@@ -57,6 +57,8 @@ class Metrics(abc.ABC):
 
     # How to test locally a metrics script
 
+    # Using the command line
+
     The metrics script can be directly tested through it's command line
     interface.  For instance to get the metrics from fake data, run the
     following command:
@@ -71,6 +73,30 @@ class Metrics(abc.ABC):
     python <script_path> --help
     ```
 
+    # Using Python code
+
+    A metrics class can be imported and used in python code as would any other class.
+
+    For example, assuming that you have files named `opener.py` and `metrics.py` that contains
+    an `Opener` named  `MyOpener` and a `Metrics` called `MyMetrics`:
+
+    ```python
+    import os
+    import opener
+    import metrics
+
+    o = MyOpener()
+    m = MyMetrics()
+
+
+    data_sample_folders = os.listdir('./sandbox/data_samples/')
+    predictions_path = './sandbox/predictions'
+
+    y_true = o.get_y(data_sample_folders)
+    y_pred = o.get_predictions(predictions_path)
+
+    score = m.score(y_true, y_pred)
+    ```
     """
 
     @abc.abstractmethod
