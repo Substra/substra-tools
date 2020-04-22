@@ -12,6 +12,10 @@ following abstract methods:
 - `Algo.load_model()`
 - `Algo.save_model()`
 
+This class has an `use_models_generator` class property:
+- if True, models will be passed to the `train` method as a generator
+- (default) if False, models will be passed to the `train` method as a list
+
 To add an algo to the Substra Platform, the line
 `tools.algo.execute(<AlgoClass>())` must be added to the main of the algo
 python script. It defines the algo command line interface and thus enables
@@ -87,6 +91,12 @@ y_pred = a.predict(X, model)
 ```
 
 
+## use_models_generator
+bool(x) -> bool
+
+Returns True when the argument x is true, False otherwise.
+The builtins True and False are the only two instances of the class bool.
+The class bool is a subclass of the class int, and cannot be subclassed.
 ## train
 ```python
 Algo.train(self, X, y, models, rank)
@@ -101,7 +111,7 @@ __Arguments__
 
 - __X__: training data samples loaded with `Opener.get_X()`.
 - __y__: training data samples labels loaded with `Opener.get_y()`.
-- __models__: list of models loaded with `Algo.load_model()`.
+- __models__: list or generator of models loaded with `Algo.load_model()`.
 - __rank__: rank of the training task.
 
 __Returns__
@@ -386,6 +396,10 @@ following abstract methods:
 - `AggregateAlgo.load_model()`
 - `AggregateAlgo.save_model()`
 
+This class has an `use_models_generator` class property:
+- if True, models will be passed to the `aggregate` method as a generator
+- (default) if False, models will be passed to the `aggregate` method as a list
+
 To add a aggregate algo to the Substra Platform, the line
 `tools.algo.execute(<AggregateAlgoClass>())` must be added to the main of the algo
 python script. It defines the aggregate algo command line interface and thus enables
@@ -453,6 +467,12 @@ model_2 = a.load_model('./sandbox/models/model_2')
 aggregated_model = a.aggregate([model_1, model_2], 0)
 ```
 
+## use_models_generator
+bool(x) -> bool
+
+Returns True when the argument x is true, False otherwise.
+The builtins True and False are the only two instances of the class bool.
+The class bool is a subclass of the class int, and cannot be subclassed.
 ## aggregate
 ```python
 AggregateAlgo.aggregate(self, models, rank)

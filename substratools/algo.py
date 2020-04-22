@@ -26,6 +26,10 @@ class Algo(abc.ABC):
     - #Algo.load_model()
     - #Algo.save_model()
 
+    This class has an `use_models_generator` class property:
+    - if True, models will be passed to the `train` method as a generator
+    - (default) if False, models will be passed to the `train` method as a list
+
     To add an algo to the Substra Platform, the line
     `tools.algo.execute(<AlgoClass>())` must be added to the main of the algo
     python script. It defines the algo command line interface and thus enables
@@ -98,6 +102,8 @@ class Algo(abc.ABC):
 
     """
 
+    use_models_generator = False
+
     @abc.abstractmethod
     def train(self, X, y, models, rank):
         """Train model and produce new model from train data.
@@ -109,7 +115,7 @@ class Algo(abc.ABC):
 
         X: training data samples loaded with `Opener.get_X()`.
         y: training data samples labels loaded with `Opener.get_y()`.
-        models: list of models loaded with `Algo.load_model()`.
+        models: list or generator of models loaded with `Algo.load_model()`.
         rank: rank of the training task.
 
         # Returns
@@ -211,17 +217,25 @@ class AlgoWrapper(object):
         if not os.path.isfile(path):
             raise exceptions.MissingFileError(f'Output model file {path} does not exists')
 
+    def _load_model(self, model_name):
+        """Load single model in memory from its name."""
+        # load model from workspace and deserialize it
+        model_path = os.path.join(self._workspace.input_models_folder_path, model_name)
+        logger.info("loading model from '{}'".format(model_path))
+        return self._interface.load_model(model_path)
+
+    def _load_models_as_list(self, model_names):
+        return [self._load_model(model_name) for model_name in model_names]
+
+    def _load_models_as_generator(self, model_names):
+        for model_name in model_names:
+            yield self._load_model(model_name)
+
     def _load_models(self, model_names):
-        """Load models in-memory from names."""
-        # load models from workspace and deserialize them
-        models = []
-        models_path = self._workspace.input_models_folder_path
-        logger.info("loading models from '{}'".format(models_path))
-        for name in model_names:
-            path = os.path.join(models_path, name)
-            m = self._interface.load_model(path)
-            models.append(m)
-        return models
+        """Load models either as list or as generator"""
+        if self._interface.use_models_generator:
+            return self._load_models_as_generator(model_names)
+        return self._load_models_as_list(model_names)
 
     def train(self, model_names, rank=0, fake_data=False):
         """Train method wrapper."""
@@ -252,13 +266,13 @@ class AlgoWrapper(object):
         X = self._opener_wrapper.get_X(fake_data)
 
         # load models
-        models = self._load_models([model_name])
+        model = self._load_model(model_name)
 
         # get predictions
         logger.info("launching predict task")
         method = (self._interface.predict if not fake_data else
                   self._interface._predict_fake_data)
-        pred = method(X, models[0])
+        pred = method(X, model)
 
         # save predictions
         self._opener_wrapper.save_predictions(pred)
@@ -790,6 +804,10 @@ class AggregateAlgo(abc.ABC):
     - #AggregateAlgo.load_model()
     - #AggregateAlgo.save_model()
 
+    This class has an `use_models_generator` class property:
+    - if True, models will be passed to the `aggregate` method as a generator
+    - (default) if False, models will be passed to the `aggregate` method as a list
+
     To add a aggregate algo to the Substra Platform, the line
     `tools.algo.execute(<AggregateAlgoClass>())` must be added to the main of the algo
     python script. It defines the aggregate algo command line interface and thus enables
@@ -853,6 +871,8 @@ class AggregateAlgo(abc.ABC):
     aggregated_model = a.aggregate([model_1, model_2], 0)
     ```
     """
+
+    use_models_generator = False
 
     @abc.abstractmethod
     def aggregate(self, models, rank):
@@ -920,17 +940,25 @@ class AggregateAlgoWrapper(object):
         if not os.path.isfile(path):
             raise exceptions.MissingFileError(f'Output model file {path} does not exists')
 
+    def _load_model(self, model_name):
+        """Load single model in memory from its name."""
+        # load model from workspace and deserialize it
+        model_path = os.path.join(self._workspace.input_models_folder_path, model_name)
+        logger.info("loading model from '{}'".format(model_path))
+        return self._interface.load_model(model_path)
+
+    def _load_models_as_list(self, model_names):
+        return [self._load_model(model_name) for model_name in model_names]
+
+    def _load_models_as_generator(self, model_names):
+        for model_name in model_names:
+            yield self._load_model(model_name)
+
     def _load_models(self, model_names):
-        """Load models in-memory from names."""
-        # load models from workspace and deserialize them
-        models = []
-        models_path = self._workspace.input_models_folder_path
-        logger.info("loading models from '{}'".format(models_path))
-        for name in model_names:
-            path = os.path.join(models_path, name)
-            m = self._interface.load_model(path)
-            models.append(m)
-        return models
+        """Load models either as list or as generator"""
+        if self._interface.use_models_generator:
+            return self._load_models_as_generator(model_names)
+        return self._load_models_as_list(model_names)
 
     def aggregate(self, model_names, rank=0):
         """Aggregate method wrapper."""
