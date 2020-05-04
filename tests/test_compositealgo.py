@@ -54,6 +54,32 @@ class DummyCompositeAlgo(algo.CompositeAlgo):
             json.dump(model, f)
 
 
+class NoSavedTrunkModelAggregateAlgo(DummyCompositeAlgo):
+    def save_trunk_model(self, model, path):
+        # do not save model at all
+        pass
+
+
+class NoSavedHeadModelAggregateAlgo(DummyCompositeAlgo):
+    def save_head_model(self, model, path):
+        # do not save model at all
+        pass
+
+
+class WrongSavedTrunkModelAggregateAlgo(DummyCompositeAlgo):
+    def save_trunk_model(self, model, path):
+        # simulate numpy.save behavior
+        with open(path + '.npy', 'w') as f:
+            json.dump(model, f)
+
+
+class WrongSavedHeadModelAggregateAlgo(DummyCompositeAlgo):
+    def save_head_model(self, model, path):
+        # simulate numpy.save behavior
+        with open(path + '.npy', 'w') as f:
+            json.dump(model, f)
+
+
 @pytest.fixture
 def workspace(workdir):
     models_dir = workdir / "input_models"
@@ -204,3 +230,17 @@ def test_execute_predict(workdir, create_models):
         pred = json.load(f)
     assert pred == []
     pred_path.unlink()
+
+
+@pytest.mark.parametrize('algo_class', (
+    NoSavedTrunkModelAggregateAlgo,
+    NoSavedHeadModelAggregateAlgo,
+    WrongSavedTrunkModelAggregateAlgo,
+    WrongSavedHeadModelAggregateAlgo
+))
+def test_model_check(algo_class):
+    a = algo_class()
+    wp = algo.CompositeAlgoWrapper(a)
+
+    with pytest.raises(AssertionError):
+        wp.train([])

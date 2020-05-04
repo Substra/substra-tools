@@ -22,6 +22,19 @@ class DummyAggregateAlgo(algo.AggregateAlgo):
             json.dump(model, f)
 
 
+class NoSavedModelAggregateAlgo(DummyAggregateAlgo):
+    def save_model(self, model, path):
+        # do not save model at all
+        pass
+
+
+class WrongSavedModelAggregateAlgo(DummyAggregateAlgo):
+    def save_model(self, model, path):
+        # simulate numpy.save behavior
+        with open(path + '.npy', 'w') as f:
+            json.dump(model, f)
+
+
 @pytest.fixture
 def create_models(workdir):
     model_a = {'value': 1}
@@ -92,3 +105,12 @@ def test_execute_aggregate_multiple_models(workdir, create_models):
     with open(output_model_path, 'r') as f:
         model = json.load(f)
     assert model['value'] == 3
+
+
+@pytest.mark.parametrize('algo_class', (NoSavedModelAggregateAlgo, WrongSavedModelAggregateAlgo))
+def test_model_check(algo_class):
+    a = algo_class()
+    wp = algo.AggregateAlgoWrapper(a)
+
+    with pytest.raises(AssertionError):
+        wp.aggregate([])
