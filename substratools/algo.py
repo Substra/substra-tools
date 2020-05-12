@@ -60,6 +60,8 @@ class Algo(abc.ABC):
 
     # How to test locally an algo script
 
+    # Using the command line
+
     The algo script can be directly tested through it's command line interface.
     For instance to train an algo using fake data, run the following command:
 
@@ -72,6 +74,26 @@ class Algo(abc.ABC):
     ```sh
     python <script_path> train --help
     python <script_path> predict --help
+    ```
+
+    # Using a python script
+
+    An algo can be imported and used in python scripts as would any other class.
+
+    For example, assuming that you have two local files named `opener.py` and
+    `algo.py` (the latter containing an `Algo` class named `MyAlgo`):
+
+    ```python
+    import algo
+    import opener
+
+    o = opener.Opener()
+    X = o.get_X(["dataset/train/train1"])
+    y = o.get_y(["dataset/train/train1"])
+
+    a = algo.MyAlgo()
+    model = a.train(X, y, None, None, 0)
+    y_pred = a.predict(X, model)
     ```
 
     """
@@ -381,6 +403,45 @@ class CompositeAlgo(abc.ABC):
 
     if __name__ == '__main__':
         tools.algo.execute(DummyCompositeAlgo())
+    ```
+
+    # How to test locally a composite algo script
+
+    # Using the command line
+
+    The composite algo script can be directly tested through it's command line interface.
+    For instance to train an algo using fake data, run the following command:
+
+    ```sh
+    python <script_path> train --fake-data --debug
+    ```
+
+    To see all the available options for the train and predict commands, run:
+
+    ```sh
+    python <script_path> train --help
+    python <script_path> predict --help
+    ```
+
+    # Using a python script
+
+    A composite algo can be imported and used in python scripts as would any other class.
+
+    For example, assuming that you have two local files named `opener.py` and
+    `composite_algo.py` (the latter containing a `CompositeAlgo` class named
+    `MyCompositeAlgo`):
+
+    ```python
+    import composite_algo
+    import opener
+
+    o = opener.Opener()
+    X = o.get_X(["dataset/train/train1"])
+    y = o.get_y(["dataset/train/train1"])
+
+    a = composite_algo.MyCompositeAlgo()
+    head_model, trunk_model = a.train(X, y, None, None, 0)
+    y_pred = a.predict(X, head_model, trunk_model)
     ```
     """
 
@@ -733,6 +794,41 @@ class AggregateAlgo(abc.ABC):
 
     if __name__ == '__main__':
         tools.algo.execute(DummyAggregateAlgo())
+    ```
+
+    # How to test locally an aggregate algo script
+
+    # Using the command line
+
+    The aggregate algo script can be directly tested through it's command line interface.
+    For instance to train an algo using fake data, run the following command:
+
+    ```sh
+    python <script_path> aggregate --models_path <models_path> --models <model_name> --model <model_name> --debug
+    ```
+
+    To see all the available options for the aggregate command, run:
+
+    ```sh
+    python <script_path> aggregate --help
+    ```
+
+    # Using a python script
+
+    An aggregate algo can be imported and used in python scripts as would any other class.
+
+    For example, assuming that you have a local file named `aggregate_algo.py` containing
+    containing an `AggregateAlgo` class named `MyAggregateAlgo`:
+
+    ```python
+    from aggregate_algo import MyAggregateAlgo
+
+    a = MyAggregateAlgo()
+
+    model_1 = a.load_model('./sandbox/models/model_1')
+    model_2 = a.load_model('./sandbox/models/model_2')
+
+    aggregated_model = a.aggregate([model_1, model_2], 0)
     ```
     """
 

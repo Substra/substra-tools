@@ -68,6 +68,24 @@ class Opener(abc.ABC):
         def get_predictions(self, path):
             return pd.read_csv(path)
     ```
+
+    # How to test locally an opener script
+
+    An opener can be imported and used in python scripts as would any other class.
+
+    For example, assuming that you have a local file named `opener.py` that contains
+    an `Opener` named  `MyOpener`:
+
+    ```python
+    import os
+    from opener import MyOpener
+
+    folders = os.listdir('./sandbox/data_samples/')
+
+    o = MyOpener()
+    X = o.get_X(folders)
+    y = o.get_y(folders)
+    ```
     """
 
     @abc.abstractmethod

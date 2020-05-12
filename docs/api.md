@@ -48,6 +48,9 @@ if __name__ == '__main__':
 __How to test locally an algo script__
 
 
+__Using the command line__
+
+
 The algo script can be directly tested through it's command line interface.
 For instance to train an algo using fake data, run the following command:
 
@@ -60,6 +63,27 @@ To see all the available options for the train and predict commands, run:
 ```sh
 python <script_path> train --help
 python <script_path> predict --help
+```
+
+__Using a python script__
+
+
+An algo can be imported and used in python scripts as would any other class.
+
+For example, assuming that you have two local files named `opener.py` and
+`algo.py` (the latter containing an `Algo` class named `MyAlgo`):
+
+```python
+import algo
+import opener
+
+o = opener.Opener()
+X = o.get_X(["dataset/train/train1"])
+y = o.get_y(["dataset/train/train1"])
+
+a = algo.MyAlgo()
+model = a.train(X, y, None, None, 0)
+y_pred = a.predict(X, model)
 ```
 
 
@@ -193,6 +217,48 @@ class DummyCompositeAlgo(tools.CompositeAlgo):
 
 if __name__ == '__main__':
     tools.algo.execute(DummyCompositeAlgo())
+```
+
+__How to test locally a composite algo script__
+
+
+__Using the command line__
+
+
+The composite algo script can be directly tested through it's command line interface.
+For instance to train an algo using fake data, run the following command:
+
+```sh
+python <script_path> train --fake-data --debug
+```
+
+To see all the available options for the train and predict commands, run:
+
+```sh
+python <script_path> train --help
+python <script_path> predict --help
+```
+
+__Using a python script__
+
+
+A composite algo can be imported and used in python scripts as would any other class.
+
+For example, assuming that you have two local files named `opener.py` and
+`composite_algo.py` (the latter containing a `CompositeAlgo` class named
+`MyCompositeAlgo`):
+
+```python
+import composite_algo
+import opener
+
+o = opener.Opener()
+X = o.get_X(["dataset/train/train1"])
+y = o.get_y(["dataset/train/train1"])
+
+a = composite_algo.MyCompositeAlgo()
+head_model, trunk_model = a.train(X, y, None, None, 0)
+y_pred = a.predict(X, head_model, trunk_model)
 ```
 
 ## train
@@ -349,6 +415,44 @@ if __name__ == '__main__':
     tools.algo.execute(DummyAggregateAlgo())
 ```
 
+__How to test locally an aggregate algo script__
+
+
+__Using the command line__
+
+
+The aggregate algo script can be directly tested through it's command line interface.
+For instance to train an algo using fake data, run the following command:
+
+```sh
+python <script_path> aggregate --models_path <models_path> --models <model_name> --model <model_name> --debug
+```
+
+To see all the available options for the aggregate command, run:
+
+```sh
+python <script_path> aggregate --help
+```
+
+__Using a python script__
+
+
+An aggregate algo can be imported and used in python scripts as would any other class.
+
+For example, assuming that you have a local file named `aggregate_algo.py` containing
+containing an `AggregateAlgo` class named `MyAggregateAlgo`:
+
+```python
+from aggregate_algo import MyAggregateAlgo
+
+a = MyAggregateAlgo()
+
+model_1 = a.load_model('./sandbox/models/model_1')
+model_2 = a.load_model('./sandbox/models/model_2')
+
+aggregated_model = a.aggregate([model_1, model_2], 0)
+```
+
 ## aggregate
 ```python
 AggregateAlgo.aggregate(self, models, rank)
@@ -436,6 +540,9 @@ if __name__ == '__main__':
 __How to test locally a metrics script__
 
 
+__Using the command line__
+
+
 The metrics script can be directly tested through it's command line
 interface.  For instance to get the metrics from fake data, run the
 following command:
@@ -450,6 +557,31 @@ To see all the available options for metrics commands, run:
 python <script_path> --help
 ```
 
+__Using a python script__
+
+
+A metrics class can be imported and used in python scripts as would any other class.
+
+For example, assuming that you have files named `opener.py` and `metrics.py` that contains
+an `Opener` named  `MyOpener` and a `Metrics` called `MyMetrics`:
+
+```python
+import os
+import opener
+import metrics
+
+o = MyOpener()
+m = MyMetrics()
+
+
+data_sample_folders = os.listdir('./sandbox/data_samples/')
+predictions_path = './sandbox/predictions'
+
+y_true = o.get_y(data_sample_folders)
+y_pred = o.get_predictions(predictions_path)
+
+score = m.score(y_true, y_pred)
+```
 
 ## score
 ```python
@@ -520,6 +652,25 @@ class DummyOpener(tools.Opener):
 
     def get_predictions(self, path):
         return pd.read_csv(path)
+```
+
+__How to test locally an opener script__
+
+
+An opener can be imported and used in python scripts as would any other class.
+
+For example, assuming that you have a local file named `opener.py` that contains
+an `Opener` named  `MyOpener`:
+
+```python
+import os
+from opener import MyOpener
+
+folders = os.listdir('./sandbox/data_samples/')
+
+o = MyOpener()
+X = o.get_X(folders)
+y = o.get_y(folders)
 ```
 
 ## get_X
