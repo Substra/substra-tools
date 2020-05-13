@@ -1,7 +1,7 @@
 import json
 import pathlib
 
-from substratools import algo
+from substratools import algo, exceptions
 from substratools.workspace import CompositeAlgoWorkspace
 
 import pytest
@@ -242,5 +242,5 @@ def test_model_check(algo_class):
     a = algo_class()
     wp = algo.CompositeAlgoWrapper(a)
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(exceptions.MissingFileError):
         wp.train([])

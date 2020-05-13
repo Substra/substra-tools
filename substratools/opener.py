@@ -3,7 +3,7 @@ import logging
 import os
 import types
 
-from substratools import utils
+from substratools import utils, exceptions
 from substratools.workspace import OpenerWorkspace
 
 logger = logging.getLogger(__name__)
@@ -185,8 +185,10 @@ class OpenerWrapper(object):
 
     def _assert_predictions_file_exists(self):
         path = self._workspace.output_predictions_path
-        assert not os.path.isdir(path), f'Expected predictions file at {path}, found dir'
-        assert os.path.isfile(path), f'Predictions file {path} does not exists'
+        if os.path.isdir(path):
+            raise exceptions.NotAFileError(f'Expected predictions file at {path}, found dir')
+        if not os.path.isfile(path):
+            raise exceptions.MissingFileError(f'Predictions file {path} does not exists')
 
     def save_predictions(self, y_pred):
         path = self._workspace.output_predictions_path

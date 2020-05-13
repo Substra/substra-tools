@@ -1,6 +1,6 @@
 import json
 
-from substratools import algo
+from substratools import algo, exceptions
 
 import pytest
 
@@ -112,5 +112,5 @@ def test_model_check(algo_class):
     a = algo_class()
     wp = algo.AggregateAlgoWrapper(a)
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(exceptions.MissingFileError):
         wp.aggregate([])

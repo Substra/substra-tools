@@ -5,7 +5,7 @@ import logging
 import os
 import sys
 
-from substratools import opener, utils
+from substratools import opener, utils, exceptions
 from substratools.workspace import (AlgoWorkspace, CompositeAlgoWorkspace,
                                     AggregateAlgoWorkspace)
 
@@ -184,8 +184,10 @@ class AlgoWrapper(object):
 
     def _assert_output_model_exists(self):
         path = self._workspace.output_model_path
-        assert not os.path.isdir(path), f'Expected output model file at {path}, found dir'
-        assert os.path.isfile(path), f'Output model file {path} does not exists'
+        if os.path.isdir(path):
+            raise exceptions.NotAFileError(f'Expected output model file at {path}, found dir')
+        if not os.path.isfile(path):
+            raise exceptions.MissingFileError(f'Output model file {path} does not exists')
 
     def _load_models(self, model_names):
         """Load models in-memory from names."""
@@ -537,8 +539,10 @@ class CompositeAlgoWrapper(AlgoWrapper):
         return head_model, trunk_model
 
     def _assert_output_model_exists(self, path, part):
-        assert not os.path.isdir(path), f'Expected output {part} model file at {path}, found dir'
-        assert os.path.isfile(path), f'Output {part} model file {path} does not exists'
+        if os.path.isdir(path):
+            raise exceptions.NotAFileError(f'Expected output {part} model file at {path}, found dir')
+        if not os.path.isfile(path):
+            raise exceptions.MissingFileError(f'Output {part} model file {path} does not exists')
 
     def _assert_output_trunkmodel_exists(self):
         self._assert_output_model_exists(self._workspace.output_trunk_model_path, 'trunk')
@@ -815,8 +819,10 @@ class AggregateAlgoWrapper(object):
 
     def _assert_output_model_exists(self):
         path = self._workspace.output_model_path
-        assert not os.path.isdir(path), f'Expected output model file at {path}, found dir'
-        assert os.path.isfile(path), f'Output model file {path} does not exists'
+        if os.path.isdir(path):
+            raise exceptions.NotAFileError(f'Expected output model file at {path}, found dir')
+        if not os.path.isfile(path):
+            raise exceptions.MissingFileError(f'Output model file {path} does not exists')
 
     def _load_models(self, model_names):
         """Load models in-memory from names."""

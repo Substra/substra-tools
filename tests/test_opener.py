@@ -168,5 +168,5 @@ class MyOpener(Opener):
 
     o = load_from_module()
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(exceptions.MissingFileError):
         o.save_predictions({'foo': 'bar'})
