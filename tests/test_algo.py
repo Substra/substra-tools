@@ -1,7 +1,7 @@
 import json
 import shutil
 
-from substratools import algo
+from substratools import algo, exceptions
 
 import pytest
 
@@ -31,6 +31,19 @@ class DummyAlgo(algo.Algo):
 
     def save_model(self, model, path):
         with open(path, 'w') as f:
+            json.dump(model, f)
+
+
+class NoSavedModelAlgo(DummyAlgo):
+    def save_model(self, model, path):
+        # do not save model at all
+        pass
+
+
+class WrongSavedModelAlgo(DummyAlgo):
+    def save_model(self, model, path):
+        # simulate numpy.save behavior
+        with open(path + '.npy', 'w') as f:
             json.dump(model, f)
 
 
@@ -166,3 +179,12 @@ def test_execute_predict(workdir, create_models):
     with open(pred_path, 'r') as f:
         pred = json.load(f)
     assert pred == 'XXX'
+
+
+@pytest.mark.parametrize('algo_class', (NoSavedModelAlgo, WrongSavedModelAlgo))
+def test_model_check(algo_class):
+    a = algo_class()
+    wp = algo.AlgoWrapper(a)
+
+    with pytest.raises(exceptions.MissingFileError):
+        wp.train([])

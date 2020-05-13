@@ -5,7 +5,7 @@ import logging
 import os
 import sys
 
-from substratools import opener, utils
+from substratools import opener, utils, exceptions
 from substratools.workspace import (AlgoWorkspace, CompositeAlgoWorkspace,
                                     AggregateAlgoWorkspace)
 
@@ -204,6 +204,13 @@ class AlgoWrapper(object):
             opener.load_from_module(workspace=self._workspace)
         self._interface = interface
 
+    def _assert_output_model_exists(self):
+        path = self._workspace.output_model_path
+        if os.path.isdir(path):
+            raise exceptions.NotAFileError(f'Expected output model file at {path}, found dir')
+        if not os.path.isfile(path):
+            raise exceptions.MissingFileError(f'Output model file {path} does not exists')
+
     def _load_models(self, model_names):
         """Load models in-memory from names."""
         # load models from workspace and deserialize them
@@ -235,6 +242,7 @@ class AlgoWrapper(object):
         logger.info("saving output model to '{}'".format(
             self._workspace.output_model_path))
         self._interface.save_model(model, self._workspace.output_model_path)
+        self._assert_output_model_exists()
 
         return model
 
@@ -591,6 +599,18 @@ class CompositeAlgoWrapper(AlgoWrapper):
             trunk_model = self._interface.load_trunk_model(trunk_model_path)
         return head_model, trunk_model
 
+    def _assert_output_model_exists(self, path, part):
+        if os.path.isdir(path):
+            raise exceptions.NotAFileError(f'Expected output {part} model file at {path}, found dir')
+        if not os.path.isfile(path):
+            raise exceptions.MissingFileError(f'Output {part} model file {path} does not exists')
+
+    def _assert_output_trunkmodel_exists(self):
+        self._assert_output_model_exists(self._workspace.output_trunk_model_path, 'trunk')
+
+    def _assert_output_headmodel_exists(self):
+        self._assert_output_model_exists(self._workspace.output_head_model_path, 'head')
+
     def train(self, input_head_model_filename=None, input_trunk_model_filename=None,
               rank=0, fake_data=False):
         """Train method wrapper."""
@@ -612,10 +632,12 @@ class CompositeAlgoWrapper(AlgoWrapper):
         output_head_model_path = self._workspace.output_head_model_path
         logger.info("saving output head model to '{}'".format(output_head_model_path))
         self._interface.save_head_model(head_model, output_head_model_path)
+        self._assert_output_headmodel_exists()
 
         output_trunk_model_path = self._workspace.output_trunk_model_path
         logger.info("saving output trunk model to '{}'".format(output_trunk_model_path))
         self._interface.save_trunk_model(trunk_model, output_trunk_model_path)
+        self._assert_output_trunkmodel_exists()
 
         return head_model, trunk_model
 
@@ -891,6 +913,13 @@ class AggregateAlgoWrapper(object):
         self._workspace = workspace or self._DEFAULT_WORKSPACE_CLASS()
         self._interface = interface
 
+    def _assert_output_model_exists(self):
+        path = self._workspace.output_model_path
+        if os.path.isdir(path):
+            raise exceptions.NotAFileError(f'Expected output model file at {path}, found dir')
+        if not os.path.isfile(path):
+            raise exceptions.MissingFileError(f'Output model file {path} does not exists')
+
     def _load_models(self, model_names):
         """Load models in-memory from names."""
         # load models from workspace and deserialize them
@@ -916,6 +945,7 @@ class AggregateAlgoWrapper(object):
         logger.info("saving output model to '{}'".format(
             self._workspace.output_model_path))
         self._interface.save_model(model, self._workspace.output_model_path)
+        self._assert_output_model_exists()
         return model
 
 

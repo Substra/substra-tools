@@ -128,3 +128,45 @@ class MyOpener(Opener):
 
     o.data_folders = data_paths
     assert o.get_X() == 'Xclass'
+
+
+@pytest.mark.parametrize('save_predictions_method_body', (
+    """
+        pass
+    """,
+    """
+        with open(path + '.npy', 'w') as f:
+            json.dump(pred, f)
+    """,
+))
+def test_predictions_check(tmp_cwd, save_predictions_method_body):
+    script = f"""
+import json
+from substratools import Opener
+
+class MyOpener(Opener):
+    def get_X(self, folder):
+        return 'X'
+
+    def get_y(self, folder):
+        return list(range(0, 3))
+
+    def fake_X(self):
+        return 'Xfake'
+
+    def fake_y(self):
+        return [0] * 3
+
+    def get_predictions(self, path):
+        with open(path, 'r') as f:
+            return json.load(f)
+
+    def save_predictions(self, pred, path):
+        {save_predictions_method_body}
+"""
+    import_module('opener', script)
+
+    o = load_from_module()
+
+    with pytest.raises(exceptions.MissingFileError):
+        o.save_predictions({'foo': 'bar'})
