@@ -1,5 +1,6 @@
 import json
 import shutil
+import types
 
 from substratools import algo, exceptions
 
@@ -188,3 +189,22 @@ def test_model_check(algo_class):
 
     with pytest.raises(exceptions.MissingFileError):
         wp.train([])
+
+
+@pytest.mark.parametrize('use_models_generator,models_type', (
+    (True, types.GeneratorType),
+    (False, list),
+))
+def test_models_generator(mocker, workdir, create_models, use_models_generator, models_type):
+    _, model_filenames = create_models
+
+    command = ['train']
+    command.extend(model_filenames)
+
+    a = DummyAlgo()
+    a.use_models_generator = use_models_generator
+    mocker.patch.object(a, 'train', autospec=True, return_value={})
+
+    algo.execute(a, sysargs=command)
+    models = a.train.call_args[0][2]
+    assert isinstance(models, models_type)

@@ -1,4 +1,5 @@
 import json
+import types
 
 from substratools import algo, exceptions
 
@@ -114,3 +115,22 @@ def test_model_check(algo_class):
 
     with pytest.raises(exceptions.MissingFileError):
         wp.aggregate([])
+
+
+@pytest.mark.parametrize('use_models_generator,models_type', (
+    (True, types.GeneratorType),
+    (False, list),
+))
+def test_models_generator(mocker, workdir, create_models, use_models_generator, models_type):
+    _, model_filenames = create_models
+
+    command = ['aggregate']
+    command.extend(model_filenames)
+
+    a = DummyAggregateAlgo()
+    a.use_models_generator = use_models_generator
+    mocker.patch.object(a, 'aggregate', autospec=True, return_value={})
+
+    algo.execute(a, sysargs=command)
+    models = a.aggregate.call_args[0][0]
+    assert isinstance(models, models_type)
