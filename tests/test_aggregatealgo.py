@@ -117,25 +117,20 @@ def test_model_check(algo_class):
         wp.aggregate([])
 
 
-def test_models_generator(mocker, workdir, create_models):
+@pytest.mark.parametrize('use_models_generator,models_type', (
+    (True, types.GeneratorType),
+    (False, list),
+))
+def test_models_generator(mocker, workdir, create_models, use_models_generator, models_type):
     _, model_filenames = create_models
 
     command = ['aggregate']
     command.extend(model_filenames)
 
-    a1 = DummyAggregateAlgo()
-    mocker.patch.object(a1, 'aggregate', autospec=True, return_value={})
+    a = DummyAggregateAlgo()
+    a.use_models_generator = use_models_generator
+    mocker.patch.object(a, 'aggregate', autospec=True, return_value={})
 
-    algo.execute(a1, sysargs=command)
-    models_1 = a1.aggregate.call_args[0][0]
-    assert type(models_1) == list
-
-    a2 = DummyAggregateAlgo()
-    a2.use_models_generator = True
-    mocker.patch.object(a2, 'aggregate', autospec=True, return_value={})
-
-    algo.execute(a2, sysargs=command)
-    models_2 = a2.aggregate.call_args[0][0]
-    assert isinstance(models_2, types.GeneratorType)
-
-    assert models_1 == list(models_2)
+    algo.execute(a, sysargs=command)
+    models = a.aggregate.call_args[0][0]
+    assert isinstance(models, models_type)
