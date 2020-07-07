@@ -70,7 +70,7 @@ class Algo(abc.ABC):
     For instance to train an algo using fake data, run the following command:
 
     ```sh
-    python <script_path> train --fake-data --debug
+    python <script_path> train --fake-data --n-fake-samples 20 --debug
     ```
 
     To see all the available options for the train and predict commands, run:
@@ -237,11 +237,11 @@ class AlgoWrapper(object):
             return self._load_models_as_generator(model_names)
         return self._load_models_as_list(model_names)
 
-    def train(self, model_names, rank=0, fake_data=False):
+    def train(self, model_names, rank=0, fake_data=False, n_samples=None):
         """Train method wrapper."""
         # load data from opener
-        X = self._opener_wrapper.get_X(fake_data)
-        y = self._opener_wrapper.get_y(fake_data)
+        X = self._opener_wrapper.get_X(fake_data, n_samples)
+        y = self._opener_wrapper.get_y(fake_data, n_samples)
 
         # load models
         models = self._load_models(model_names)
@@ -260,10 +260,10 @@ class AlgoWrapper(object):
 
         return model
 
-    def predict(self, model_name, fake_data=False):
+    def predict(self, model_name, fake_data=False, n_samples=None):
         """Predict method wrapper."""
         # load data from opener
-        X = self._opener_wrapper.get_X(fake_data)
+        X = self._opener_wrapper.get_X(fake_data, n_samples)
 
         # load models
         model = self._load_model(model_name)
@@ -307,7 +307,7 @@ def _generate_algo_cli(interface):
             help="Enable fake data mode",
         )
         _parser.add_argument(
-            '--n-fake', default=None, type=int,
+            '--n-fake-samples', default=None, type=int,
             help="Number of fake samples if fake data is used. Default to the maximum number of samples",
         )
         _parser.add_argument(
@@ -345,6 +345,7 @@ def _generate_algo_cli(interface):
             args.models,
             args.rank,
             args.fake_data,
+            args.n_fake_samples
         )
 
     parser = argparse.ArgumentParser()
@@ -366,6 +367,7 @@ def _generate_algo_cli(interface):
         algo_wrapper.predict(
             args.model,
             args.fake_data,
+            args.n_fake_samples
         )
 
     predict_parser = parsers.add_parser('predict')
@@ -439,7 +441,7 @@ class CompositeAlgo(abc.ABC):
     For instance to train an algo using fake data, run the following command:
 
     ```sh
-    python <script_path> train --fake-data --debug
+    python <script_path> train --fake-data --n-fake-samples 20 --debug
     ```
 
     To see all the available options for the train and predict commands, run:
@@ -630,11 +632,11 @@ class CompositeAlgoWrapper(AlgoWrapper):
         self._assert_output_model_exists(self._workspace.output_head_model_path, 'head')
 
     def train(self, input_head_model_filename=None, input_trunk_model_filename=None,
-              rank=0, fake_data=False):
+              rank=0, fake_data=False, n_samples=None):
         """Train method wrapper."""
         # load data from opener
-        X = self._opener_wrapper.get_X(fake_data)
-        y = self._opener_wrapper.get_y(fake_data)
+        X = self._opener_wrapper.get_X(fake_data, n_samples)
+        y = self._opener_wrapper.get_y(fake_data, n_samples)
 
         # load head and trunk models
         head_model, trunk_model = self._load_head_trunk_models(
@@ -660,10 +662,10 @@ class CompositeAlgoWrapper(AlgoWrapper):
         return head_model, trunk_model
 
     def predict(self, input_head_model_filename, input_trunk_model_filename,
-                fake_data=False):
+                fake_data=False, n_samples=None):
         """Predict method wrapper."""
         # load data from opener
-        X = self._opener_wrapper.get_X(fake_data)
+        X = self._opener_wrapper.get_X(fake_data, n_samples)
 
         # load head and trunk models
         head_model, trunk_model = self._load_head_trunk_models(
@@ -711,6 +713,10 @@ def _generate_composite_algo_cli(interface):
             help="Enable fake data mode",
         )
         _parser.add_argument(
+            '--n-fake-samples', default=None, type=int,
+            help="Number of fake samples if fake data is used. Default to the maximum number of samples",
+        )
+        _parser.add_argument(
             '--data-samples-path', default=None,
             help="Define train/test data samples folder path",
         )
@@ -755,6 +761,7 @@ def _generate_composite_algo_cli(interface):
             args.input_trunk_model_filename,
             args.rank,
             args.fake_data,
+            args.n_fake_samples
         )
 
     parser = argparse.ArgumentParser()
@@ -781,6 +788,7 @@ def _generate_composite_algo_cli(interface):
             args.input_head_model_filename,
             args.input_trunk_model_filename,
             args.fake_data,
+            args.n_fake_samples
         )
 
     predict_parser = parsers.add_parser('predict')

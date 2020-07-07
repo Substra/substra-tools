@@ -55,10 +55,10 @@ class Opener(abc.ABC):
                 for folder in folders
             ]
 
-        def fake_X(self):
+        def fake_X(self, n_samples=None):
             return []  # compute random fake data
 
-        def fake_y(self):
+        def fake_y(self, n_samples=None):
             return []  # compute random fake data
 
         def save_predictions(self, y_pred, path):

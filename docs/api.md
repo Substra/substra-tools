@@ -59,7 +59,7 @@ The algo script can be directly tested through it's command line interface.
 For instance to train an algo using fake data, run the following command:
 
 ```sh
-python <script_path> train --fake-data --debug
+python <script_path> train --fake-data --n-fake-samples 20 --debug
 ```
 
 To see all the available options for the train and predict commands, run:
@@ -239,7 +239,7 @@ The composite algo script can be directly tested through it's command line inter
 For instance to train an algo using fake data, run the following command:
 
 ```sh
-python <script_path> train --fake-data --debug
+python <script_path> train --fake-data --n-fake-samples 20 --debug
 ```
 
 To see all the available options for the train and predict commands, run:
@@ -660,10 +660,10 @@ class DummyOpener(tools.Opener):
             for folder in folders
         ]
 
-    def fake_X(self):
+    def fake_X(self, n_samples=None):
         return []  # compute random fake data
 
-    def fake_y(self):
+    def fake_y(self, n_samples=None):
         return []  # compute random fake data
 
     def save_predictions(self, y_pred, path):
@@ -727,9 +727,14 @@ __Returns__
 
 ## fake_X
 ```python
-Opener.fake_X(self)
+Opener.fake_X(self, n_samples=None)
 ```
 Generate a fake matrix of features for offline testing.
+
+__Arguments__
+
+
+- __n_samples__: number of samples to return, all by default
 
 __Returns__
 
@@ -738,9 +743,14 @@ __Returns__
 
 ## fake_y
 ```python
-Opener.fake_y(self)
+Opener.fake_y(self, n_samples=None)
 ```
 Generate a fake target variable vector for offline testing.
+
+__Arguments__
+
+
+- __n_samples__: number of samples to return, all by default
 
 __Returns__
 
