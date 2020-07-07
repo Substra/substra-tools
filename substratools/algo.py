@@ -308,7 +308,7 @@ def _generate_algo_cli(interface):
         )
         _parser.add_argument(
             '--n-fake-samples', default=None, type=int,
-            help="Number of fake samples if fake data is used. Default to the maximum number of samples",
+            help="Number of fake samples if fake data is used.",
         )
         _parser.add_argument(
             '--data-samples-path', default=None,

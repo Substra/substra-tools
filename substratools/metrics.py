@@ -64,7 +64,7 @@ class Metrics(abc.ABC):
     following command:
 
     ```sh
-    python <script_path> --fake-data --debug
+    python <script_path> --fake-data --n-fake-samples 20 --debug
     ```
 
     To see all the available options for metrics commands, run:
@@ -129,7 +129,7 @@ class MetricsWrapper(object):
         with open(path, 'w') as f:
             json.dump({'all': score}, f)
 
-    def score(self, fake_data=False):
+    def score(self, fake_data=False, n_fake_samples=None):
         """Load labels and predictions and save score results."""
         mode = FakeDataMode.from_value(fake_data)
         if mode == FakeDataMode.DISABLED:
@@ -137,11 +137,11 @@ class MetricsWrapper(object):
             y_pred = self._opener_wrapper.get_predictions()
 
         elif mode == FakeDataMode.FAKE_Y:
-            y = self._opener_wrapper.get_y(fake_data=True)
+            y = self._opener_wrapper.get_y(fake_data=True, n_fake_samples=n_fake_samples)
             y_pred = self._opener_wrapper.get_predictions()
 
         elif mode == FakeDataMode.FAKE_Y_PRED:
-            y = self._opener_wrapper.get_y(fake_data=True)
+            y = self._opener_wrapper.get_y(fake_data=True, n_fake_samples=n_fake_samples)
             y_pred = y
 
         else:
@@ -163,7 +163,11 @@ def _generate_cli():
     parser.add_argument(
         '--fake-data-mode', default=FakeDataMode.DISABLED.name,
         choices=[e.name for e in FakeDataMode],
-        help="Set fake data mode",
+        help="Set fake data )-",
+    )
+    parser.add_argument(
+        '--n-fake-samples', type=int, default=None,
+        help="Number of fake samples if fake data is used.",
     )
     parser.add_argument(
         '--data-samples-path', default=None,
@@ -221,6 +225,8 @@ def execute(interface=None, sysargs=None):
         opener_wrapper=opener_wrapper,
     )
     fake_data = args.fake_data or FakeDataMode.from_str(args.fake_data_mode)
+    n_fake_samples = args.n_fake_samples
     return metrics_wrapper.score(
         fake_data,
+        n_fake_samples,
     )

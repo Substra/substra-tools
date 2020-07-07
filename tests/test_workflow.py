@@ -23,10 +23,10 @@ class DummyOpener(Opener):
     def get_y(self, folder):
         return None
 
-    def fake_X(self, n_fake_samples=None):
+    def fake_X(self, n_samples=None):
         raise NotImplementedError
 
-    def fake_y(self, n_fake_samples=None):
+    def fake_y(self, n_samples=None):
         raise NotImplementedError
 
     def get_predictions(self, path):
