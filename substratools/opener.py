@@ -115,7 +115,7 @@ class Opener(abc.ABC):
 
         # Arguments
 
-        n_samples: number of samples to return, all by default
+        n_samples: number of samples to return
 
         # Returns
 
@@ -129,7 +129,7 @@ class Opener(abc.ABC):
 
         # Arguments
 
-        n_samples: number of samples to return, all by default
+        n_samples: number of samples to return
 
         # Returns
 

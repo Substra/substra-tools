@@ -734,7 +734,7 @@ Generate a fake matrix of features for offline testing.
 __Arguments__
 
 
-- __n_samples__: number of samples to return, all by default
+- __n_samples__: number of samples to return
 
 __Returns__
 
@@ -750,7 +750,7 @@ Generate a fake target variable vector for offline testing.
 __Arguments__
 
 
-- __n_samples__: number of samples to return, all by default
+- __n_samples__: number of samples to return
 
 __Returns__
 
