@@ -34,10 +34,10 @@ class FakeOpener(Opener):
     def get_y(self, folder):
         return list(range(0, 3))
 
-    def fake_X(self):
+    def fake_X(self, n_samples=None):
         return 'Xfake'
 
-    def fake_y(self):
+    def fake_y(self, n_samples=None):
         return [0] * 3
 
     def get_predictions(self, path):

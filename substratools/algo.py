@@ -307,6 +307,10 @@ def _generate_algo_cli(interface):
             help="Enable fake data mode",
         )
         _parser.add_argument(
+            '--n-fake', default=None, type=int,
+            help="Number of fake samples if fake data is used. Default to the maximum number of samples",
+        )
+        _parser.add_argument(
             '--data-samples-path', default=None,
             help="Define train/test data samples folder path",
         )
