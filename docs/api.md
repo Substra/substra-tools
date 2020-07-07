@@ -660,10 +660,10 @@ class DummyOpener(tools.Opener):
             for folder in folders
         ]
 
-    def fake_X(self, n_samples=None):
+    def fake_X(self, n_fake_samples=None):
         return []  # compute random fake data
 
-    def fake_y(self, n_samples=None):
+    def fake_y(self, n_fake_samples=None):
         return []  # compute random fake data
 
     def save_predictions(self, y_pred, path):
@@ -727,14 +727,14 @@ __Returns__
 
 ## fake_X
 ```python
-Opener.fake_X(self, n_samples=None)
+Opener.fake_X(self, n_fake_samples=None)
 ```
 Generate a fake matrix of features for offline testing.
 
 __Arguments__
 
 
-- __n_samples__: number of samples to return, all by default
+- __n_fake_samples__: number of samples to return, all by default
 
 __Returns__
 
@@ -743,14 +743,14 @@ __Returns__
 
 ## fake_y
 ```python
-Opener.fake_y(self, n_samples=None)
+Opener.fake_y(self, n_fake_samples=None)
 ```
 Generate a fake target variable vector for offline testing.
 
 __Arguments__
 
 
-- __n_samples__: number of samples to return, all by default
+- __n_fake_samples__: number of samples to return, all by default
 
 __Returns__
 

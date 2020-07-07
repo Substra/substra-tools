@@ -49,9 +49,9 @@ def get_X(folders):
     return 'X'
 def get_y(folders):
     return 'y'
-def fake_X(n_samples=None):
+def fake_X(n_fake_samples=None):
     return 'fakeX'
-def fake_y(n_samples=None):
+def fake_y(n_fake_samples=None):
     return 'fakey'
 def get_predictions(path):
     return 'pred'
@@ -73,9 +73,9 @@ class MyOpener(Opener):
         return 'Xclass'
     def get_y(self, folders):
         return 'yclass'
-    def fake_X(self, n_samples=None):
+    def fake_X(self, n_fake_samples=None):
         return 'fakeX'
-    def fake_y(self, n_samples=None):
+    def fake_y(self, n_fake_samples=None):
         return 'fakey'
     def get_predictions(self, path):
         return 'pred'
@@ -107,9 +107,9 @@ class MyOpener(Opener):
         return 'Xclass'
     def get_y(self, folders):
         return 'yclass'
-    def fake_X(self, n_samples=None):
+    def fake_X(self, n_fake_samples=None):
         return 'fakeX'
-    def fake_y(self, n_samples=None):
+    def fake_y(self, n_fake_samples=None):
         return 'fakey'
     def get_predictions(self, path):
         return 'pred'
@@ -151,10 +151,10 @@ class MyOpener(Opener):
     def get_y(self, folder):
         return list(range(0, 3))
 
-    def fake_X(self, n_samples=None):
+    def fake_X(self, n_fake_samples=None):
         return 'Xfake'
 
-    def fake_y(self, n_samples=None):
+    def fake_y(self, n_fake_samples=None):
         return [0] * 3
 
     def get_predictions(self, path):

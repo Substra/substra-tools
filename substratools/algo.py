@@ -237,11 +237,11 @@ class AlgoWrapper(object):
             return self._load_models_as_generator(model_names)
         return self._load_models_as_list(model_names)
 
-    def train(self, model_names, rank=0, fake_data=False, n_samples=None):
+    def train(self, model_names, rank=0, fake_data=False, n_fake_samples=None):
         """Train method wrapper."""
         # load data from opener
-        X = self._opener_wrapper.get_X(fake_data, n_samples)
-        y = self._opener_wrapper.get_y(fake_data, n_samples)
+        X = self._opener_wrapper.get_X(fake_data, n_fake_samples)
+        y = self._opener_wrapper.get_y(fake_data, n_fake_samples)
 
         # load models
         models = self._load_models(model_names)
@@ -260,10 +260,10 @@ class AlgoWrapper(object):
 
         return model
 
-    def predict(self, model_name, fake_data=False, n_samples=None):
+    def predict(self, model_name, fake_data=False, n_fake_samples=None):
         """Predict method wrapper."""
         # load data from opener
-        X = self._opener_wrapper.get_X(fake_data, n_samples)
+        X = self._opener_wrapper.get_X(fake_data, n_fake_samples)
 
         # load models
         model = self._load_model(model_name)
@@ -632,11 +632,11 @@ class CompositeAlgoWrapper(AlgoWrapper):
         self._assert_output_model_exists(self._workspace.output_head_model_path, 'head')
 
     def train(self, input_head_model_filename=None, input_trunk_model_filename=None,
-              rank=0, fake_data=False, n_samples=None):
+              rank=0, fake_data=False, n_fake_samples=None):
         """Train method wrapper."""
         # load data from opener
-        X = self._opener_wrapper.get_X(fake_data, n_samples)
-        y = self._opener_wrapper.get_y(fake_data, n_samples)
+        X = self._opener_wrapper.get_X(fake_data, n_fake_samples)
+        y = self._opener_wrapper.get_y(fake_data, n_fake_samples)
 
         # load head and trunk models
         head_model, trunk_model = self._load_head_trunk_models(
@@ -662,10 +662,10 @@ class CompositeAlgoWrapper(AlgoWrapper):
         return head_model, trunk_model
 
     def predict(self, input_head_model_filename, input_trunk_model_filename,
-                fake_data=False, n_samples=None):
+                fake_data=False, n_fake_samples=None):
         """Predict method wrapper."""
         # load data from opener
-        X = self._opener_wrapper.get_X(fake_data, n_samples)
+        X = self._opener_wrapper.get_X(fake_data, n_fake_samples)
 
         # load head and trunk models
         head_model, trunk_model = self._load_head_trunk_models(

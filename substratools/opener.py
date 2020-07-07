@@ -55,10 +55,10 @@ class Opener(abc.ABC):
                 for folder in folders
             ]
 
-        def fake_X(self, n_samples=None):
+        def fake_X(self, n_fake_samples=None):
             return []  # compute random fake data
 
-        def fake_y(self, n_samples=None):
+        def fake_y(self, n_fake_samples=None):
             return []  # compute random fake data
 
         def save_predictions(self, y_pred, path):
@@ -117,12 +117,12 @@ class Opener(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def fake_X(self, n_samples=None):
+    def fake_X(self, n_fake_samples=None):
         """Generate a fake matrix of features for offline testing.
 
         # Arguments
 
-        n_samples: number of samples to return, all by default
+        n_fake_samples: number of samples to return, all by default
 
         # Returns
 
@@ -131,12 +131,12 @@ class Opener(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def fake_y(self, n_samples=None):
+    def fake_y(self, n_fake_samples=None):
         """Generate a fake target variable vector for offline testing.
 
         # Arguments
 
-        n_samples: number of samples to return, all by default
+        n_fake_samples: number of samples to return, all by default
 
         # Returns
 
@@ -188,18 +188,18 @@ class OpenerWrapper(object):
                    if os.path.isdir(os.path.join(rootpath, subfolder_name))]
         return folders
 
-    def get_X(self, fake_data=False, n_samples=None):
+    def get_X(self, fake_data=False, n_fake_samples=None):
         if fake_data:
             logger.info("loading X from fake data")
-            return self._interface.fake_X(n_samples=n_samples)
+            return self._interface.fake_X(n_fake_samples=n_fake_samples)
         else:
             logger.info("loading X from '{}'".format(self.data_folder_paths))
             return self._interface.get_X(self.data_folder_paths)
 
-    def get_y(self, fake_data=False, n_samples=None):
+    def get_y(self, fake_data=False, n_fake_samples=None):
         if fake_data:
             logger.info("loading y from fake data")
-            return self._interface.fake_y(n_samples=n_samples)
+            return self._interface.fake_y(n_fake_samples=n_fake_samples)
         else:
             logger.info("loading y from '{}'".format(self.data_folder_paths))
             return self._interface.get_y(self.data_folder_paths)
