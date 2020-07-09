@@ -6,6 +6,7 @@ RUN pip3 install --upgrade pip
 RUN pip3 install pillow==6.1.0 pandas==0.24.2 numpy==1.16.4 scikit-learn==0.21.2 lifelines==0.22.1 scipy==1.2.1
 
 ADD ./setup.py /tmp
+ADD ./README.md /tmp
 ADD ./substratools /tmp/substratools
 RUN cd /tmp && pip install .
 
