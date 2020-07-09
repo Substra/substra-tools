@@ -163,7 +163,7 @@ def _generate_cli():
     parser.add_argument(
         '--fake-data-mode', default=FakeDataMode.DISABLED.name,
         choices=[e.name for e in FakeDataMode],
-        help="Set fake data )-",
+        help="Set fake data mode",
     )
     parser.add_argument(
         '--n-fake-samples', type=int, default=None,
