@@ -1,8 +1,8 @@
 FROM nvidia/cuda:9.2-base-ubuntu18.04
 
 ADD ./setup.py /tmp
-ADD ./substratools /tmp/substratools
 ADD ./README.md /tmp
+ADD ./substratools /tmp/substratools
 
 RUN apt-get update; \
     apt-get install -y python3-minimal python3-pip; \
@@ -11,7 +11,5 @@ RUN apt-get update; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/
 
-RUN mkdir -p /sandbox
-ENV PYTHONPATH /sandbox
-
 WORKDIR /sandbox
+ENV PYTHONPATH /sandbox
