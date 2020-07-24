@@ -101,7 +101,6 @@ def test_train_fake_data():
 @pytest.mark.parametrize("fake_data,expected_pred,n_fake_samples", [
     (False, 'X', None),
     (True, ['Xfake'], 1),
-    (True, 'Xfake', None),
 ])
 def test_predict(fake_data, expected_pred, n_fake_samples, workdir, create_models):
     _, model_filenames = create_models

@@ -55,10 +55,10 @@ class Opener(abc.ABC):
                 for folder in folders
             ]
 
-        def fake_X(self, n_samples=None):
+        def fake_X(self, n_samples):
             return []  # compute random fake data
 
-        def fake_y(self, n_samples=None):
+        def fake_y(self, n_samples):
             return []  # compute random fake data
 
         def save_predictions(self, y_pred, path):
@@ -117,12 +117,12 @@ class Opener(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def fake_X(self, n_samples=None):
+    def fake_X(self, n_samples):
         """Generate a fake matrix of features for offline testing.
 
         # Arguments
 
-        n_samples: number of samples to return
+        n_samples (int): number of samples to return
 
         # Returns
 
@@ -131,12 +131,12 @@ class Opener(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def fake_y(self, n_samples=None):
+    def fake_y(self, n_samples):
         """Generate a fake target variable vector for offline testing.
 
         # Arguments
 
-        n_samples: number of samples to return
+        n_samples (int): number of samples to return
 
         # Returns
 

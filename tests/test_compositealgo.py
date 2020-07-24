@@ -134,19 +134,24 @@ def test_train_input_head_trunk_models(create_models, dummy_wrapper):
 
 
 def test_train_fake_data(dummy_wrapper):
-    head_model, trunk_model = dummy_wrapper.train(fake_data=True)
+    head_model, trunk_model = dummy_wrapper.train(fake_data=True, n_fake_samples=2)
     assert head_model['value'] == 1
     assert trunk_model['value'] == -1
 
 
-@pytest.mark.parametrize("fake_data,expected_pred", [
-    (False, []),
-    (True, []),
+@pytest.mark.parametrize("fake_data,n_fake_samples,expected_pred", [
+    (False, 0, []),
+    (True, 1, []),
 ])
-def test_predict(fake_data, expected_pred, create_models, dummy_wrapper):
+def test_predict(fake_data, n_fake_samples, expected_pred, create_models, dummy_wrapper):
     _, _, head_filename, trunk_filename = create_models
 
-    pred = dummy_wrapper.predict(head_filename, trunk_filename, fake_data=fake_data)
+    pred = dummy_wrapper.predict(
+        head_filename,
+        trunk_filename,
+        fake_data=fake_data,
+        n_fake_samples=n_fake_samples,
+    )
     assert pred == expected_pred
 
 
