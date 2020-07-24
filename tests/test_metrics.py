@@ -58,10 +58,10 @@ def test_execute(load_metrics_module):
 
 @pytest.mark.parametrize("fake_data_mode,expected_score", [
     ([], 15),
-    (['--fake-data'], 0),
-    (['--fake-data-mode', metrics.FakeDataMode.DISABLED.name], 15),
-    (['--fake-data-mode', metrics.FakeDataMode.FAKE_Y.name], 12),
-    (['--fake-data-mode', metrics.FakeDataMode.FAKE_Y_PRED.name], 0),
+    (['--fake-data', '--n-fake-samples', '3'], 0),
+    (['--fake-data-mode', metrics.FakeDataMode.DISABLED.name, '--n-fake-samples', '3'], 15),
+    (['--fake-data-mode', metrics.FakeDataMode.FAKE_Y.name, '--n-fake-samples', '3'], 12),
+    (['--fake-data-mode', metrics.FakeDataMode.FAKE_Y_PRED.name, '--n-fake-samples', '3'], 0),
 ])
 def test_execute_fake_data_modes(fake_data_mode, expected_score,
                                  load_metrics_module):
