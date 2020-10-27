@@ -41,12 +41,15 @@ class OpenerWorkspace(Workspace):
     def __init__(self,
                  dirpath=None,
                  input_data_folder_path=None,
+                 input_data_folder_order=None,
                  input_predictions_path=None,
                  output_predictions_path=None, ):
         super().__init__(dirpath=dirpath)
 
         self.input_data_folder_path = input_data_folder_path or \
             self._get_default_path(DEFAULT_INPUT_DATA_FOLDER_PATH)
+
+        self.input_data_folder_order = input_data_folder_order or []
 
         self.input_predictions_path = input_predictions_path or \
             self._get_default_path(DEFAULT_INPUT_PREDICTIONS_PATH)
@@ -103,6 +106,7 @@ class AlgoWorkspace(OpenerWorkspace):
     def __init__(self,
                  dirpath=None,
                  input_data_folder_path=None,
+                 input_data_folder_order=None,
                  input_models_folder_path=None,
                  input_predictions_path=None,
                  output_model_path=None,
@@ -110,6 +114,7 @@ class AlgoWorkspace(OpenerWorkspace):
                  log_path=None, ):
         super().__init__(dirpath=dirpath,
                          input_data_folder_path=input_data_folder_path,
+                         input_data_folder_order=input_data_folder_order,
                          input_predictions_path=input_predictions_path,
                          output_predictions_path=output_predictions_path, )
 
@@ -139,6 +144,7 @@ class CompositeAlgoWorkspace(OpenerWorkspace):
     def __init__(self,
                  dirpath=None,
                  input_data_folder_path=None,
+                 input_data_folder_order=None,
                  input_models_folder_path=None,
                  input_predictions_path=None,
                  output_models_folder_path=None,
@@ -148,6 +154,7 @@ class CompositeAlgoWorkspace(OpenerWorkspace):
                  log_path=None, ):
         super().__init__(dirpath=dirpath,
                          input_data_folder_path=input_data_folder_path,
+                         input_data_folder_order=input_data_folder_order,
                          input_predictions_path=input_predictions_path,
                          output_predictions_path=output_predictions_path, )
 

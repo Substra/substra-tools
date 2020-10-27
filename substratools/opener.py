@@ -183,9 +183,19 @@ class OpenerWrapper(object):
     @property
     def data_folder_paths(self):
         rootpath = self._workspace.input_data_folder_path
-        folders = [os.path.join(rootpath, subfolder_name)
-                   for subfolder_name in os.listdir(rootpath)
+        requested_folders_order = self._workspace.input_data_folder_order
+
+        folders = [subfolder_name for subfolder_name in os.listdir(rootpath)
                    if os.path.isdir(os.path.join(rootpath, subfolder_name))]
+
+        if requested_folders_order:
+            assert set(folders) == set(requested_folders_order)
+            folders = [os.path.join(rootpath, subfolder_name)
+                       for subfolder_name in requested_folders_order]
+        else:
+            folders = [os.path.join(rootpath, subfolder_name)
+                       for subfolder_name in sorted(folders)]
+
         return folders
 
     def get_X(self, fake_data=False, n_fake_samples=None):

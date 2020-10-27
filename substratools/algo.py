@@ -285,6 +285,7 @@ def _generate_algo_cli(interface):
     def _algo_from_args(args):
         workspace = AlgoWorkspace(
             input_data_folder_path=args.data_samples_path,
+            input_data_folder_order=args.data_samples_order,
             input_models_folder_path=args.models_path,
             log_path=args.log_path,
             output_model_path=args.output_model_path,
@@ -313,6 +314,11 @@ def _generate_algo_cli(interface):
         _parser.add_argument(
             '--data-samples-path', default=None,
             help="Define train/test data samples folder path",
+        )
+        _parser.add_argument(
+            '--data-samples-order', default=[],
+            nargs='*',
+            help="Relative order of data samples"
         )
         _parser.add_argument(
             '--models-path', default=None,
@@ -689,6 +695,7 @@ def _generate_composite_algo_cli(interface):
     def _algo_from_args(args):
         workspace = CompositeAlgoWorkspace(
             input_data_folder_path=args.data_samples_path,
+            input_data_folder_order=args.data_samples_order,
             input_models_folder_path=args.input_models_path,
             output_models_folder_path=args.output_models_path,
             output_head_model_filename=args.output_head_model_filename,
@@ -719,6 +726,11 @@ def _generate_composite_algo_cli(interface):
         _parser.add_argument(
             '--data-samples-path', default=None,
             help="Define train/test data samples folder path",
+        )
+        _parser.add_argument(
+            '--data-samples-order', default=[],
+            nargs='*',
+            help="Relative order of data samples"
         )
         _parser.add_argument(
             '--input-models-path', default=None,
