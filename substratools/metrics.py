@@ -170,8 +170,9 @@ def _generate_cli():
         help="Number of fake samples if fake data is used.",
     )
     parser.add_argument(
-        '--data-samples-path', default=None,
-        help="Define train/test data samples folder path",
+        '--data-sample-paths', default=[],
+        nargs='*',
+        help="Define train/test data samples folder paths",
     )
     parser.add_argument(
         '--input-predictions-path', default=None,
@@ -209,7 +210,7 @@ def execute(interface=None, sysargs=None):
     args = cli.parse_args(sysargs)
 
     workspace = MetricsWorkspace(
-        input_data_folder_path=args.data_samples_path,
+        input_data_folder_paths=args.data_sample_paths,
         input_predictions_path=args.input_predictions_path,
         log_path=args.log_path,
         output_perf_path=args.output_perf_path,

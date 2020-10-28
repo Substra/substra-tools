@@ -52,7 +52,7 @@ def test_score():
 
 
 def test_execute(load_metrics_module):
-    s = metrics.execute()
+    s = metrics.execute(sysargs=[])
     assert s == 15
 
 
