@@ -34,19 +34,29 @@ class Workspace(abc.ABC):
     def _get_default_path(self, path):
         return os.path.join(self._workdir, path)
 
+    def _get_default_subpaths(self, path):
+        rootpath = os.path.join(self._workdir, path)
+        if os.path.isdir(rootpath):
+            return [
+                os.path.join(rootpath, subfolder)
+                for subfolder in os.listdir(rootpath)
+                if os.path.isdir(os.path.join(rootpath, subfolder))
+            ]
+        return []
+
 
 class OpenerWorkspace(Workspace):
     """Filesystem workspace required by the opener."""
 
     def __init__(self,
                  dirpath=None,
-                 input_data_folder_path=None,
+                 input_data_folder_paths=None,
                  input_predictions_path=None,
                  output_predictions_path=None, ):
         super().__init__(dirpath=dirpath)
 
-        self.input_data_folder_path = input_data_folder_path or \
-            self._get_default_path(DEFAULT_INPUT_DATA_FOLDER_PATH)
+        self.input_data_folder_paths = input_data_folder_paths or \
+            self._get_default_subpaths(DEFAULT_INPUT_DATA_FOLDER_PATH)
 
         self.input_predictions_path = input_predictions_path or \
             self._get_default_path(DEFAULT_INPUT_PREDICTIONS_PATH)
@@ -54,9 +64,8 @@ class OpenerWorkspace(Workspace):
         self.output_predictions_path = output_predictions_path or \
             self._get_default_path(DEFAULT_OUTPUT_PREDICTIONS_PATH)
 
-        dirs = [
-            self.input_data_folder_path,
-        ]
+        dirs = []
+        dirs.extend(self.input_data_folder_paths)
         paths = [
             self.input_predictions_path,
             self.output_predictions_path,
@@ -72,12 +81,12 @@ class MetricsWorkspace(OpenerWorkspace):
 
     def __init__(self,
                  dirpath=None,
-                 input_data_folder_path=None,
+                 input_data_folder_paths=None,
                  input_predictions_path=None,
                  output_perf_path=None,
                  log_path=None, ):
         super().__init__(dirpath=dirpath,
-                         input_data_folder_path=input_data_folder_path,
+                         input_data_folder_paths=input_data_folder_paths,
                          input_predictions_path=input_predictions_path, )
 
         self.output_perf_path = output_perf_path or \
@@ -102,14 +111,14 @@ class AlgoWorkspace(OpenerWorkspace):
 
     def __init__(self,
                  dirpath=None,
-                 input_data_folder_path=None,
+                 input_data_folder_paths=None,
                  input_models_folder_path=None,
                  input_predictions_path=None,
                  output_model_path=None,
                  output_predictions_path=None,
                  log_path=None, ):
         super().__init__(dirpath=dirpath,
-                         input_data_folder_path=input_data_folder_path,
+                         input_data_folder_paths=input_data_folder_paths,
                          input_predictions_path=input_predictions_path,
                          output_predictions_path=output_predictions_path, )
 
@@ -138,7 +147,7 @@ class AlgoWorkspace(OpenerWorkspace):
 class CompositeAlgoWorkspace(OpenerWorkspace):
     def __init__(self,
                  dirpath=None,
-                 input_data_folder_path=None,
+                 input_data_folder_paths=None,
                  input_models_folder_path=None,
                  input_predictions_path=None,
                  output_models_folder_path=None,
@@ -147,7 +156,7 @@ class CompositeAlgoWorkspace(OpenerWorkspace):
                  output_predictions_path=None,
                  log_path=None, ):
         super().__init__(dirpath=dirpath,
-                         input_data_folder_path=input_data_folder_path,
+                         input_data_folder_paths=input_data_folder_paths,
                          input_predictions_path=input_predictions_path,
                          output_predictions_path=output_predictions_path, )
 

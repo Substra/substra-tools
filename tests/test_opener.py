@@ -5,6 +5,7 @@ import pytest
 from substratools import exceptions
 from substratools.opener import load_from_module
 from substratools.utils import import_module
+from substratools.workspace import DEFAULT_INPUT_DATA_FOLDER_PATH
 
 
 @pytest.fixture
@@ -122,11 +123,11 @@ class MyOpener(Opener):
     o = load_from_module()
 
     # create some data folders
-    data_root_path = o._workspace.input_data_folder_path
+    data_root_path = os.path.join(o._workspace._workdir, DEFAULT_INPUT_DATA_FOLDER_PATH)
     data_paths = [os.path.join(data_root_path, str(i)) for i in range(5)]
     [os.makedirs(p) for p in data_paths]
 
-    o.data_folders = data_paths
+    o._workspace.input_data_folder_paths = data_paths
     assert o.get_X() == 'Xclass'
 
 
