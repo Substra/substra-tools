@@ -13,6 +13,8 @@ deploy:
   distributions: 'sdist bdist_wheel'
   on:
     tags: true
+  before_deploy:
+    - pip install -U twine wheel setuptools
 
 script:
   - pip install flake8
