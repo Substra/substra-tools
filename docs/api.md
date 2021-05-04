@@ -30,11 +30,11 @@ import substratools as tools
 
 
 class DummyAlgo(tools.Algo):
-    def train(self, X, y, models, rank):
+    def train(self, X, y, models, rank, metadata):
         new_model = None
         return new_model
 
-    def predict(self, X, model):
+    def predict(self, X, model, metadata):
         predictions = 0
         return predictions
 
@@ -86,8 +86,8 @@ X = o.get_X(["dataset/train/train1"])
 y = o.get_y(["dataset/train/train1"])
 
 a = algo.MyAlgo()
-model = a.train(X, y, None, None, 0)
-y_pred = a.predict(X, model)
+model = a.train(X, y, None, None, 0, None)
+y_pred = a.predict(X, model, None)
 ```
 
 
@@ -99,7 +99,7 @@ The builtins True and False are the only two instances of the class bool.
 The class bool is a subclass of the class int, and cannot be subclassed.
 ## train
 ```python
-Algo.train(self, X, y, models, rank)
+Algo.train(self, X, y, models, rank, metadata)
 ```
 Train model and produce new model from train data.
 
@@ -113,6 +113,7 @@ __Arguments__
 - __y__: training data samples labels loaded with `Opener.get_y()`.
 - __models__: list or generator of models loaded with `Algo.load_model()`.
 - __rank__: rank of the training task.
+- __metadata__: task metadata
 
 __Returns__
 
@@ -121,7 +122,7 @@ __Returns__
 
 ## predict
 ```python
-Algo.predict(self, X, model)
+Algo.predict(self, X, model, metadata)
 ```
 Get predictions from test data.
 
@@ -133,6 +134,7 @@ __Arguments__
 
 - __X__: testing data samples loaded with `Opener.get_X()`.
 - __model__: input model load with `Algo.load_model()` used for predictions.
+- __metadata__: task metadata
 
 __Returns__
 
@@ -203,12 +205,12 @@ import substratools as tools
 
 
 class DummyCompositeAlgo(tools.CompositeAlgo):
-    def train(self, X, y, head_model, trunk_model, rank):
+    def train(self, X, y, head_model, trunk_model, rank, metadata):
         new_head_model = None
         new_trunk_model = None
         return new_head_model, new_trunk_model
 
-    def predict(self, X, head_model, trunk_model):
+    def predict(self, X, head_model, trunk_model, metadata):
         predictions = 0
         return predictions
 
@@ -267,13 +269,13 @@ X = o.get_X(["dataset/train/train1"])
 y = o.get_y(["dataset/train/train1"])
 
 a = composite_algo.MyCompositeAlgo()
-head_model, trunk_model = a.train(X, y, None, None, 0)
-y_pred = a.predict(X, head_model, trunk_model)
+head_model, trunk_model = a.train(X, y, None, None, 0, None)
+y_pred = a.predict(X, head_model, trunk_model, None)
 ```
 
 ## train
 ```python
-CompositeAlgo.train(self, X, y, head_model, trunk_model, rank)
+CompositeAlgo.train(self, X, y, head_model, trunk_model, rank, metadata)
 ```
 Train model and produce new composite models from train data.
 
@@ -288,6 +290,7 @@ __Arguments__
 - __head_model__: head model loaded with `CompositeAlgo.load_head_model()` (may be None).
 - __trunk_model__: trunk model loaded with `CompositeAlgo.load_trunk_model()` (may be None).
 - __rank__: rank of the training task.
+- __metadata__: task metadata
 
 __Returns__
 
@@ -296,7 +299,7 @@ __Returns__
 
 ## predict
 ```python
-CompositeAlgo.predict(self, X, head_model, trunk_model)
+CompositeAlgo.predict(self, X, head_model, trunk_model, metadata)
 ```
 Get predictions from test data.
 
@@ -309,6 +312,7 @@ __Arguments__
 - __X__: testing data samples loaded with `Opener.get_X()`.
 - __head_model__: head model loaded with `CompositeAlgo.load_head_model()`.
 - __trunk_model__: trunk model loaded with `CompositeAlgo.load_trunk_model()`.
+- __metadata__: task metadata
 
 __Returns__
 
@@ -414,7 +418,7 @@ import substratools as tools
 
 
 class DummyAggregateAlgo(tools.AggregateAlgo):
-    def aggregate(self, models, rank):
+    def aggregate(self, models, rank, metadata):
         new_model = None
         return new_model
 
@@ -464,7 +468,7 @@ a = MyAggregateAlgo()
 model_1 = a.load_model('./sandbox/models/model_1')
 model_2 = a.load_model('./sandbox/models/model_2')
 
-aggregated_model = a.aggregate([model_1, model_2], 0)
+aggregated_model = a.aggregate([model_1, model_2], 0, None)
 ```
 
 ## use_models_generator
@@ -475,7 +479,7 @@ The builtins True and False are the only two instances of the class bool.
 The class bool is a subclass of the class int, and cannot be subclassed.
 ## aggregate
 ```python
-AggregateAlgo.aggregate(self, models, rank)
+AggregateAlgo.aggregate(self, models, rank, metadata)
 ```
 Aggregate models and produce a new model.
 
@@ -487,6 +491,7 @@ __Arguments__
 
 - __models__: list of models loaded with `AggregateAlgo.load_model()`.
 - __rank__: rank of the aggregate task.
+- __metadata__: task metadata
 
 __Returns__
 

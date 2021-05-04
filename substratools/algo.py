@@ -4,6 +4,7 @@ import argparse
 import logging
 import os
 import sys
+import json
 
 from substratools import opener, utils, exceptions
 from substratools.workspace import (AlgoWorkspace, CompositeAlgoWorkspace,
@@ -43,11 +44,11 @@ class Algo(abc.ABC):
 
 
     class DummyAlgo(tools.Algo):
-        def train(self, X, y, models, rank):
+        def train(self, X, y, models, rank, metadata):
             new_model = None
             return new_model
 
-        def predict(self, X, model):
+        def predict(self, X, model, metadata):
             predictions = 0
             return predictions
 
@@ -96,8 +97,8 @@ class Algo(abc.ABC):
     y = o.get_y(["dataset/train/train1"])
 
     a = algo.MyAlgo()
-    model = a.train(X, y, None, None, 0)
-    y_pred = a.predict(X, model)
+    model = a.train(X, y, None, None, 0, None)
+    y_pred = a.predict(X, model, None)
     ```
 
     """
@@ -105,7 +106,7 @@ class Algo(abc.ABC):
     use_models_generator = False
 
     @abc.abstractmethod
-    def train(self, X, y, models, rank):
+    def train(self, X, y, models, rank, metadata):
         """Train model and produce new model from train data.
 
         This task corresponds to the creation of a traintuple on the Substra
@@ -117,6 +118,7 @@ class Algo(abc.ABC):
         y: training data samples labels loaded with `Opener.get_y()`.
         models: list or generator of models loaded with `Algo.load_model()`.
         rank: rank of the training task.
+        metadata: task metadata
 
         # Returns
 
@@ -125,7 +127,7 @@ class Algo(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def predict(self, X, model):
+    def predict(self, X, model, metadata):
         """Get predictions from test data.
 
         This task corresponds to the creation of a testtuple on the Substra
@@ -135,6 +137,7 @@ class Algo(abc.ABC):
 
         X: testing data samples loaded with `Opener.get_X()`.
         model: input model load with `Algo.load_model()` used for predictions.
+        metadata: task metadata
 
         # Returns
 
@@ -237,7 +240,7 @@ class AlgoWrapper(object):
             return self._load_models_as_generator(model_names)
         return self._load_models_as_list(model_names)
 
-    def train(self, model_names, rank=0, fake_data=False, n_fake_samples=None):
+    def train(self, model_names, rank=0, metadata=None, fake_data=False, n_fake_samples=None):
         """Train method wrapper."""
         # load data from opener
         X = self._opener_wrapper.get_X(fake_data, n_fake_samples)
@@ -250,7 +253,7 @@ class AlgoWrapper(object):
         logger.info("launching training task")
         method = (self._interface.train if not fake_data else
                   self._interface._train_fake_data)
-        model = method(X, y, models, rank)
+        model = method(X, y, models, rank, metadata)
 
         # serialize output model and save it to workspace
         logger.info("saving output model to '{}'".format(
@@ -260,7 +263,7 @@ class AlgoWrapper(object):
 
         return model
 
-    def predict(self, model_name, fake_data=False, n_fake_samples=None):
+    def predict(self, model_name, metadata=None, fake_data=False, n_fake_samples=None):
         """Predict method wrapper."""
         # load data from opener
         X = self._opener_wrapper.get_X(fake_data, n_fake_samples)
@@ -272,7 +275,7 @@ class AlgoWrapper(object):
         logger.info("launching predict task")
         method = (self._interface.predict if not fake_data else
                   self._interface._predict_fake_data)
-        pred = method(X, model)
+        pred = method(X, model, metadata)
 
         # save predictions
         self._opener_wrapper.save_predictions(pred)
@@ -340,11 +343,17 @@ def _generate_algo_cli(interface):
             help="Enable debug mode (logs printed in stdout)",
         )
 
+        _parser.add_argument(
+            '--metadata', type=json.loads,
+            help="Add task dict metadata",
+        )
+
     def _train(args):
         algo_wrapper = _algo_from_args(args)
         algo_wrapper.train(
             args.models,
             args.rank,
+            args.metadata,
             args.fake_data,
             args.n_fake_samples
         )
@@ -367,6 +376,7 @@ def _generate_algo_cli(interface):
         algo_wrapper = _algo_from_args(args)
         algo_wrapper.predict(
             args.model,
+            args.metadata,
             args.fake_data,
             args.n_fake_samples
         )
@@ -408,12 +418,12 @@ class CompositeAlgo(abc.ABC):
 
 
     class DummyCompositeAlgo(tools.CompositeAlgo):
-        def train(self, X, y, head_model, trunk_model, rank):
+        def train(self, X, y, head_model, trunk_model, rank, metadata):
             new_head_model = None
             new_trunk_model = None
             return new_head_model, new_trunk_model
 
-        def predict(self, X, head_model, trunk_model):
+        def predict(self, X, head_model, trunk_model, metadata):
             predictions = 0
             return predictions
 
@@ -469,13 +479,13 @@ class CompositeAlgo(abc.ABC):
     y = o.get_y(["dataset/train/train1"])
 
     a = composite_algo.MyCompositeAlgo()
-    head_model, trunk_model = a.train(X, y, None, None, 0)
-    y_pred = a.predict(X, head_model, trunk_model)
+    head_model, trunk_model = a.train(X, y, None, None, 0, None)
+    y_pred = a.predict(X, head_model, trunk_model, None)
     ```
     """
 
     @abc.abstractmethod
-    def train(self, X, y, head_model, trunk_model, rank):
+    def train(self, X, y, head_model, trunk_model, rank, metadata):
         """Train model and produce new composite models from train data.
 
         This task corresponds to the creation of a composite traintuple on the Substra
@@ -488,6 +498,7 @@ class CompositeAlgo(abc.ABC):
         head_model: head model loaded with `CompositeAlgo.load_head_model()` (may be None).
         trunk_model: trunk model loaded with `CompositeAlgo.load_trunk_model()` (may be None).
         rank: rank of the training task.
+        metadata: task metadata
 
         # Returns
 
@@ -496,7 +507,7 @@ class CompositeAlgo(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def predict(self, X, head_model, trunk_model):
+    def predict(self, X, head_model, trunk_model, metadata):
         """Get predictions from test data.
 
         This task corresponds to the creation of a composite testtuple on the Substra
@@ -507,6 +518,7 @@ class CompositeAlgo(abc.ABC):
         X: testing data samples loaded with `Opener.get_X()`.
         head_model: head model loaded with `CompositeAlgo.load_head_model()`.
         trunk_model: trunk model loaded with `CompositeAlgo.load_trunk_model()`.
+        metadata: task metadata
 
         # Returns
 
@@ -633,7 +645,7 @@ class CompositeAlgoWrapper(AlgoWrapper):
         self._assert_output_model_exists(self._workspace.output_head_model_path, 'head')
 
     def train(self, input_head_model_filename=None, input_trunk_model_filename=None,
-              rank=0, fake_data=False, n_fake_samples=None):
+              rank=0, metadata=None, fake_data=False, n_fake_samples=None):
         """Train method wrapper."""
         # load data from opener
         X = self._opener_wrapper.get_X(fake_data, n_fake_samples)
@@ -647,7 +659,7 @@ class CompositeAlgoWrapper(AlgoWrapper):
         logger.info("launching training task")
         method = (self._interface.train if not fake_data else
                   self._interface._train_fake_data)
-        head_model, trunk_model = method(X, y, head_model, trunk_model, rank)
+        head_model, trunk_model = method(X, y, head_model, trunk_model, rank, metadata)
 
         # serialize output head and trunk models and save them to workspace
         output_head_model_path = self._workspace.output_head_model_path
@@ -663,7 +675,7 @@ class CompositeAlgoWrapper(AlgoWrapper):
         return head_model, trunk_model
 
     def predict(self, input_head_model_filename, input_trunk_model_filename,
-                fake_data=False, n_fake_samples=None):
+                metadata=None, fake_data=False, n_fake_samples=None):
         """Predict method wrapper."""
         # load data from opener
         X = self._opener_wrapper.get_X(fake_data, n_fake_samples)
@@ -677,7 +689,7 @@ class CompositeAlgoWrapper(AlgoWrapper):
         logger.info("launching predict task")
         method = (self._interface.predict if not fake_data else
                   self._interface._predict_fake_data)
-        pred = method(X, head_model, trunk_model)
+        pred = method(X, head_model, trunk_model, metadata)
 
         # save predictions
         self._opener_wrapper.save_predictions(pred)
@@ -756,12 +768,18 @@ def _generate_composite_algo_cli(interface):
             help="Define output models folder path",
         )
 
+        _parser.add_argument(
+            '--metadata', type=json.loads,
+            help="Add task dict metadata",
+        )
+
     def _train(args):
         algo_wrapper = _algo_from_args(args)
         algo_wrapper.train(
             args.input_head_model_filename,
             args.input_trunk_model_filename,
             args.rank,
+            args.metadata,
             args.fake_data,
             args.n_fake_samples
         )
@@ -789,6 +807,7 @@ def _generate_composite_algo_cli(interface):
         algo_wrapper.predict(
             args.input_head_model_filename,
             args.input_trunk_model_filename,
+            args.metadata,
             args.fake_data,
             args.n_fake_samples
         )
@@ -835,7 +854,7 @@ class AggregateAlgo(abc.ABC):
 
 
     class DummyAggregateAlgo(tools.AggregateAlgo):
-        def aggregate(self, models, rank):
+        def aggregate(self, models, rank, metadata):
             new_model = None
             return new_model
 
@@ -882,14 +901,14 @@ class AggregateAlgo(abc.ABC):
     model_1 = a.load_model('./sandbox/models/model_1')
     model_2 = a.load_model('./sandbox/models/model_2')
 
-    aggregated_model = a.aggregate([model_1, model_2], 0)
+    aggregated_model = a.aggregate([model_1, model_2], 0, None)
     ```
     """
 
     use_models_generator = False
 
     @abc.abstractmethod
-    def aggregate(self, models, rank):
+    def aggregate(self, models, rank, metadata):
         """Aggregate models and produce a new model.
 
         This task corresponds to the creation of an aggregate tuple on the Substra
@@ -899,6 +918,7 @@ class AggregateAlgo(abc.ABC):
 
         models: list of models loaded with `AggregateAlgo.load_model()`.
         rank: rank of the aggregate task.
+        metadata: task metadata
 
         # Returns
 
@@ -974,14 +994,14 @@ class AggregateAlgoWrapper(object):
             return self._load_models_as_generator(model_names)
         return self._load_models_as_list(model_names)
 
-    def aggregate(self, model_names, rank=0):
+    def aggregate(self, model_names, rank=0, metadata=None):
         """Aggregate method wrapper."""
         # load models
         models = self._load_models(model_names)
 
         # train new model
         logger.info("launching aggregate task")
-        model = self._interface.aggregate(models, rank)
+        model = self._interface.aggregate(models, rank, metadata)
 
         # serialize output model and save it to workspace
         logger.info("saving output model to '{}'".format(
@@ -1024,11 +1044,17 @@ def _generate_aggregate_algo_cli(interface):
             help="Enable debug mode (logs printed in stdout)",
         )
 
+        _parser.add_argument(
+            '--metadata', type=json.loads,
+            help="Add task dict metadata",
+        )
+
     def _aggregate(args):
         algo_wrapper = _algo_from_args(args)
         algo_wrapper.aggregate(
             args.models,
             args.rank,
+            args.metadata
         )
 
     parser = argparse.ArgumentParser()

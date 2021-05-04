@@ -41,12 +41,12 @@ class DummyOpener(Opener):
 
 
 class DummyAlgo(Algo):
-    def train(self, X, y, models, rank):
+    def train(self, X, y, models, rank, metadata):
         total = sum([m['i'] for m in models])
         new_model = {'i': len(models) + 1, 'total': total}
         return new_model
 
-    def predict(self, X, model):
+    def predict(self, X, model, metadata):
         return {'sum': model['i']}
 
     def load_model(self, path):

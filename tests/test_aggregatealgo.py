@@ -8,7 +8,7 @@ import pytest
 
 class DummyAggregateAlgo(algo.AggregateAlgo):
 
-    def aggregate(self, models, rank):
+    def aggregate(self, models, rank, metadata):
         new_model = {'value': 0}
         for m in models:
             new_model['value'] += m['value']

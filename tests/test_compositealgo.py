@@ -14,7 +14,7 @@ def setup(valid_opener):
 
 class DummyCompositeAlgo(algo.CompositeAlgo):
 
-    def train(self, X, y, head_model, trunk_model, rank):
+    def train(self, X, y, head_model, trunk_model, rank, metadata):
         # init phase
         if head_model and trunk_model:
             new_head_model = dict(head_model)
@@ -27,9 +27,14 @@ class DummyCompositeAlgo(algo.CompositeAlgo):
         new_head_model['value'] += 1
         new_trunk_model['value'] -= 1
 
+        if metadata is not None:
+            factor = metadata['factor']
+            new_head_model['value'] *= factor
+            new_trunk_model['value'] *= factor
+
         return new_head_model, new_trunk_model
 
-    def predict(self, X, head_model, trunk_model):
+    def predict(self, X, head_model, trunk_model, metadata):
         pred = list(range(head_model['value'], trunk_model['value']))
         return pred
 
@@ -109,7 +114,7 @@ def create_models(workspace):
     return (
         [head_model, trunk_model],
         workspace.input_models_folder_path,
-        _create_model(head_model,  'head'),
+        _create_model(head_model, 'head'),
         _create_model(trunk_model, 'trunk')
     )
 
@@ -123,6 +128,13 @@ def test_train_no_model(dummy_wrapper):
     head_model, trunk_model = dummy_wrapper.train()
     assert head_model['value'] == 1
     assert trunk_model['value'] == -1
+
+
+def test_train_no_model_metadata(dummy_wrapper):
+    factor = 3
+    head_model, trunk_model = dummy_wrapper.train(metadata={'factor': factor})
+    assert head_model['value'] == 1 * factor
+    assert trunk_model['value'] == -1 * factor
 
 
 def test_train_input_head_trunk_models(create_models, dummy_wrapper):
@@ -174,6 +186,37 @@ def test_execute_train(workdir):
     algo.execute(DummyCompositeAlgo(), sysargs=['train'] + common_args)
     assert output_head_model_path.exists()
     assert output_trunk_model_path.exists()
+
+
+def test_execute_train_with_metadata(workdir):
+    output_models_path = workdir / 'output_models'
+    output_head_model_filename = 'head_model'
+    output_trunk_model_filename = 'trunk_model'
+    factor = 2
+    metadata = {'factor': factor}
+
+    output_head_model_path = output_models_path / output_head_model_filename
+    assert not output_head_model_path.exists()
+    output_trunk_model_path = output_models_path / output_trunk_model_filename
+    assert not output_trunk_model_path.exists()
+
+    common_args = [
+        '--output-models-path', str(output_models_path),
+        '--output-head-model-filename', output_head_model_filename,
+        '--output-trunk-model-filename', output_trunk_model_filename,
+        '--metadata', json.dumps(metadata)
+    ]
+
+    algo.execute(DummyCompositeAlgo(), sysargs=['train'] + common_args)
+    assert output_head_model_path.exists()
+    with open(output_head_model_path) as head_model_file:
+        head_model = json.load(head_model_file)
+        assert head_model['value'] == 1 * factor
+
+    assert output_trunk_model_path.exists()
+    with open(output_trunk_model_path) as trunk_model_file:
+        trunk_model = json.load(trunk_model_file)
+        assert trunk_model['value'] == -1 * factor
 
 
 def test_execute_train_multiple_models(workdir, create_models):

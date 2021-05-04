@@ -14,17 +14,22 @@ def setup(valid_opener):
 
 class DummyAlgo(algo.Algo):
 
-    def train(self, X, y, models, rank):
+    def train(self, X, y, models, rank, metadata):
         new_model = {'value': 0}
         for m in models:
             assert isinstance(m, dict)
             assert 'value' in m
             new_model['value'] += m['value']
+
         return new_model
 
-    def predict(self, X, model):
+    def predict(self, X, model, metadata):
         pred = model['value']
-        return X * pred
+        if metadata is not None:
+            factor = metadata['factor']
+        else:
+            factor = 1
+        return X * pred * factor
 
     def load_model(self, path):
         with open(path, 'r') as f:
@@ -98,16 +103,17 @@ def test_train_fake_data():
     assert model['value'] == 0
 
 
-@pytest.mark.parametrize("fake_data,expected_pred,n_fake_samples", [
-    (False, 'X', None),
-    (True, ['Xfake'], 1),
+@pytest.mark.parametrize("fake_data,expected_pred,n_fake_samples,metadata", [
+    (False, 'X', None, None),
+    (False, 'XX', 1, {'factor': 2}),
+    (True, ['Xfake'], 1, None),
 ])
-def test_predict(fake_data, expected_pred, n_fake_samples, workdir, create_models):
+def test_predict(fake_data, expected_pred, n_fake_samples, metadata, workdir, create_models):
     _, model_filenames = create_models
 
     a = DummyAlgo()
     wp = algo.AlgoWrapper(a)
-    pred = wp.predict(model_filenames[0], fake_data=fake_data, n_fake_samples=n_fake_samples)
+    pred = wp.predict(model_filenames[0], metadata=metadata, fake_data=fake_data, n_fake_samples=n_fake_samples)
     assert pred == expected_pred
 
 
