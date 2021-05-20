@@ -17,6 +17,9 @@ DEFAULT_OUTPUT_MODEL_PATH = 'model/model'
 DEFAULT_OUTPUT_PREDICTIONS_PATH = 'pred/pred'
 DEFAULT_OUTPUT_PERF_PATH = 'pred/perf.json'
 DEFAULT_LOG_PATH = 'model/log_model.log'
+DEFAULT_CHAINKEYS_PATH = 'chainkeys/'
+DEFAULT_COMPUTE_PLAN_PATH = 'local/'
+
 
 # to not conflict with existing default global vars
 DEFAULT_SRC_MODELS_FOLDER_PATH = 'input_models/'
@@ -116,7 +119,10 @@ class AlgoWorkspace(OpenerWorkspace):
                  input_predictions_path=None,
                  output_model_path=None,
                  output_predictions_path=None,
-                 log_path=None, ):
+                 log_path=None,
+                 chainkeys_path=None,
+                 compute_plan_path=None,
+                ):
         super().__init__(dirpath=dirpath,
                          input_data_folder_paths=input_data_folder_paths,
                          input_predictions_path=input_predictions_path,
@@ -131,8 +137,16 @@ class AlgoWorkspace(OpenerWorkspace):
         self.log_path = log_path or \
             self._get_default_path(DEFAULT_LOG_PATH)
 
+        self.chainkeys_path = chainkeys_path or \
+            self._get_default_path(DEFAULT_CHAINKEYS_PATH)
+
+        self.compute_plan_path = compute_plan_path or \
+            self._get_default_path(DEFAULT_COMPUTE_PLAN_PATH)
+
         dirs = [
             self.input_models_folder_path,
+            self.chainkeys_path,
+            self.compute_plan_path,
         ]
         paths = [
             self.output_model_path,
@@ -154,7 +168,10 @@ class CompositeAlgoWorkspace(OpenerWorkspace):
                  output_head_model_filename=None,
                  output_trunk_model_filename=None,
                  output_predictions_path=None,
-                 log_path=None, ):
+                 log_path=None,
+                 chainkeys_path=None,
+                 compute_plan_path=None,
+                ):
         super().__init__(dirpath=dirpath,
                          input_data_folder_paths=input_data_folder_paths,
                          input_predictions_path=input_predictions_path,
@@ -179,9 +196,17 @@ class CompositeAlgoWorkspace(OpenerWorkspace):
         self.log_path = log_path or \
             self._get_default_path(DEFAULT_LOG_PATH)
 
+        self.chainkeys_path = chainkeys_path or \
+            self._get_default_path(DEFAULT_CHAINKEYS_PATH)
+
+        self.compute_plan_path = compute_plan_path or \
+            self._get_default_path(DEFAULT_COMPUTE_PLAN_PATH)
+
         dirs = [
             self.input_models_folder_path,
             self.output_models_folder_path,
+            self.chainkeys_path,
+            self.compute_plan_path,
         ]
         paths = [
             self.log_path,
@@ -199,7 +224,10 @@ class AggregateAlgoWorkspace(Workspace):
                  dirpath=None,
                  input_models_folder_path=None,
                  output_model_path=None,
-                 log_path=None, ):
+                 log_path=None,
+                 chainkeys_path=None,
+                 compute_plan_path=None,
+                ):
         super().__init__(dirpath=dirpath)
 
         self.input_models_folder_path = input_models_folder_path or \
@@ -211,8 +239,16 @@ class AggregateAlgoWorkspace(Workspace):
         self.log_path = log_path or \
             self._get_default_path(DEFAULT_LOG_PATH)
 
+        self.chainkeys_path = chainkeys_path or \
+            self._get_default_path(DEFAULT_CHAINKEYS_PATH)
+
+        self.compute_plan_path = compute_plan_path or \
+            self._get_default_path(DEFAULT_COMPUTE_PLAN_PATH)
+
         dirs = [
             self.input_models_folder_path,
+            self.chainkeys_path,
+            self.compute_plan_path,
         ]
         paths = [
             self.output_model_path,
