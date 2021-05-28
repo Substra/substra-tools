@@ -112,17 +112,18 @@ class MetricsWorkspace(OpenerWorkspace):
 class AlgoWorkspace(OpenerWorkspace):
     """Filesystem workspace for algo execution."""
 
-    def __init__(self,
-                 dirpath=None,
-                 input_data_folder_paths=None,
-                 input_models_folder_path=None,
-                 input_predictions_path=None,
-                 output_model_path=None,
-                 output_predictions_path=None,
-                 log_path=None,
-                 chainkeys_path=None,
-                 compute_plan_path=None,
-                ):
+    def __init__(
+        self,
+        dirpath=None,
+        input_data_folder_paths=None,
+        input_models_folder_path=None,
+        input_predictions_path=None,
+        output_model_path=None,
+        output_predictions_path=None,
+        log_path=None,
+        chainkeys_path=None,
+        compute_plan_path=None,
+    ):
         super().__init__(dirpath=dirpath,
                          input_data_folder_paths=input_data_folder_paths,
                          input_predictions_path=input_predictions_path,
@@ -159,19 +160,20 @@ class AlgoWorkspace(OpenerWorkspace):
 
 
 class CompositeAlgoWorkspace(OpenerWorkspace):
-    def __init__(self,
-                 dirpath=None,
-                 input_data_folder_paths=None,
-                 input_models_folder_path=None,
-                 input_predictions_path=None,
-                 output_models_folder_path=None,
-                 output_head_model_filename=None,
-                 output_trunk_model_filename=None,
-                 output_predictions_path=None,
-                 log_path=None,
-                 chainkeys_path=None,
-                 compute_plan_path=None,
-                ):
+    def __init__(
+        self,
+        dirpath=None,
+        input_data_folder_paths=None,
+        input_models_folder_path=None,
+        input_predictions_path=None,
+        output_models_folder_path=None,
+        output_head_model_filename=None,
+        output_trunk_model_filename=None,
+        output_predictions_path=None,
+        log_path=None,
+        chainkeys_path=None,
+        compute_plan_path=None,
+    ):
         super().__init__(dirpath=dirpath,
                          input_data_folder_paths=input_data_folder_paths,
                          input_predictions_path=input_predictions_path,
@@ -220,14 +222,15 @@ class CompositeAlgoWorkspace(OpenerWorkspace):
 class AggregateAlgoWorkspace(Workspace):
     """Filesystem workspace for aggregate algo execution."""
 
-    def __init__(self,
-                 dirpath=None,
-                 input_models_folder_path=None,
-                 output_model_path=None,
-                 log_path=None,
-                 chainkeys_path=None,
-                 compute_plan_path=None,
-                ):
+    def __init__(
+        self,
+        dirpath=None,
+        input_models_folder_path=None,
+        output_model_path=None,
+        log_path=None,
+        chainkeys_path=None,
+        compute_plan_path=None,
+    ):
         super().__init__(dirpath=dirpath)
 
         self.input_models_folder_path = input_models_folder_path or \

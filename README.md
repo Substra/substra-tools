@@ -30,13 +30,13 @@ currently based on Python 3.6.
 ### Pull from public docker registry
 
 ```sh
-docker pull substrafoundation/substra-tools
+docker pull gcr.io/connect-314908/connect-tools
 ```
 
 ### Build from source
 
 ```sh
-docker build -t substrafoundation/substra-tools .
+docker build -t gcr.io/connect-314908/connect-tools .
 ```
 
 ## Contributing
@@ -59,7 +59,7 @@ python setup.py test
 Use the following command to generate the python sdk documentation:
 
 ```sh
-pydocmd simple substratools.Algo+ substratools.Metrics+ substratools.Opener+> docs/api.md
+make doc
 ```
 
 Documentation will be available in *docs/* directory.

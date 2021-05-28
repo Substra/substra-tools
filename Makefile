@@ -1,6 +1,6 @@
 .PHONY: pyclean build test doc
 
-IMAGE = substrafoundation/substra-tools
+IMAGE = gcr.io/connect-314908/connect-tools
 DOCS_FILEPATH = docs/api.md
 
 ifeq ($(TAG),)
@@ -18,4 +18,6 @@ test:
 	python setup.py test
 
 doc:
-	pydocmd simple substratools.Algo+ substratools.CompositeAlgo+  substratools.AggregateAlgo+ substratools.Metrics+ substratools.Opener+> $(DOCS_FILEPATH)
+	python -m pydoc substratools.Algo substratools.CompositeAlgo substratools.AggregateAlgo substratools.Metrics substratools.Opener > $(DOCS_FILEPATH)
+	# Replace '| ' by '' to make the doc readable. Portable solution that works on Linux and Mac OS
+	sed -i.bak 's/| //g' '$(DOCS_FILEPATH)' && rm $(DOCS_FILEPATH).bak

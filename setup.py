@@ -34,6 +34,7 @@ setup(
         'Programming Language :: Python :: 3',
         'Topic :: Scientific/Engineering'
     ],
+    python_requires='>=3.6',
     setup_requires=['pytest-runner'],
     tests_require=['flake8', 'pytest', 'pytest-cov', 'pytest-mock'],
     zip_safe=False

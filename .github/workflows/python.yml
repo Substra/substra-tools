@@ -1,0 +1,33 @@
+name: Python
+
+on:
+  push:
+    branches:
+      - "master"
+  pull_request:
+    branches:
+      - "master"
+
+jobs:
+  lint:
+    name: Lint and tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install tools
+        run: pip install flake8
+      - name: Lint
+        run: flake8 substratools
+      - name: Install connect-tools
+        run: pip install -e .[test]
+      - name: Test
+        run: |
+          make test
+      - name: Generate and validate documentation
+        run: |
+          make doc DOCS_FILEPATH=docs/api.md.tmp
+          cmp --silent docs/api.md docs/api.md.tmp
