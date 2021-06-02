@@ -4,7 +4,7 @@ import inspect
 import logging
 import os
 import sys
-
+import time
 from substratools import exceptions
 
 
@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 def configure_logging(path=None, debug_mode=True):
     level = logging.DEBUG if debug_mode else logging.INFO
 
-    formatter = logging.Formatter('%(name)s - %(message)s')
+    formatter = logging.Formatter(fmt='%(asctime)s %(levelname)-6s %(name)s - %(message)s',
+                                  datefmt='%Y-%m-%d %H:%M:%S')
 
     h = logging.StreamHandler()
     h.setLevel(level)
@@ -30,6 +31,27 @@ def configure_logging(path=None, debug_mode=True):
         fh.setFormatter(formatter)
 
         root.addHandler(h)
+
+
+def get_logger(name, path=None, debug_mode=True):
+    new_logger = logging.getLogger(f"substratools.{name}")
+    configure_logging(path, debug_mode)
+    return new_logger
+
+
+class Timer(object):
+    """This decorator prints the execution time for the decorated function."""
+    def __init__(self, module_logger):
+        self.module_logger = module_logger
+
+    def __call__(self, func):
+        def wrapper(*args, **kwargs):
+            start = time.time()
+            result = func(*args, **kwargs)
+            end = time.time()
+            self.module_logger.info("{} ran in {}s".format(func.__qualname__, round(end - start, 2)))
+            return result
+        return wrapper
 
 
 def import_module(module_name, code):

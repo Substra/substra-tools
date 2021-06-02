@@ -1,10 +1,9 @@
 import sys
 
 from substratools import exceptions, Metrics
-from substratools.utils import import_module, load_interface_from_module
+from substratools.utils import import_module, load_interface_from_module, configure_logging, get_logger
 
 import pytest
-
 
 def test_invalid_interface():
     code = """
@@ -32,3 +31,10 @@ def test_empty_module(tmpdir, syspaths):
 
         with pytest.raises(exceptions.EmptyInterface):
             load_interface_from_module('foomod', interface_class=Metrics)
+
+
+def test_get_logger(capfd):
+    logger = get_logger("test")
+    logger.info("message")
+    captured = capfd.readouterr()
+    assert "INFO   substratools.test - message" in captured.err

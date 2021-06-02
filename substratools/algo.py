@@ -249,6 +249,7 @@ class AlgoWrapper(object):
             return self._load_models_as_generator(model_names)
         return self._load_models_as_list(model_names)
 
+    @utils.Timer(logger)
     def train(self, model_names, rank=0, fake_data=False, n_fake_samples=None):
         """Train method wrapper."""
         # load data from opener
@@ -272,6 +273,7 @@ class AlgoWrapper(object):
 
         return model
 
+    @utils.Timer(logger)
     def predict(self, model_name, fake_data=False, n_fake_samples=None):
         """Predict method wrapper."""
         # load data from opener
@@ -664,6 +666,7 @@ class CompositeAlgoWrapper(AlgoWrapper):
     def _assert_output_headmodel_exists(self):
         self._assert_output_model_exists(self._workspace.output_head_model_path, 'head')
 
+    @utils.Timer(logger)
     def train(self, input_head_model_filename=None, input_trunk_model_filename=None,
               rank=0, fake_data=False, n_fake_samples=None):
         """Train method wrapper."""
@@ -694,6 +697,7 @@ class CompositeAlgoWrapper(AlgoWrapper):
 
         return head_model, trunk_model
 
+    @utils.Timer(logger)
     def predict(self, input_head_model_filename, input_trunk_model_filename,
                 fake_data=False, n_fake_samples=None):
         """Predict method wrapper."""
@@ -1028,6 +1032,7 @@ class AggregateAlgoWrapper(object):
             return self._load_models_as_generator(model_names)
         return self._load_models_as_list(model_names)
 
+    @utils.Timer(logger)
     def aggregate(self, model_names, rank=0):
         """Aggregate method wrapper."""
         # load models
