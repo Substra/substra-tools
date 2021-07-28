@@ -1,0 +1,7 @@
+ARG BASE_IMAGE
+
+FROM $BASE_IMAGE
+
+RUN pip3 install \
+    torch==1.9.0 \
+    numpy==1.19.0

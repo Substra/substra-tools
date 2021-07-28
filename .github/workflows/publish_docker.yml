@@ -15,17 +15,27 @@ jobs:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
         service_account_key: ${{ secrets.GCP_SA_KEY }}
 
+    - name: Define variables
+      run: |
+        echo "tag=gcr.io/${{ secrets.GCP_PROJECT_ID }}/connect-tools:${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+
     - name: Configure docker for GCP
       run: gcloud auth configure-docker
 
     - name: Build docker image
-      run:  docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/connect-tools:${GITHUB_REF#refs/*/} .
+      run:  docker build -t ${{ env.tag }} .
+
+    - name: Push image to GCR
+      run:  docker push ${{ env.tag }}
 
     - name: Build docker minimal image
-      run:  docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/connect-tools:${GITHUB_REF#refs/*/}-minimal -f Dockerfile.minimal .
+      run:  docker build -t ${{ env.tag }}-minimal -f Dockerfile.minimal .
 
-    - name: Push to Google Container Registry
-      run:  docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/connect-tools:${GITHUB_REF#refs/*/}
+    - name: Push minimal image to GCR
+      run:  docker push ${{ env.tag }}-minimal
 
-    - name: Push the minimal image to Google Container Registry
-      run:  docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/connect-tools:${GITHUB_REF#refs/*/}-minimal
+    - name: Build docker workflows image
+      run:  docker build -t ${{ env.tag }}-workflows --build-arg BASE_IMAGE=${{ env.tag }} -f Dockerfile.workflows .
+
+    - name: Push workflows image to GCR
+      run:  docker push ${{ env.tag }}-workflows
