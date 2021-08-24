@@ -861,6 +861,7 @@ class AggregateAlgo(abc.ABC):
     following abstract methods:
 
     - #AggregateAlgo.aggregate()
+    - #AggregateAlgo.predict()
     - #AggregateAlgo.load_model()
     - #AggregateAlgo.save_model()
 
@@ -892,6 +893,10 @@ class AggregateAlgo(abc.ABC):
             new_model = None
             return new_model
 
+        def predict(self, X, model):
+            predictions = 0
+            return predictions
+
         def load_model(self, path):
             return json.load(path)
 
@@ -914,10 +919,11 @@ class AggregateAlgo(abc.ABC):
     python <script_path> aggregate --models_path <models_path> --models <model_name> --model <model_name> --debug
     ```
 
-    To see all the available options for the aggregate command, run:
+    To see all the available options for the aggregate and predict commands, run:
 
     ```sh
     python <script_path> aggregate --help
+    python <script_path> predict --help
     ```
 
     # Using a python script
@@ -962,6 +968,36 @@ class AggregateAlgo(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def predict(self, X, model):
+        """Get predictions from test data.
+
+        This task corresponds to the creation of a testtuple on the Substra
+        Platform.
+
+        # Arguments
+
+        X: testing data samples loaded with `Opener.get_X()`.
+        model: input model load with `AggregateAlgo.load_model()` used for predictions.
+
+        # Returns
+
+        predictions: predictions object.
+        """
+        raise NotImplementedError
+
+    def _predict_fake_data(self, *args, **kwargs):
+        """Predict model fake data mode.
+
+        This method is called by the algorithm wrapper when the fake data mode
+        is enabled. In fake data mode, `X` input arg has been replaced by
+        the opener fake data.
+
+        By default, it only calls directly `Algo.predict()` method. Override
+        this method if you want to implement a different behavior.
+        """
+        return self.predict(*args, **kwargs)
+
+    @abc.abstractmethod
     def load_model(self, path):
         """Deserialize model from file.
 
@@ -997,9 +1033,10 @@ class AggregateAlgoWrapper(object):
     """Aggregate algo wrapper to execute an aggregate algo instance on the platform."""
     _DEFAULT_WORKSPACE_CLASS = AggregateAlgoWorkspace
 
-    def __init__(self, interface, workspace=None):
+    def __init__(self, interface, workspace=None, opener_wrapper=None):
         assert isinstance(interface, AggregateAlgo)
         self._workspace = workspace or self._DEFAULT_WORKSPACE_CLASS()
+        self._opener_wrapper = opener_wrapper
         self._interface = interface
 
         self._interface.chainkeys_path = self._workspace.chainkeys_path
@@ -1049,25 +1086,70 @@ class AggregateAlgoWrapper(object):
         self._assert_output_model_exists()
         return model
 
+    @utils.Timer(logger)
+    def predict(self, model_name, fake_data=False, n_fake_samples=None):
+        """Predict method wrapper."""
+        # lazy load of opener wrapper as it is required only for the predict
+        self._opener_wrapper = self._opener_wrapper or \
+            opener.load_from_module(workspace=self._workspace)
+        # load data from opener
+        X = self._opener_wrapper.get_X(fake_data, n_fake_samples)
+
+        # load models
+        model = self._load_model(model_name)
+
+        # get predictions
+        logger.info("launching predict task")
+        method = (self._interface.predict if not fake_data else
+                  self._interface._predict_fake_data)
+        pred = method(X, model)
+
+        # save predictions
+        self._opener_wrapper.save_predictions(pred)
+        return pred
+
 
 def _generate_aggregate_algo_cli(interface):
     """Helper to generate a command line interface client."""
 
     def _algo_from_args(args):
         workspace = AggregateAlgoWorkspace(
+            input_data_folder_paths=args.data_sample_paths,
             input_models_folder_path=args.models_path,
             log_path=args.log_path,
             output_model_path=args.output_model_path,
+            output_predictions_path=args.output_predictions_path,
             chainkeys_path=args.chainkeys_path,
             compute_plan_path=args.compute_plan_path,
         )
         utils.configure_logging(workspace.log_path, debug_mode=args.debug)
+        if args.opener_path:
+            opener_wrapper = opener.load_from_module(
+                path=args.opener_path,
+                workspace=workspace,
+            )
+        else:
+            opener_wrapper = None
         return AggregateAlgoWrapper(
             interface,
             workspace=workspace,
+            opener_wrapper=opener_wrapper,
         )
 
     def _parser_add_default_arguments(_parser):
+        _parser.add_argument(
+            '-d', '--fake-data', action='store_true', default=False,
+            help="Enable fake data mode",
+        )
+        _parser.add_argument(
+            '--n-fake-samples', default=None, type=int,
+            help="Number of fake samples if fake data is used.",
+        )
+        _parser.add_argument(
+            '--data-sample-paths', default=[],
+            nargs='*',
+            help="Define train/test data samples folder paths",
+        )
         _parser.add_argument(
             '--models-path', default=None,
             help="Define models folder path",
@@ -1077,8 +1159,16 @@ def _generate_aggregate_algo_cli(interface):
             help="Define output model file path",
         )
         _parser.add_argument(
+            '--output-predictions-path', default=None,
+            help="Define output predictions file path",
+        )
+        _parser.add_argument(
             '--log-path', default=None,
             help="Define log filename path",
+        )
+        _parser.add_argument(
+            '--opener-path', default=None,
+            help="Define path to opener python script",
         )
         _parser.add_argument(
             '--debug', action='store_true', default=False,
@@ -1113,6 +1203,22 @@ def _generate_aggregate_algo_cli(interface):
     )
     _parser_add_default_arguments(aggregate_parser)
     aggregate_parser.set_defaults(func=_aggregate)
+
+    def _predict(args):
+        algo_wrapper = _algo_from_args(args)
+        algo_wrapper.predict(
+            args.model,
+            args.fake_data,
+            args.n_fake_samples
+        )
+
+    predict_parser = parsers.add_parser('predict')
+    predict_parser.add_argument(
+        'model', type=str,
+        help="Model name (must be located in default models folder)"
+    )
+    _parser_add_default_arguments(predict_parser)
+    predict_parser.set_defaults(func=_predict)
 
     return parser
 

@@ -394,6 +394,7 @@ substratools.AggregateAlgo = class AggregateAlgo(abc.ABC)
   following abstract methods:
   
   - #AggregateAlgo.aggregate()
+  - #AggregateAlgo.predict()
   - #AggregateAlgo.load_model()
   - #AggregateAlgo.save_model()
   
@@ -425,6 +426,10 @@ substratools.AggregateAlgo = class AggregateAlgo(abc.ABC)
           new_model = None
           return new_model
   
+      def predict(self, X, model):
+          predictions = 0
+          return predictions
+  
       def load_model(self, path):
           return json.load(path)
   
@@ -447,10 +452,11 @@ substratools.AggregateAlgo = class AggregateAlgo(abc.ABC)
   python <script_path> aggregate --models_path <models_path> --models <model_name> --model <model_name> --debug
   ```
   
-  To see all the available options for the aggregate command, run:
+  To see all the available options for the aggregate and predict commands, run:
   
   ```sh
   python <script_path> aggregate --help
+  python <script_path> predict --help
   ```
   
   # Using a python script
@@ -507,6 +513,21 @@ substratools.AggregateAlgo = class AggregateAlgo(abc.ABC)
       
       model: the deserialized model object.
   
+  predict(self, X, model)
+      Get predictions from test data.
+      
+      This task corresponds to the creation of a testtuple on the Substra
+      Platform.
+      
+      # Arguments
+      
+      X: testing data samples loaded with `Opener.get_X()`.
+      model: input model load with `AggregateAlgo.load_model()` used for predictions.
+      
+      # Returns
+      
+      predictions: predictions object.
+  
   save_model(self, model, path)
       Serialize model in file.
       
@@ -530,7 +551,7 @@ substratools.AggregateAlgo = class AggregateAlgo(abc.ABC)
   ----------------------------------------------------------------------
   Data and other attributes defined here:
   
-  __abstractmethods__ = frozenset({'aggregate', 'load_model', 'save_mode...
+  __abstractmethods__ = frozenset({'aggregate', 'load_model', 'predict',...
   
   chainkeys_path = None
   

@@ -6,6 +6,11 @@ from substratools import algo, exceptions
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def setup(valid_opener):
+    pass
+
+
 class DummyAggregateAlgo(algo.AggregateAlgo):
 
     def aggregate(self, models, rank):
@@ -13,6 +18,10 @@ class DummyAggregateAlgo(algo.AggregateAlgo):
         for m in models:
             new_model['value'] += m['value']
         return new_model
+
+    def predict(self, X, model):
+        pred = model['value']
+        return X * pred
 
     def load_model(self, path):
         with open(path, 'r') as f:
@@ -79,6 +88,19 @@ def test_aggregate_multiple_models(workdir, create_models):
     assert model['value'] == 3
 
 
+@pytest.mark.parametrize("fake_data,expected_pred,n_fake_samples", [
+    (False, 'X', None),
+    (True, ['Xfake'], 1),
+])
+def test_predict(fake_data, expected_pred, n_fake_samples, workdir, create_models):
+    _, model_filenames = create_models
+
+    a = DummyAggregateAlgo()
+    wp = algo.AggregateAlgoWrapper(a)
+    pred = wp.predict(model_filenames[0], fake_data=fake_data, n_fake_samples=n_fake_samples)
+    assert pred == expected_pred
+
+
 def test_execute_aggregate(workdir):
 
     output_model_path = workdir / 'model' / 'model'
@@ -106,6 +128,28 @@ def test_execute_aggregate_multiple_models(workdir, create_models):
     with open(output_model_path, 'r') as f:
         model = json.load(f)
     assert model['value'] == 3
+
+
+def test_execute_predict(workdir, create_models):
+    _, model_filenames = create_models
+    model_name = 'model'
+    output_model_path = workdir / 'model' / model_name
+    assert not output_model_path.exists()
+
+    command = ['aggregate']
+    command.extend(model_filenames)
+    algo.execute(DummyAggregateAlgo(), sysargs=command)
+    assert output_model_path.exists()
+
+    # do predict on output model
+    pred_path = workdir / 'pred' / 'pred'
+    assert not pred_path.exists()
+    algo.execute(DummyAggregateAlgo(), sysargs=['predict', model_name])
+    assert pred_path.exists()
+    with open(pred_path, 'r') as f:
+        pred = json.load(f)
+    assert pred == 'XXX'
+    pred_path.unlink()
 
 
 @pytest.mark.parametrize('algo_class', (NoSavedModelAggregateAlgo, WrongSavedModelAggregateAlgo))
