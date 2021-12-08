@@ -1,5 +1,11 @@
 FROM nvidia/cuda:9.2-base-ubuntu18.04
 
+ARG USER_ID=1001
+ARG GROUP_ID=1001
+ARG USER_NAME=sandbox
+ARG GROUP_NAME=sandbox
+ARG HOME_DIR=/sandbox
+
 ADD ./setup.py /tmp
 ADD ./README.md /tmp
 ADD ./substratools /tmp/substratools
@@ -11,5 +17,9 @@ RUN apt-get update; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/
 
-WORKDIR /sandbox
-ENV PYTHONPATH /sandbox
+# Create default user, group, and home directory
+RUN addgroup --gid ${GROUP_ID} ${GROUP_NAME}
+RUN adduser --disabled-password --gecos "" --uid ${USER_ID} --gid ${GROUP_ID} --home ${HOME_DIR} ${USER_NAME}
+
+ENV PYTHONPATH ${HOME_DIR}
+WORKDIR ${HOME_DIR}
