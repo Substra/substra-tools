@@ -1,9 +1,9 @@
 import os
 import sys
 
-from substratools.utils import import_module
-
 import pytest
+
+from substratools.utils import import_module
 
 
 @pytest.fixture
@@ -18,7 +18,8 @@ def patch_cwd(monkeypatch, workdir):
     # this is needed to ensure the workspace is located in a tmpdir
     def getcwd():
         return str(workdir)
-    monkeypatch.setattr(os, 'getcwd', getcwd)
+
+    monkeypatch.setattr(os, "getcwd", getcwd)
 
 
 @pytest.fixture()
@@ -52,6 +53,6 @@ class FakeOpener(Opener):
 
 @pytest.fixture()
 def valid_opener(valid_opener_code):
-    import_module('opener', valid_opener_code)
+    import_module("opener", valid_opener_code)
     yield
-    del sys.modules['opener']
+    del sys.modules["opener"]

@@ -3,20 +3,23 @@ import logging
 import os
 import types
 
-from substratools import utils, exceptions
+from substratools import exceptions
+from substratools import utils
 from substratools.workspace import OpenerWorkspace
 
 logger = logging.getLogger(__name__)
 
 
-REQUIRED_FUNCTIONS = set([
-    'get_X',
-    'get_y',
-    'fake_X',
-    'fake_y',
-    'get_predictions',
-    'save_predictions',
-])
+REQUIRED_FUNCTIONS = set(
+    [
+        "get_X",
+        "get_y",
+        "fake_X",
+        "fake_y",
+        "get_predictions",
+        "save_predictions",
+    ]
+)
 
 
 class Opener(abc.ABC):
@@ -174,8 +177,7 @@ class OpenerWrapper(object):
     """Internal wrapper to call opener interface."""
 
     def __init__(self, interface, workspace=None):
-        assert isinstance(interface, Opener) or \
-            isinstance(interface, types.ModuleType)
+        assert isinstance(interface, Opener) or isinstance(interface, types.ModuleType)
 
         self._workspace = workspace or OpenerWorkspace()
         self._interface = interface
@@ -208,9 +210,9 @@ class OpenerWrapper(object):
     def _assert_predictions_file_exists(self):
         path = self._workspace.output_predictions_path
         if os.path.isdir(path):
-            raise exceptions.NotAFileError(f'Expected predictions file at {path}, found dir')
+            raise exceptions.NotAFileError(f"Expected predictions file at {path}, found dir")
         if not os.path.isfile(path):
-            raise exceptions.MissingFileError(f'Predictions file {path} does not exists')
+            raise exceptions.MissingFileError(f"Predictions file {path} does not exists")
 
     def save_predictions(self, y_pred):
         path = self._workspace.output_predictions_path
@@ -228,7 +230,7 @@ def load_from_module(path=None, workspace=None):
     Return an OpenerWrapper instance.
     """
     interface = utils.load_interface_from_module(
-        'opener',
+        "opener",
         interface_class=Opener,
         interface_signature=None,  # XXX does not support interface for debugging
         path=path,

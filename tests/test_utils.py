@@ -1,18 +1,22 @@
 import sys
 
-from substratools import exceptions, Metrics
-from substratools.utils import import_module, load_interface_from_module, configure_logging, get_logger
-
 import pytest
+
+from substratools import Metrics
+from substratools import exceptions
+from substratools.utils import get_logger
+from substratools.utils import import_module
+from substratools.utils import load_interface_from_module
+
 
 def test_invalid_interface():
     code = """
 def score():
     pass
 """
-    import_module('score', code)
+    import_module("score", code)
     with pytest.raises(exceptions.InvalidInterface):
-        load_interface_from_module('score', interface_class=Metrics)
+        load_interface_from_module("score", interface_class=Metrics)
 
 
 @pytest.fixture
@@ -30,7 +34,7 @@ def test_empty_module(tmpdir, syspaths):
         syspaths.append(str(tmpdir))
 
         with pytest.raises(exceptions.EmptyInterface):
-            load_interface_from_module('foomod', interface_class=Metrics)
+            load_interface_from_module("foomod", interface_class=Metrics)
 
 
 def test_get_logger(capfd):

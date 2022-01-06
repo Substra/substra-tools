@@ -5,8 +5,8 @@ import logging
 import os
 import sys
 import time
-from substratools import exceptions
 
+from substratools import exceptions
 
 logger = logging.getLogger(__name__)
 
@@ -14,14 +14,13 @@ logger = logging.getLogger(__name__)
 def configure_logging(path=None, debug_mode=True):
     level = logging.DEBUG if debug_mode else logging.INFO
 
-    formatter = logging.Formatter(fmt='%(asctime)s %(levelname)-6s %(name)s - %(message)s',
-                                  datefmt='%Y-%m-%d %H:%M:%S')
+    formatter = logging.Formatter(fmt="%(asctime)s %(levelname)-6s %(name)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 
     h = logging.StreamHandler()
     h.setLevel(level)
     h.setFormatter(formatter)
 
-    root = logging.getLogger('substratools')
+    root = logging.getLogger("substratools")
     root.setLevel(level)
     root.addHandler(h)
 
@@ -41,6 +40,7 @@ def get_logger(name, path=None, debug_mode=True):
 
 class Timer(object):
     """This decorator prints the execution time for the decorated function."""
+
     def __init__(self, module_logger):
         self.module_logger = module_logger
 
@@ -51,6 +51,7 @@ class Timer(object):
             end = time.time()
             self.module_logger.info("{} ran in {}s".format(func.__qualname__, round(end - start, 2)))
             return result
+
         return wrapper
 
 
@@ -71,25 +72,23 @@ def import_module_from_path(path, module_name):
     return module
 
 
-def load_interface_from_module(module_name, interface_class,
-                               interface_signature=None, path=None):
+def load_interface_from_module(module_name, interface_class, interface_signature=None, path=None):
     if path:
         module = import_module_from_path(path, module_name)
         logger.info(f"Module '{module_name}' loaded from path '{path}'")
     else:
         try:
             module = importlib.import_module(module_name)
-            logger.info(
-                f"Module '{module_name}' imported dynamically; module={module}")
+            logger.info(f"Module '{module_name}' imported dynamically; module={module}")
         except ImportError:
             # XXX don't use ModuleNotFoundError for python3.5 compatibility
             raise
 
     # check if module empty
-    if not inspect.getmembers(
-            module, lambda m: inspect.isclass(m) or inspect.isfunction(m)):
+    if not inspect.getmembers(module, lambda m: inspect.isclass(m) or inspect.isfunction(m)):
         raise exceptions.EmptyInterface(
-            f"Module '{module_name}' seems empty: no method/class found in members: '{dir(module)}'")
+            f"Module '{module_name}' seems empty: no method/class found in members: '{dir(module)}'"
+        )
 
     # find interface class
     for name, obj in inspect.getmembers(module, inspect.isclass):
@@ -101,9 +100,7 @@ def load_interface_from_module(module_name, interface_class,
         class_name = interface_class.__name__
         elements = str(dir(module))
         logger.info(f"Class '{class_name}' not found from: '{elements}'")
-        raise exceptions.InvalidInterface(
-            "Expecting {} subclass in {}".format(
-                class_name, module_name))
+        raise exceptions.InvalidInterface("Expecting {} subclass in {}".format(class_name, module_name))
 
     missing_functions = interface_signature.copy()
     for name, obj in inspect.getmembers(module):
@@ -115,7 +112,6 @@ def load_interface_from_module(module_name, interface_class,
             pass
 
     if missing_functions:
-        message = "Method(s) {} not implemented".format(
-            ", ".join(["'{}'".format(m) for m in missing_functions]))
+        message = "Method(s) {} not implemented".format(", ".join(["'{}'".format(m) for m in missing_functions]))
         raise exceptions.InvalidInterface(message)
     return module

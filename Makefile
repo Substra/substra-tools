@@ -15,7 +15,7 @@ build: pyclean
 	docker build -t $(IMAGE):$(TAG) .
 
 test:
-	python setup.py test
+	pytest tests
 
 doc:
 	python -m pydoc substratools.Algo substratools.CompositeAlgo substratools.AggregateAlgo substratools.Metrics substratools.Opener > $(DOCS_FILEPATH)

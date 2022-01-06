@@ -35,7 +35,7 @@ def get_y():
     raise NotImplementedError
 """
 
-    import_module('opener', invalid_script)
+    import_module("opener", invalid_script)
 
     with pytest.raises(exceptions.InvalidInterface):
         load_from_module()
@@ -60,10 +60,10 @@ def save_predictions(y_pred, path):
     return 'pred'
 """
 
-    import_module('opener', script)
+    import_module("opener", script)
 
     o = load_from_module()
-    assert o.get_X() == 'X'
+    assert o.get_X() == "X"
 
 
 def test_load_opener_as_class(tmp_cwd):
@@ -84,19 +84,19 @@ class MyOpener(Opener):
         return 'pred'
 """
 
-    import_module('opener', script)
+    import_module("opener", script)
 
     o = load_from_module()
-    assert o.get_X() == 'Xclass'
+    assert o.get_X() == "Xclass"
 
 
 def test_load_opener_from_path(tmp_cwd, valid_opener_code):
-    dirpath = tmp_cwd / 'myopener'
+    dirpath = tmp_cwd / "myopener"
     dirpath.mkdir()
-    path = dirpath / 'my_opener.py'
+    path = dirpath / "my_opener.py"
     path.write_text(valid_opener_code)
     o = load_from_module(path=path)
-    assert o.get_X() == 'X'
+    assert o.get_X() == "X"
 
 
 def test_opener_check_folders(tmp_cwd):
@@ -118,7 +118,7 @@ class MyOpener(Opener):
         return 'pred'
 """
 
-    import_module('opener', script)
+    import_module("opener", script)
 
     o = load_from_module()
 
@@ -128,18 +128,21 @@ class MyOpener(Opener):
     [os.makedirs(p) for p in data_paths]
 
     o._workspace.input_data_folder_paths = data_paths
-    assert o.get_X() == 'Xclass'
+    assert o.get_X() == "Xclass"
 
 
-@pytest.mark.parametrize('save_predictions_method_body', (
-    """
+@pytest.mark.parametrize(
+    "save_predictions_method_body",
+    (
+        """
         pass
     """,
-    """
+        """
         with open(path + '.npy', 'w') as f:
             json.dump(pred, f)
     """,
-))
+    ),
+)
 def test_predictions_check(tmp_cwd, save_predictions_method_body):
     script = f"""
 import json
@@ -165,9 +168,9 @@ class MyOpener(Opener):
     def save_predictions(self, pred, path):
         {save_predictions_method_body}
 """
-    import_module('opener', script)
+    import_module("opener", script)
 
     o = load_from_module()
 
     with pytest.raises(exceptions.MissingFileError):
-        o.save_predictions({'foo': 'bar'})
+        o.save_predictions({"foo": "bar"})

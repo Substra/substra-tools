@@ -2,9 +2,10 @@ import json
 import shutil
 import types
 
-from substratools import algo, exceptions
-
 import pytest
+
+from substratools import algo
+from substratools import exceptions
 
 
 @pytest.fixture(autouse=True)
@@ -109,9 +110,7 @@ def test_predict(fake_data, expected_pred, n_fake_samples, workdir, create_model
 
     a = DummyAlgo()
     wp = algo.AlgoWrapper(a)
-    pred = wp.predict(
-        model_filenames[0], fake_data=fake_data, n_fake_samples=n_fake_samples
-    )
+    pred = wp.predict(model_filenames[0], fake_data=fake_data, n_fake_samples=n_fake_samples)
     assert pred == expected_pred
 
 
@@ -204,9 +203,7 @@ def test_model_check(algo_class):
         (False, list),
     ),
 )
-def test_models_generator(
-    mocker, workdir, create_models, use_models_generator, models_type
-):
+def test_models_generator(mocker, workdir, create_models, use_models_generator, models_type):
     _, model_filenames = create_models
 
     command = ["train"]

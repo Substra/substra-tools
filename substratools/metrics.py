@@ -5,11 +5,12 @@ import json
 import logging
 import sys
 
-from substratools import opener, utils
+from substratools import opener
+from substratools import utils
 from substratools.workspace import MetricsWorkspace
 
 logger = logging.getLogger(__name__)
-REQUIRED_FUNCTIONS = set(['score'])
+REQUIRED_FUNCTIONS = set(["score"])
 
 
 class FakeDataMode(enum.IntEnum):
@@ -116,18 +117,16 @@ class Metrics(abc.ABC):
 
 
 class MetricsWrapper(object):
-
     def __init__(self, interface, workspace=None, opener_wrapper=None):
         self._workspace = workspace or MetricsWorkspace()
-        self._opener_wrapper = opener_wrapper or \
-            opener.load_from_module(workspace=self._workspace)
+        self._opener_wrapper = opener_wrapper or opener.load_from_module(workspace=self._workspace)
         self._interface = interface
 
     def _save_score(self, score):
         path = self._workspace.output_perf_path
         logger.info("saving score to '{}'".format(path))
-        with open(path, 'w') as f:
-            json.dump({'all': score}, f)
+        with open(path, "w") as f:
+            json.dump({"all": score}, f)
 
     def score(self, fake_data=False, n_fake_samples=None):
         """Load labels and predictions and save score results."""
@@ -157,41 +156,54 @@ class MetricsWrapper(object):
 def _generate_cli():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '-d', '--fake-data', action='store_true', default=False,
+        "-d",
+        "--fake-data",
+        action="store_true",
+        default=False,
         help="Enable fake data mode (fake y)",
     )
     parser.add_argument(
-        '--fake-data-mode', default=FakeDataMode.DISABLED.name,
+        "--fake-data-mode",
+        default=FakeDataMode.DISABLED.name,
         choices=[e.name for e in FakeDataMode],
         help="Set fake data mode",
     )
     parser.add_argument(
-        '--n-fake-samples', type=int, default=None,
+        "--n-fake-samples",
+        type=int,
+        default=None,
         help="Number of fake samples if fake data is used.",
     )
     parser.add_argument(
-        '--data-sample-paths', default=[],
-        nargs='*',
+        "--data-sample-paths",
+        default=[],
+        nargs="*",
         help="Define train/test data samples folder paths",
     )
     parser.add_argument(
-        '--input-predictions-path', default=None,
+        "--input-predictions-path",
+        default=None,
         help="Define input predictions file path",
     )
     parser.add_argument(
-        '--output-perf-path', default=None,
+        "--output-perf-path",
+        default=None,
         help="Define output perf file path",
     )
     parser.add_argument(
-        '--opener-path', default=None,
+        "--opener-path",
+        default=None,
         help="Define path to opener python script",
     )
     parser.add_argument(
-        '--debug', action='store_true', default=False,
+        "--debug",
+        action="store_true",
+        default=False,
         help="Enable debug mode (logs printed in stdout)",
     )
     parser.add_argument(
-        '--log-path', default='pred/metrics.log',
+        "--log-path",
+        default="pred/metrics.log",
         help="Define log filename path",
     )
     return parser
@@ -201,9 +213,8 @@ def execute(interface=None, sysargs=None):
     """Launch metrics command line interface."""
     if not interface:
         interface = utils.load_interface_from_module(
-            'metrics',
-            interface_class=Metrics,
-            interface_signature=REQUIRED_FUNCTIONS)
+            "metrics", interface_class=Metrics, interface_signature=REQUIRED_FUNCTIONS
+        )
 
     cli = _generate_cli()
     sysargs = sysargs if sysargs is not None else sys.argv[1:]

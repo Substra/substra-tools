@@ -1,5 +1,3 @@
-
-
 class InvalidInterface(Exception):
     pass
 
