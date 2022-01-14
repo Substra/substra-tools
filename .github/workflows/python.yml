@@ -3,10 +3,12 @@ name: Python
 on:
   push:
     branches:
-      - "master"
+      - master
+      - main
   pull_request:
     branches:
-      - "master"
+      - master
+      - main
 
 jobs:
   lint:
