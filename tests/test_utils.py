@@ -15,7 +15,7 @@ def score():
     pass
 """
     import_module("score", code)
-    with pytest.raises(exceptions.InvalidInterface):
+    with pytest.raises(exceptions.InvalidInterfaceError):
         load_interface_from_module("score", interface_class=Metrics)
 
 
@@ -33,7 +33,7 @@ def test_empty_module(tmpdir, syspaths):
         tmpdir.mkdir("foomod")
         syspaths.append(str(tmpdir))
 
-        with pytest.raises(exceptions.EmptyInterface):
+        with pytest.raises(exceptions.EmptyInterfaceError):
             load_interface_from_module("foomod", interface_class=Metrics)
 
 

@@ -72,7 +72,8 @@ def import_module_from_path(path, module_name):
     return module
 
 
-def load_interface_from_module(module_name, interface_class, interface_signature=None, path=None):
+# TODO: 'load_interface_from_module' is too complex, consider refactoring
+def load_interface_from_module(module_name, interface_class, interface_signature=None, path=None):  # noqa: C901
     if path:
         module = import_module_from_path(path, module_name)
         logger.info(f"Module '{module_name}' loaded from path '{path}'")
@@ -86,12 +87,12 @@ def load_interface_from_module(module_name, interface_class, interface_signature
 
     # check if module empty
     if not inspect.getmembers(module, lambda m: inspect.isclass(m) or inspect.isfunction(m)):
-        raise exceptions.EmptyInterface(
+        raise exceptions.EmptyInterfaceError(
             f"Module '{module_name}' seems empty: no method/class found in members: '{dir(module)}'"
         )
 
     # find interface class
-    for name, obj in inspect.getmembers(module, inspect.isclass):
+    for _, obj in inspect.getmembers(module, inspect.isclass):
         if issubclass(obj, interface_class):
             return obj()  # return interface instance
 
@@ -100,7 +101,7 @@ def load_interface_from_module(module_name, interface_class, interface_signature
         class_name = interface_class.__name__
         elements = str(dir(module))
         logger.info(f"Class '{class_name}' not found from: '{elements}'")
-        raise exceptions.InvalidInterface("Expecting {} subclass in {}".format(class_name, module_name))
+        raise exceptions.InvalidInterfaceError("Expecting {} subclass in {}".format(class_name, module_name))
 
     missing_functions = interface_signature.copy()
     for name, obj in inspect.getmembers(module):
@@ -113,5 +114,5 @@ def load_interface_from_module(module_name, interface_class, interface_signature
 
     if missing_functions:
         message = "Method(s) {} not implemented".format(", ".join(["'{}'".format(m) for m in missing_functions]))
-        raise exceptions.InvalidInterface(message)
+        raise exceptions.InvalidInterfaceError(message)
     return module

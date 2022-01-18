@@ -37,7 +37,7 @@ def get_y():
 
     import_module("opener", invalid_script)
 
-    with pytest.raises(exceptions.InvalidInterface):
+    with pytest.raises(exceptions.InvalidInterfaceError):
         load_from_module()
 
 

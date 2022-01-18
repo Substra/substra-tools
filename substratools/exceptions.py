@@ -1,8 +1,8 @@
-class InvalidInterface(Exception):
+class InvalidInterfaceError(Exception):
     pass
 
 
-class EmptyInterface(InvalidInterface):
+class EmptyInterfaceError(InvalidInterfaceError):
     pass
 
 
