@@ -1,3 +1,9 @@
+**This repository is inactive.**
+
+The Substra project is under active development as a closed-source solution. There are ongoing strategic discussions regarding the possibility of open-sourcing newer versions, but no conclusion has been reached yet.
+
+---
+
 # Substra-tools
 
 Python package defining base classes for assets submitted on the platform:
