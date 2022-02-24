@@ -3,11 +3,42 @@ on:
   release:
     types: [published]
 
+  workflow_dispatch:
+    inputs:
+      cuda_image:
+        required: true
+      python_version:
+        required: true
+      release_tag:
+        required: true
+
+
 jobs:
-  build:
+  create-matrix:
     runs-on: ubuntu-latest
+    outputs:
+      # Add a version to this list to automatically build Dockerfiles from it for the next releases
+      default_cuda_images: '["nvidia/cuda:11.6.0-base-ubuntu20.04"]'
+      default_python_versions:  '["3.7", "3.8", "3.9"]'
     steps:
     - uses: actions/checkout@v2
+
+  build:
+    needs: create-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # don't stop all the builds if one fails
+      matrix:
+        cuda_image: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.cuda_image || fromJson(needs.create-matrix.outputs.default_cuda_images) }}
+        python_version: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.python_version || fromJson(needs.create-matrix.outputs.default_python_versions) }}
+    steps:
+    - name: Set variables
+      run: |
+        echo "CONNECT_TOOLS_REF=${{ github.event.inputs.release_tag || github.ref_name }}" >> $GITHUB_ENV
+
+    - uses: actions/checkout@v2
+      with:
+        ref: ${{ env.CONNECT_TOOLS_REF }}
 
     - name: Set up gcloud Cloud SDK environment
       uses: google-github-actions/setup-gcloud@v0.2.0
@@ -15,27 +46,49 @@ jobs:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
         service_account_key: ${{ secrets.GCP_SA_KEY }}
 
+    # define tag = Docker image url
     - name: Define variables
       run: |
-        echo "tag=gcr.io/${{ secrets.GCP_PROJECT_ID }}/connect-tools:${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+        cuda_image_tag=$( echo "${{ matrix.cuda_image }}" | tr -d ':,/' )
+        echo "tag=gcr.io/${{ secrets.GCP_PROJECT_ID }}/connect-tools:${{ env.CONNECT_TOOLS_REF }}-${{ cuda_image_tag }}-python${{ matrix.python_version }}" >> $GITHUB_ENV
 
     - name: Configure docker for GCP
       run: gcloud auth configure-docker
 
+    # Build & push connect-tools/Dockerfile
     - name: Build docker image
-      run:  docker build -t ${{ env.tag }} .
+      run: |
+        docker build \
+        -t ${{ env.tag }} \
+        --build-arg CUDA_IMAGE=${{ matrix.cuda_image }} \
+        --build-arg PYTHON_VERSION=${{ matrix.python_version }} \
+        .
 
     - name: Push image to GCR
       run:  docker push ${{ env.tag }}
 
+    # Build & push connect-tools/Dockerfile.minimal
     - name: Build docker minimal image
-      run:  docker build -t ${{ env.tag }}-minimal -f Dockerfile.minimal .
+      run: |
+        docker build \
+        -t ${{ env.tag }}-minimal \
+        --build-arg CUDA_IMAGE=${{ matrix.cuda_image }} \
+        --build-arg PYTHON_VERSION=${{ matrix.python_version }} \
+        -f Dockerfile.minimal \
+        .
 
     - name: Push minimal image to GCR
       run:  docker push ${{ env.tag }}-minimal
 
+    # Build & push connect-tools/Dockerfile.workflows
+    # Takes connect-tools/Dockerfile as base image
     - name: Build docker workflows image
-      run:  docker build -t ${{ env.tag }}-workflows --build-arg BASE_IMAGE=${{ env.tag }} -f Dockerfile.workflows .
+      run: |
+        docker build \
+        -t ${{ env.tag }}-workflows \
+        --build-arg BASE_IMAGE=${{ env.tag }} \
+        -f Dockerfile.workflows \
+        .
 
     - name: Push workflows image to GCR
       run:  docker push ${{ env.tag }}-workflows

@@ -1,4 +1,9 @@
-FROM nvidia/cuda:9.2-base-ubuntu18.04
+# Modified by .github/workflows/publish_docker.yml
+ARG CUDA_IMAGE=nvidia/cuda:9.2-base-ubuntu18.04
+FROM $CUDA_IMAGE
+
+# Modified by .github/workflows/publish_docker.yml
+ARG PYTHON_VERSION=3.7
 
 ARG USER_ID=1001
 ARG GROUP_ID=1001
@@ -6,16 +11,39 @@ ARG USER_NAME=sandbox
 ARG GROUP_NAME=sandbox
 ARG HOME_DIR=/sandbox
 
-ADD ./setup.py /tmp
-ADD ./README.md /tmp
-ADD ./substratools /tmp/substratools
+COPY ./setup.py /tmp
+COPY ./README.md /tmp
+COPY ./substratools /tmp/substratools
 
-RUN apt-get update; \
-    apt-get install -y python3-minimal python3-pip; \
-    cd /tmp && pip3 install . ; \
-    apt-get remove -y python3-pip --purge --autoremove; \
-    apt-get clean; \
-    rm -rf /var/lib/apt/lists/
+# need the 3 first lines to get python${PYTHON_VERSION} on all ubuntu versions
+RUN apt-get update && apt-get install -y \
+    software-properties-common \
+ && add-apt-repository ppa:deadsnakes/ppa \
+# needed for tzdata, installed by python3.9
+ && export DEBIAN_FRONTEND=noninteractive \
+ && export TZ=Europe/Moscow \
+# install minimal apps (python${PYTHON_VERSION}-distutils needed for python3.9)
+ && apt-get install -y python${PYTHON_VERSION}-minimal python${PYTHON_VERSION}-distutils python3-pip \
+ # link default python, python3, pip, pip3 to python${PYTHON_VERSION}
+ && rm -f /usr/bin/python \
+ && ln -s /usr/bin/python${PYTHON_VERSION} /usr/bin/python \
+ && rm -f /usr/bin/python3 \
+ && ln -s /usr/bin/python${PYTHON_VERSION} /usr/bin/python3 \
+ && python --version \
+ && python3 --version \
+# needed for substratools with python3.9
+ && python -m pip install --upgrade --no-cache-dir pip setuptools\
+ && pip --version \
+ && pip3 --version \
+# install substratools
+ && cd /tmp && python -m pip install --no-cache-dir . \
+# remove all python packages but substratools
+ && python -m pip uninstall -y setuptools pip \
+# remove all apps but python
+ && apt-get remove -y python3-pip python${PYTHON_VERSION}-distutils software-properties-common --purge --autoremove \
+# clean the apt cache
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
 
 # Create default user, group, and home directory
 RUN addgroup --gid ${GROUP_ID} ${GROUP_NAME}

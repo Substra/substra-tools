@@ -1,7 +1,11 @@
+# Given by .github/workflows/publish_docker.yml
+# For now takes the ./Dockerfile image url (tag)
 ARG BASE_IMAGE
 
 FROM $BASE_IMAGE
 
-RUN pip3 install \
-    torch==1.9.0 \
-    numpy==1.19.0
+# install datascience workflows libraries
+# latest versions compatible with python>=3.7
+RUN pip install --no-cache-dir \
+    torch==1.10.2 \
+    numpy==1.21.5
