@@ -5,11 +5,14 @@ on:
 
   workflow_dispatch:
     inputs:
-      cuda_image:
+      cuda_images:
+        description: 'cuda_images. Example: ["nvidia/cuda:11.6.0-base-ubuntu20.04"]'
         required: true
-      python_version:
+      python_versions:
+        description: 'python_versions. Example: ["3.7", "3.8", "3.9"]'
         required: true
       release_tag:
+        description: 'release_tag. Example: 0.9.1'
         required: true
 
 
@@ -29,8 +32,8 @@ jobs:
     strategy:
       fail-fast: false # don't stop all the builds if one fails
       matrix:
-        cuda_image: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.cuda_image || fromJson(needs.create-matrix.outputs.default_cuda_images) }}
-        python_version: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.python_version || fromJson(needs.create-matrix.outputs.default_python_versions) }}
+        cuda_image: ${{ github.event_name == 'workflow_dispatch' && fromJson(github.event.inputs.cuda_images) || fromJson(needs.create-matrix.outputs.default_cuda_images) }}
+        python_version: ${{ github.event_name == 'workflow_dispatch' && fromJson(github.event.inputs.python_versions) || fromJson(needs.create-matrix.outputs.default_python_versions) }}
     steps:
     - name: Set variables
       run: |
@@ -50,7 +53,7 @@ jobs:
     - name: Define variables
       run: |
         cuda_image_tag=$( echo "${{ matrix.cuda_image }}" | tr -d ':,/' )
-        echo "tag=gcr.io/${{ secrets.GCP_PROJECT_ID }}/connect-tools:${{ env.CONNECT_TOOLS_REF }}-${{ cuda_image_tag }}-python${{ matrix.python_version }}" >> $GITHUB_ENV
+        echo "tag=gcr.io/${{ secrets.GCP_PROJECT_ID }}/connect-tools:${{ env.CONNECT_TOOLS_REF }}-${cuda_image_tag}-python${{ matrix.python_version }}" >> $GITHUB_ENV
 
     - name: Configure docker for GCP
       run: gcloud auth configure-docker
