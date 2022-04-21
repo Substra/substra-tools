@@ -1,6 +1,5 @@
 import json
 import os
-import shutil
 
 import pytest
 
@@ -9,6 +8,7 @@ from substratools import Metrics
 from substratools.algo import AlgoWrapper
 from substratools.metrics import MetricsWrapper
 from substratools.utils import import_module
+from substratools.workspace import AlgoWorkspace
 
 
 @pytest.fixture
@@ -65,36 +65,45 @@ class DummyMetrics(Metrics):
 
 
 def test_workflow(workdir, dummy_opener):
-    algo_wp = AlgoWrapper(DummyAlgo())
-
-    models_path = algo_wp._workspace.input_models_folder_path
+    a = DummyAlgo()
+    loop1_model_path = workdir / "loop1model"
+    loop1_workspace = AlgoWorkspace(output_model_path=str(loop1_model_path))
+    loop1_wp = AlgoWrapper(a, workspace=loop1_workspace)
 
     # loop 1 (no input)
-    model = algo_wp.train([])
+    model = loop1_wp.train()
     assert model == {"i": 1, "total": 0}
-    output_model_path = os.path.join(models_path, "model")
-    assert os.path.exists(output_model_path)
+    assert os.path.exists(loop1_model_path)
+
+    loop2_model_path = workdir / "loop2model"
+    loop2_workspace = AlgoWorkspace(
+        input_model_paths=[str(loop1_model_path)], output_model_path=str(loop2_model_path)
+    )
+    loop2_wp = AlgoWrapper(a, workspace=loop2_workspace)
 
     # loop 2 (one model as input)
-    model_1_name = "model1"
-    shutil.move(output_model_path, os.path.join(models_path, model_1_name))
-    model = algo_wp.train([model_1_name])
+    model = loop2_wp.train()
     assert model == {"i": 2, "total": 1}
-    output_model_path = os.path.join(models_path, "model")
-    assert os.path.exists(output_model_path)
+    assert os.path.exists(loop2_model_path)
+
+    loop3_model_path = workdir / "loop2model"
+    loop3_workspace = AlgoWorkspace(
+        input_model_paths=[str(loop1_model_path), str(loop2_model_path)], output_model_path=str(loop3_model_path)
+    )
+    loop3_wp = AlgoWrapper(a, workspace=loop3_workspace)
 
     # loop 3 (two models as input)
-    model_2_name = "model2"
-    shutil.move(output_model_path, os.path.join(models_path, model_2_name))
-    model = algo_wp.train([model_1_name, model_2_name])
+    model = loop3_wp.train()
     assert model == {"i": 3, "total": 3}
-    output_model_path = os.path.join(models_path, "model")
-    assert os.path.exists(output_model_path)
+    assert os.path.exists(loop3_model_path)
+
+    predict_workspace = AlgoWorkspace(
+        input_model_paths=[str(loop3_model_path)],
+    )
+    predict_wp = AlgoWrapper(a, workspace=predict_workspace)
 
     # predict
-    model_3_name = "model3"
-    shutil.move(output_model_path, os.path.join(models_path, model_3_name))
-    pred = algo_wp.predict(model_3_name)
+    pred = predict_wp.predict()
     assert pred == {"sum": 3}
 
     # metrics

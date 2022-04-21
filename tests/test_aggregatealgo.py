@@ -5,6 +5,10 @@ import pytest
 
 from substratools import algo
 from substratools import exceptions
+from substratools.task_resources import TASK_IO_PREDICTIONS
+from substratools.task_resources import TRAIN_IO_MODEL
+from substratools.task_resources import TRAIN_IO_MODELS
+from substratools.workspace import AggregateAlgoWorkspace
 
 
 @pytest.fixture(autouse=True)
@@ -58,7 +62,7 @@ def create_models(workdir):
         filename = "{}.json".format(model_name)
         path = model_dir / filename
         path.write_text(json.dumps(model_data))
-        return filename
+        return path
 
     model_datas = [model_a, model_b]
     model_filenames = [_create_model(d) for d in model_datas]
@@ -71,20 +75,21 @@ def test_create():
     DummyAggregateAlgo()
 
 
-def test_aggregate_no_model():
+def test_aggregate_no_model(valid_algo_workspace):
     a = DummyAggregateAlgo()
-    wp = algo.AggregateAlgoWrapper(a)
-    model = wp.aggregate([])
+    wp = algo.AggregateAlgoWrapper(a, valid_algo_workspace)
+    model = wp.aggregate()
     assert model["value"] == 0
 
 
-def test_aggregate_multiple_models(workdir, create_models):
+def test_aggregate_multiple_models(create_models, output_model_path):
     _, model_filenames = create_models
 
+    workspace = AggregateAlgoWorkspace(input_model_paths=model_filenames, output_model_path=output_model_path)
     a = DummyAggregateAlgo()
-    wp = algo.AggregateAlgoWrapper(a)
+    wp = algo.AggregateAlgoWrapper(a, workspace)
 
-    model = wp.aggregate(model_filenames)
+    model = wp.aggregate()
     assert model["value"] == 3
 
 
@@ -95,36 +100,43 @@ def test_aggregate_multiple_models(workdir, create_models):
         (True, ["Xfake"], 1),
     ],
 )
-def test_predict(fake_data, expected_pred, n_fake_samples, workdir, create_models):
+def test_predict(fake_data, expected_pred, n_fake_samples, create_models):
     _, model_filenames = create_models
 
     a = DummyAggregateAlgo()
-    wp = algo.AggregateAlgoWrapper(a)
-    pred = wp.predict(model_filenames[0], fake_data=fake_data, n_fake_samples=n_fake_samples)
+    workspace = AggregateAlgoWorkspace(input_model_paths=[model_filenames[0]])
+    wp = algo.AggregateAlgoWrapper(a, workspace)
+    pred = wp.predict(fake_data=fake_data, n_fake_samples=n_fake_samples)
     assert pred == expected_pred
 
 
-def test_execute_aggregate(workdir):
+def test_execute_aggregate(output_model_path):
 
-    output_model_path = workdir / "model" / "model"
     assert not output_model_path.exists()
 
-    algo.execute(DummyAggregateAlgo(), sysargs=["aggregate"])
+    outputs = [{"id": TRAIN_IO_MODEL, "value": str(output_model_path)}]
+
+    algo.execute(DummyAggregateAlgo(), sysargs=["aggregate", "--outputs", json.dumps(outputs)])
     assert output_model_path.exists()
 
     output_model_path.unlink()
-    algo.execute(DummyAggregateAlgo(), sysargs=["aggregate", "--debug"])
+    algo.execute(DummyAggregateAlgo(), sysargs=["aggregate", "--outputs", json.dumps(outputs), "--debug"])
     assert output_model_path.exists()
 
 
-def test_execute_aggregate_multiple_models(workdir, create_models):
+def test_execute_aggregate_multiple_models(workdir, create_models, output_model_path):
     _, model_filenames = create_models
 
-    output_model_path = workdir / "model" / "model"
     assert not output_model_path.exists()
 
+    inputs = [{"id": TRAIN_IO_MODELS, "value": str(workdir / model)} for model in model_filenames]
+    outputs = [
+        {"id": TRAIN_IO_MODEL, "value": str(output_model_path)},
+    ]
+    options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
+
     command = ["aggregate"]
-    command.extend(model_filenames)
+    command.extend(options)
 
     algo.execute(DummyAggregateAlgo(), sysargs=command)
     assert output_model_path.exists()
@@ -133,21 +145,29 @@ def test_execute_aggregate_multiple_models(workdir, create_models):
     assert model["value"] == 3
 
 
-def test_execute_predict(workdir, create_models):
+def test_execute_predict(workdir, create_models, output_model_path):
     _, model_filenames = create_models
-    model_name = "model"
-    output_model_path = workdir / "model" / model_name
     assert not output_model_path.exists()
 
+    inputs = [{"id": TRAIN_IO_MODELS, "value": str(workdir / model_name)} for model_name in model_filenames]
+    outputs = [{"id": TRAIN_IO_MODEL, "value": str(output_model_path)}]
+    options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
     command = ["aggregate"]
-    command.extend(model_filenames)
+    command.extend(options)
     algo.execute(DummyAggregateAlgo(), sysargs=command)
     assert output_model_path.exists()
 
     # do predict on output model
     pred_path = workdir / "pred" / "pred"
     assert not pred_path.exists()
-    algo.execute(DummyAggregateAlgo(), sysargs=["predict", model_name])
+
+    pred_inputs = [
+        {"id": TRAIN_IO_MODELS, "value": str(output_model_path)},
+    ]
+    pred_outputs = [{"id": TASK_IO_PREDICTIONS, "value": str(pred_path)}]
+    pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
+
+    algo.execute(DummyAggregateAlgo(), sysargs=["predict"] + pred_options)
     assert pred_path.exists()
     with open(pred_path, "r") as f:
         pred = json.load(f)
@@ -156,9 +176,9 @@ def test_execute_predict(workdir, create_models):
 
 
 @pytest.mark.parametrize("algo_class", (NoSavedModelAggregateAlgo, WrongSavedModelAggregateAlgo))
-def test_model_check(algo_class):
+def test_model_check(algo_class, valid_algo_workspace):
     a = algo_class()
-    wp = algo.AggregateAlgoWrapper(a)
+    wp = algo.AggregateAlgoWrapper(a, valid_algo_workspace)
 
     with pytest.raises(exceptions.MissingFileError):
         wp.aggregate([])
@@ -171,11 +191,15 @@ def test_model_check(algo_class):
         (False, list),
     ),
 )
-def test_models_generator(mocker, workdir, create_models, use_models_generator, models_type):
+def test_models_generator(mocker, workdir, create_models, use_models_generator, models_type, output_model_path):
     _, model_filenames = create_models
 
+    inputs = [{"id": TRAIN_IO_MODELS, "value": str(workdir / model)} for model in model_filenames]
+    outputs = [{"id": TRAIN_IO_MODEL, "value": str(output_model_path)}]
+
     command = ["aggregate"]
-    command.extend(model_filenames)
+    command.extend(["--inputs", json.dumps(inputs)])
+    command.extend(["--outputs", json.dumps(outputs)])
 
     a = DummyAggregateAlgo()
     a.use_models_generator = use_models_generator

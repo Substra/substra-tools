@@ -12,3 +12,7 @@ class NotAFileError(Exception):
 
 class MissingFileError(Exception):
     pass
+
+
+class InvalidInputOutputsError(Exception):
+    pass

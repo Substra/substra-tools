@@ -6,6 +6,11 @@ import pytest
 
 from substratools import algo
 from substratools import exceptions
+from substratools.task_resources import TASK_IO_DATASAMPLES
+from substratools.task_resources import TASK_IO_PREDICTIONS
+from substratools.task_resources import TRAIN_IO_MODEL
+from substratools.task_resources import TRAIN_IO_MODELS
+from substratools.workspace import AlgoWorkspace
 
 
 @pytest.fixture(autouse=True)
@@ -61,7 +66,7 @@ def create_models(workdir):
         filename = "{}.json".format(model_name)
         path = model_dir / filename
         path.write_text(json.dumps(model_data))
-        return filename
+        return path
 
     model_datas = [model_a, model_b]
     model_filenames = [_create_model(d) for d in model_datas]
@@ -74,27 +79,29 @@ def test_create():
     DummyAlgo()
 
 
-def test_train_no_model():
+def test_train_no_model(valid_algo_workspace):
     a = DummyAlgo()
-    wp = algo.AlgoWrapper(a)
-    model = wp.train([])
+    wp = algo.AlgoWrapper(a, valid_algo_workspace)
+    model = wp.train()
     assert model["value"] == 0
 
 
-def test_train_multiple_models(workdir, create_models):
+def test_train_multiple_models(output_model_path, create_models):
     _, model_filenames = create_models
 
+    workspace = AlgoWorkspace(input_model_paths=model_filenames, output_model_path=output_model_path)
     a = DummyAlgo()
-    wp = algo.AlgoWrapper(a)
+    wp = algo.AlgoWrapper(a, workspace=workspace)
 
-    model = wp.train(model_filenames)
+    model = wp.train()
     assert model["value"] == 3
 
 
-def test_train_fake_data():
+def test_train_fake_data(output_model_path):
     a = DummyAlgo()
-    wp = algo.AlgoWrapper(a)
-    model = wp.train([], fake_data=True, n_fake_samples=2)
+    workspace = AlgoWorkspace(input_model_paths=[], output_model_path=output_model_path)
+    wp = algo.AlgoWrapper(a, workspace=workspace)
+    model = wp.train(fake_data=True, n_fake_samples=2)
     assert model["value"] == 0
 
 
@@ -105,40 +112,55 @@ def test_train_fake_data():
         (True, ["Xfake"], 1),
     ],
 )
-def test_predict(fake_data, expected_pred, n_fake_samples, workdir, create_models):
+def test_predict(fake_data, expected_pred, n_fake_samples, create_models):
     _, model_filenames = create_models
 
     a = DummyAlgo()
-    wp = algo.AlgoWrapper(a)
-    pred = wp.predict(model_filenames[0], fake_data=fake_data, n_fake_samples=n_fake_samples)
+
+    workspace = AlgoWorkspace(input_model_paths=[model_filenames[0]])
+    wp = algo.AlgoWrapper(a, workspace=workspace)
+    pred = wp.predict(fake_data=fake_data, n_fake_samples=n_fake_samples)
     assert pred == expected_pred
 
 
-def test_execute_train(workdir):
+def test_execute_train(workdir, output_model_path):
+    inputs = [
+        {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
+    ]
+    outputs = [
+        {"id": TRAIN_IO_MODEL, "value": str(output_model_path)},
+    ]
+    options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
 
-    output_model_path = workdir / "model" / "model"
     assert not output_model_path.exists()
 
-    algo.execute(DummyAlgo(), sysargs=["train"])
+    algo.execute(DummyAlgo(), sysargs=["train"] + options)
     assert output_model_path.exists()
 
-    algo.execute(DummyAlgo(), sysargs=["train", "--fake-data", "--n-fake-samples", "1"])
+    algo.execute(DummyAlgo(), sysargs=["train", "--fake-data", "--n-fake-samples", "1", "--outputs", json.dumps(outputs)])
     assert output_model_path.exists()
 
-    algo.execute(DummyAlgo(), sysargs=["train", "--debug"])
+    algo.execute(DummyAlgo(), sysargs=["train", "--debug"] + options)
     assert output_model_path.exists()
 
 
-def test_execute_train_multiple_models(workdir, create_models):
+def test_execute_train_multiple_models(workdir, output_model_path, create_models):
     _, model_filenames = create_models
 
-    output_model_path = workdir / "model" / "model"
     assert not output_model_path.exists()
     pred_path = workdir / "pred" / "pred"
     assert not pred_path.exists()
 
+    inputs = [
+        {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
+    ] + [{"id": TRAIN_IO_MODELS, "value": str(workdir / model)} for model in model_filenames]
+    outputs = [
+        {"id": TRAIN_IO_MODEL, "value": str(output_model_path)},
+    ]
+    options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
+
     command = ["train"]
-    command.extend(model_filenames)
+    command.extend(options)
 
     algo.execute(DummyAlgo(), sysargs=command)
     assert output_model_path.exists()
@@ -149,22 +171,32 @@ def test_execute_train_multiple_models(workdir, create_models):
     assert not pred_path.exists()
 
 
-def test_execute_predict(workdir, create_models):
+def test_execute_predict(workdir, output_model_path, create_models):
     _, model_filenames = create_models
-    model_name = "model"
-    output_model_path = workdir / "model" / model_name
     pred_path = workdir / "pred" / "pred"
+    train_inputs = [
+        {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
+    ] + [{"id": TRAIN_IO_MODELS, "value": str(workdir / model)} for model in model_filenames]
+    train_outputs = [{"id": TRAIN_IO_MODEL, "value": str(output_model_path)}]
+    train_options = ["--inputs", json.dumps(train_inputs), "--outputs", json.dumps(train_outputs)]
 
     # first train models
     assert not pred_path.exists()
     command = ["train"]
-    command.extend(model_filenames)
+    command.extend(train_options)
     algo.execute(DummyAlgo(), sysargs=command)
     assert output_model_path.exists()
 
     # do predict on output model
+    pred_inputs = [
+        {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
+        {"id": TRAIN_IO_MODELS, "value": str(output_model_path)},
+    ]
+    pred_outputs = [{"id": TASK_IO_PREDICTIONS, "value": str(pred_path)}]
+    pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
+
     assert not pred_path.exists()
-    algo.execute(DummyAlgo(), sysargs=["predict", model_name])
+    algo.execute(DummyAlgo(), sysargs=["predict"] + pred_options)
     assert pred_path.exists()
     with open(pred_path, "r") as f:
         pred = json.load(f)
@@ -176,10 +208,18 @@ def test_execute_predict(workdir, create_models):
     input_models_dir.mkdir()
     input_model_path = input_models_dir / "supermodel"
     shutil.move(output_model_path, input_model_path)
+
+    pred_inputs = [
+        {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
+        {"id": TRAIN_IO_MODELS, "value": str(input_model_path)},
+    ]
+    pred_outputs = [{"id": TASK_IO_PREDICTIONS, "value": str(pred_path)}]
+    pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
+
     assert not pred_path.exists()
     algo.execute(
         DummyAlgo(),
-        sysargs=["predict", "supermodel", "--models-path", str(input_models_dir)],
+        sysargs=["predict"] + pred_options,
     )
     assert pred_path.exists()
     with open(pred_path, "r") as f:
@@ -188,12 +228,12 @@ def test_execute_predict(workdir, create_models):
 
 
 @pytest.mark.parametrize("algo_class", (NoSavedModelAlgo, WrongSavedModelAlgo))
-def test_model_check(algo_class):
+def test_model_check(valid_algo_workspace, algo_class):
     a = algo_class()
-    wp = algo.AlgoWrapper(a)
+    wp = algo.AlgoWrapper(a, workspace=valid_algo_workspace)
 
     with pytest.raises(exceptions.MissingFileError):
-        wp.train([])
+        wp.train()
 
 
 @pytest.mark.parametrize(
@@ -203,11 +243,17 @@ def test_model_check(algo_class):
         (False, list),
     ),
 )
-def test_models_generator(mocker, workdir, create_models, use_models_generator, models_type):
+def test_models_generator(mocker, workdir, output_model_path, create_models, use_models_generator, models_type):
     _, model_filenames = create_models
 
+    inputs = [
+        {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
+    ] + [{"id": TRAIN_IO_MODELS, "value": str(workdir / model)} for model in model_filenames]
+    outputs = [{"id": TRAIN_IO_MODEL, "value": str(output_model_path)}]
+
     command = ["train"]
-    command.extend(model_filenames)
+    command.extend(["--inputs", json.dumps(inputs)])
+    command.extend(["--outputs", json.dumps(outputs)])
 
     a = DummyAlgo()
     a.use_models_generator = use_models_generator

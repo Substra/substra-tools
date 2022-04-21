@@ -1,9 +1,12 @@
 import os
 import sys
+from pathlib import Path
 
 import pytest
 
 from substratools.utils import import_module
+from substratools.workspace import AlgoWorkspace
+from substratools.workspace import CompositeAlgoWorkspace
 
 
 @pytest.fixture
@@ -56,3 +59,22 @@ def valid_opener(valid_opener_code):
     import_module("opener", valid_opener_code)
     yield
     del sys.modules["opener"]
+
+
+@pytest.fixture()
+def output_model_path(workdir: str) -> Path:
+    return workdir / "model" / "model"
+
+
+@pytest.fixture()
+def valid_algo_workspace(output_model_path: str) -> AlgoWorkspace:
+    return AlgoWorkspace(output_model_path=str(output_model_path))
+
+
+@pytest.fixture()
+def valid_composite_algo_workspace(workdir) -> CompositeAlgoWorkspace:
+    return CompositeAlgoWorkspace(
+        output_head_model_path=str(workdir / "model" / "model_head"),
+        output_trunk_model_path=str(workdir / "model" / "model_trunk")
+    )
+

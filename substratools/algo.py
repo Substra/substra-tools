@@ -8,6 +8,16 @@ import sys
 from substratools import exceptions
 from substratools import opener
 from substratools import utils
+from substratools.task_resources import COMPOSITE_IO_LOCAL
+from substratools.task_resources import COMPOSITE_IO_SHARED
+from substratools.task_resources import TASK_IO_CHAINKEYS
+from substratools.task_resources import TASK_IO_DATASAMPLES
+from substratools.task_resources import TASK_IO_LOCALFOLDER
+from substratools.task_resources import TASK_IO_OPENER
+from substratools.task_resources import TASK_IO_PREDICTIONS
+from substratools.task_resources import TRAIN_IO_MODEL
+from substratools.task_resources import TRAIN_IO_MODELS
+from substratools.task_resources import TaskResources
 from substratools.workspace import AggregateAlgoWorkspace
 from substratools.workspace import AlgoWorkspace
 from substratools.workspace import CompositeAlgoWorkspace
@@ -15,6 +25,45 @@ from substratools.workspace import CompositeAlgoWorkspace
 logger = logging.getLogger(__name__)
 
 # TODO rework how to handle input args of command line commands and wrapper methods
+
+
+def _parser_add_default_arguments(parser):
+    parser.add_argument(
+        "-d",
+        "--fake-data",
+        action="store_true",
+        default=False,
+        help="Enable fake data mode",
+    )
+    parser.add_argument(
+        "--n-fake-samples",
+        default=None,
+        type=int,
+        help="Number of fake samples if fake data is used.",
+    )
+    parser.add_argument(
+        "--log-path",
+        default=None,
+        help="Define log filename path",
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        default=False,
+        help="Enable debug mode (logs printed in stdout)",
+    )
+    parser.add_argument(
+        "--inputs",
+        type=str,
+        default="[]",
+        help="Inputs of the compute task",
+    )
+    parser.add_argument(
+        "--outputs",
+        type=str,
+        default="[]",
+        help="Outputs of the compute task",
+    )
 
 
 class Algo(abc.ABC):
@@ -213,11 +262,10 @@ class AlgoWrapper(object):
     """Algo wrapper to execute an algo instance on the platform."""
 
     _INTERFACE_CLASS = Algo
-    _DEFAULT_WORKSPACE_CLASS = AlgoWorkspace
 
-    def __init__(self, interface, workspace=None, opener_wrapper=None):
+    def __init__(self, interface, workspace, opener_wrapper=None):
         assert isinstance(interface, self._INTERFACE_CLASS)
-        self._workspace = workspace or self._DEFAULT_WORKSPACE_CLASS()
+        self._workspace = workspace
         self._opener_wrapper = opener_wrapper or opener.load_from_module(workspace=self._workspace)
         self._interface = interface
 
@@ -231,35 +279,38 @@ class AlgoWrapper(object):
         if not os.path.isfile(path):
             raise exceptions.MissingFileError(f"Output model file {path} does not exists")
 
-    def _load_model(self, model_name):
-        """Load single model in memory from its name."""
+    def _load_model(self, model_path):
+        """Load single model in memory."""
         # load model from workspace and deserialize it
-        model_path = os.path.join(self._workspace.input_models_folder_path, model_name)
         logger.info("loading model from '{}'".format(model_path))
         return self._interface.load_model(model_path)
 
-    def _load_models_as_list(self, model_names):
-        return [self._load_model(model_name) for model_name in model_names]
+    def _load_models_as_list(self):
+        if not self._workspace.input_model_paths:
+            return []
+        return [self._load_model(model_path) for model_path in self._workspace.input_model_paths]
 
-    def _load_models_as_generator(self, model_names):
-        for model_name in model_names:
-            yield self._load_model(model_name)
+    def _load_models_as_generator(self):
+        if not self._workspace.input_data_folder_paths:
+            return
+        for model_path in self._workspace.input_model_paths:
+            yield self._load_model(model_path)
 
-    def _load_models(self, model_names):
+    def _load_models(self):
         """Load models either as list or as generator"""
         if self._interface.use_models_generator:
-            return self._load_models_as_generator(model_names)
-        return self._load_models_as_list(model_names)
+            return self._load_models_as_generator()
+        return self._load_models_as_list()
 
     @utils.Timer(logger)
-    def train(self, model_names, rank=0, fake_data=False, n_fake_samples=None):
+    def train(self, rank=0, fake_data=False, n_fake_samples=None):
         """Train method wrapper."""
         # load data from opener
         X = self._opener_wrapper.get_X(fake_data, n_fake_samples)
         y = self._opener_wrapper.get_y(fake_data, n_fake_samples)
 
         # load models
-        models = self._load_models(model_names)
+        models = self._load_models()
 
         # train new model
         logger.info("launching training task")
@@ -274,13 +325,16 @@ class AlgoWrapper(object):
         return model
 
     @utils.Timer(logger)
-    def predict(self, model_name, fake_data=False, n_fake_samples=None):
+    def predict(self, fake_data=False, n_fake_samples=None):
         """Predict method wrapper."""
         # load data from opener
         X = self._opener_wrapper.get_X(fake_data, n_fake_samples)
 
         # load models
-        model = self._load_model(model_name)
+        model_paths = self._workspace.input_model_paths
+        if not model_paths or len(model_paths) != 1:
+            raise exceptions.InvalidInputOutputsError("predict expects exactly one input model")
+        model = self._load_models()[0]
 
         # get predictions
         logger.info("launching predict task")
@@ -296,98 +350,33 @@ def _generate_algo_cli(interface):
     """Helper to generate a command line interface client."""
 
     def _algo_from_args(args):
+        inputs = TaskResources(args.inputs)
+        outputs = TaskResources(args.outputs)
         workspace = AlgoWorkspace(
-            input_data_folder_paths=args.data_sample_paths,
-            input_models_folder_path=args.models_path,
+            # Data samples are optional because we could be using fake data.
+            # TODO: validate that the input contains either the --fake-data argument OR a "datasample" input.
+            input_data_folder_paths=inputs.get_optional_values(TASK_IO_DATASAMPLES),
             log_path=args.log_path,
-            output_model_path=args.output_model_path,
-            output_predictions_path=args.output_predictions_path,
-            chainkeys_path=args.chainkeys_path,
-            compute_plan_path=args.compute_plan_path,
+            input_model_paths=inputs.get_optional_values(TRAIN_IO_MODELS),
+            output_model_path=outputs.get_optional_value(TRAIN_IO_MODEL),
+            output_predictions_path=outputs.get_optional_value(TASK_IO_PREDICTIONS),
+            chainkeys_path=inputs.get_optional_value(TASK_IO_CHAINKEYS),
+            compute_plan_path=inputs.get_optional_value(TASK_IO_LOCALFOLDER),
         )
         utils.configure_logging(workspace.log_path, debug_mode=args.debug)
         opener_wrapper = opener.load_from_module(
-            path=args.opener_path,
+            path=inputs.get_optional_value(TASK_IO_OPENER),
             workspace=workspace,
         )
-        return AlgoWrapper(
-            interface,
-            workspace=workspace,
-            opener_wrapper=opener_wrapper,
-        )
-
-    def _parser_add_default_arguments(_parser):
-        _parser.add_argument(
-            "-d",
-            "--fake-data",
-            action="store_true",
-            default=False,
-            help="Enable fake data mode",
-        )
-        _parser.add_argument(
-            "--n-fake-samples",
-            default=None,
-            type=int,
-            help="Number of fake samples if fake data is used.",
-        )
-        _parser.add_argument(
-            "--data-sample-paths",
-            default=[],
-            nargs="*",
-            help="Define train/test data samples folder paths",
-        )
-        _parser.add_argument(
-            "--models-path",
-            default=None,
-            help="Define models folder path",
-        )
-        _parser.add_argument(
-            "--output-model-path",
-            default=None,
-            help="Define output model file path",
-        )
-        _parser.add_argument(
-            "--output-predictions-path",
-            default=None,
-            help="Define output predictions file path",
-        )
-        _parser.add_argument(
-            "--log-path",
-            default=None,
-            help="Define log filename path",
-        )
-        _parser.add_argument(
-            "--opener-path",
-            default=None,
-            help="Define path to opener python script",
-        )
-        _parser.add_argument(
-            "--debug",
-            action="store_true",
-            default=False,
-            help="Enable debug mode (logs printed in stdout)",
-        )
-        _parser.add_argument(
-            "--chainkeys-path",
-            default=None,
-            help="Define path to chainkeys",
-        )
-        _parser.add_argument(
-            "--compute-plan-path",
-            default=None,
-            help="Define path to the compute plan shared folder",
-        )
+        return AlgoWrapper(interface, workspace, opener_wrapper)
 
     def _train(args):
         algo_wrapper = _algo_from_args(args)
-        algo_wrapper.train(args.models, args.rank, args.fake_data, args.n_fake_samples)
+        algo_wrapper.train(args.rank, args.fake_data, args.n_fake_samples)
 
     parser = argparse.ArgumentParser()
     parsers = parser.add_subparsers()
     train_parser = parsers.add_parser("train")
-    train_parser.add_argument(
-        "models", type=str, nargs="*", help="Model names (must be located in default models folder)"
-    )
     train_parser.add_argument(
         "-r",
         "--rank",
@@ -400,10 +389,9 @@ def _generate_algo_cli(interface):
 
     def _predict(args):
         algo_wrapper = _algo_from_args(args)
-        algo_wrapper.predict(args.model, args.fake_data, args.n_fake_samples)
+        algo_wrapper.predict(args.fake_data, args.n_fake_samples)
 
     predict_parser = parsers.add_parser("predict")
-    predict_parser.add_argument("model", type=str, help="Model name (must be located in default models folder)")
     _parser_add_default_arguments(predict_parser)
     predict_parser.set_defaults(func=_predict)
 
@@ -643,18 +631,15 @@ class CompositeAlgoWrapper(AlgoWrapper):
     """Algo wrapper to execute an algo instance on the platform."""
 
     _INTERFACE_CLASS = CompositeAlgo
-    _DEFAULT_WORKSPACE_CLASS = CompositeAlgoWorkspace
 
-    def _load_head_trunk_models(self, head_filename, trunk_filename):
+    def _load_head_trunk_models(self):
         """Load head and trunk models from their filename."""
         head_model = None
-        if head_filename:
-            head_model_path = os.path.join(self._workspace.input_models_folder_path, head_filename)
-            head_model = self._interface.load_head_model(head_model_path)
+        if self._workspace.input_head_model_path:
+            head_model = self._interface.load_head_model(self._workspace.input_head_model_path)
         trunk_model = None
-        if trunk_filename:
-            trunk_model_path = os.path.join(self._workspace.input_models_folder_path, trunk_filename)
-            trunk_model = self._interface.load_trunk_model(trunk_model_path)
+        if self._workspace.input_trunk_model_path:
+            trunk_model = self._interface.load_trunk_model(self._workspace.input_trunk_model_path)
         return head_model, trunk_model
 
     def _assert_output_model_exists(self, path, part):
@@ -672,8 +657,6 @@ class CompositeAlgoWrapper(AlgoWrapper):
     @utils.Timer(logger)
     def train(
         self,
-        input_head_model_filename=None,
-        input_trunk_model_filename=None,
         rank=0,
         fake_data=False,
         n_fake_samples=None,
@@ -684,7 +667,7 @@ class CompositeAlgoWrapper(AlgoWrapper):
         y = self._opener_wrapper.get_y(fake_data, n_fake_samples)
 
         # load head and trunk models
-        head_model, trunk_model = self._load_head_trunk_models(input_head_model_filename, input_trunk_model_filename)
+        head_model, trunk_model = self._load_head_trunk_models()
 
         # train new models
         logger.info("launching training task")
@@ -705,13 +688,13 @@ class CompositeAlgoWrapper(AlgoWrapper):
         return head_model, trunk_model
 
     @utils.Timer(logger)
-    def predict(self, input_head_model_filename, input_trunk_model_filename, fake_data=False, n_fake_samples=None):
+    def predict(self, fake_data=False, n_fake_samples=None):
         """Predict method wrapper."""
         # load data from opener
         X = self._opener_wrapper.get_X(fake_data, n_fake_samples)
 
         # load head and trunk models
-        head_model, trunk_model = self._load_head_trunk_models(input_head_model_filename, input_trunk_model_filename)
+        head_model, trunk_model = self._load_head_trunk_models()
         assert head_model and trunk_model  # should not be None
 
         # get predictions
@@ -728,108 +711,31 @@ def _generate_composite_algo_cli(interface):
     """Helper to generate a command line interface client."""
 
     def _algo_from_args(args):
+        inputs = TaskResources(args.inputs)
+        outputs = TaskResources(args.outputs)
         workspace = CompositeAlgoWorkspace(
-            input_data_folder_paths=args.data_sample_paths,
-            input_models_folder_path=args.input_models_path,
-            output_models_folder_path=args.output_models_path,
-            output_head_model_filename=args.output_head_model_filename,
-            output_trunk_model_filename=args.output_trunk_model_filename,
+            # Data samples are optional because we could be using fake data.
+            # TODO: validate that the input contains either the --fake-data argument OR a "datasample" input.
+            input_data_folder_paths=inputs.get_optional_values(TASK_IO_DATASAMPLES),
             log_path=args.log_path,
-            output_predictions_path=args.output_predictions_path,
-            chainkeys_path=args.chainkeys_path,
-            compute_plan_path=args.compute_plan_path,
+            chainkeys_path=inputs.get_optional_value(TASK_IO_CHAINKEYS),
+            compute_plan_path=inputs.get_optional_value(TASK_IO_LOCALFOLDER),
+            input_head_model_path=inputs.get_optional_value(COMPOSITE_IO_LOCAL),
+            input_trunk_model_path=inputs.get_optional_value(COMPOSITE_IO_SHARED),
+            output_head_model_path=outputs.get_optional_value(COMPOSITE_IO_LOCAL),
+            output_trunk_model_path=outputs.get_optional_value(COMPOSITE_IO_SHARED),
+            output_predictions_path=outputs.get_optional_value(TASK_IO_PREDICTIONS),
         )
         opener_wrapper = opener.load_from_module(
-            path=args.opener_path,
+            path=inputs.get_optional_value(TASK_IO_OPENER),
             workspace=workspace,
         )
         utils.configure_logging(workspace.log_path, debug_mode=args.debug)
-        return CompositeAlgoWrapper(
-            interface,
-            workspace=workspace,
-            opener_wrapper=opener_wrapper,
-        )
-
-    def _parser_add_default_arguments(_parser):
-        _parser.add_argument(
-            "-d",
-            "--fake-data",
-            action="store_true",
-            default=False,
-            help="Enable fake data mode",
-        )
-        _parser.add_argument(
-            "--n-fake-samples",
-            default=None,
-            type=int,
-            help="Number of fake samples if fake data is used.",
-        )
-        _parser.add_argument(
-            "--data-sample-paths",
-            default=[],
-            nargs="*",
-            help="Define train/test data samples folder paths",
-        )
-        _parser.add_argument(
-            "--input-models-path",
-            default=None,
-            help="Define input models folder path",
-        )
-        _parser.add_argument(
-            "--output-predictions-path",
-            default=None,
-            help="Define output predictions file path",
-        )
-        _parser.add_argument(
-            "--log-path",
-            default=None,
-            help="Define log filename path",
-        )
-        _parser.add_argument(
-            "--opener-path",
-            default=None,
-            help="Define path to opener python script",
-        )
-        _parser.add_argument(
-            "--debug",
-            action="store_true",
-            default=False,
-            help="Enable debug mode (logs printed in stdout)",
-        )
-        # TODO the following options should be defined only for the train command
-        _parser.add_argument(
-            "--output-head-model-filename",
-            type=str,
-            default=None,
-            help="Output head model filename (must be located in output models folder)",
-        )
-        _parser.add_argument(
-            "--output-trunk-model-filename",
-            type=str,
-            default=None,
-            help="Output trunk model filename (must be located in output models folder)",
-        )
-        _parser.add_argument(
-            "--output-models-path",
-            default=None,
-            help="Define output models folder path",
-        )
-        _parser.add_argument(
-            "--chainkeys-path",
-            default=None,
-            help="Define path to chainkeys",
-        )
-        _parser.add_argument(
-            "--compute-plan-path",
-            default=None,
-            help="Define path to the compute plan shared folder",
-        )
+        return CompositeAlgoWrapper(interface, workspace, opener_wrapper)
 
     def _train(args):
         algo_wrapper = _algo_from_args(args)
         algo_wrapper.train(
-            args.input_head_model_filename,
-            args.input_trunk_model_filename,
             args.rank,
             args.fake_data,
             args.n_fake_samples,
@@ -838,18 +744,6 @@ def _generate_composite_algo_cli(interface):
     parser = argparse.ArgumentParser()
     parsers = parser.add_subparsers()
     train_parser = parsers.add_parser("train")
-    train_parser.add_argument(
-        "--input-head-model-filename",
-        type=str,
-        default=None,
-        help="Input head model filename (must be located in input models folder)",
-    )
-    train_parser.add_argument(
-        "--input-trunk-model-filename",
-        type=str,
-        default=None,
-        help="Input trunk model filename (must be located in input models folder)",
-    )
     train_parser.add_argument(
         "-r",
         "--rank",
@@ -862,23 +756,9 @@ def _generate_composite_algo_cli(interface):
 
     def _predict(args):
         algo_wrapper = _algo_from_args(args)
-        algo_wrapper.predict(
-            args.input_head_model_filename, args.input_trunk_model_filename, args.fake_data, args.n_fake_samples
-        )
+        algo_wrapper.predict(args.fake_data, args.n_fake_samples)
 
     predict_parser = parsers.add_parser("predict")
-    predict_parser.add_argument(
-        "--input-head-model-filename",
-        type=str,
-        required=True,
-        help="Input head model filename (must be located in input models folder)",
-    )
-    predict_parser.add_argument(
-        "--input-trunk-model-filename",
-        type=str,
-        required=True,
-        help="Input trunk model filename (must be located in input models folder)",
-    )
     _parser_add_default_arguments(predict_parser)
     predict_parser.set_defaults(func=_predict)
 
@@ -1063,11 +943,9 @@ class AggregateAlgo(abc.ABC):
 class AggregateAlgoWrapper(object):
     """Aggregate algo wrapper to execute an aggregate algo instance on the platform."""
 
-    _DEFAULT_WORKSPACE_CLASS = AggregateAlgoWorkspace
-
-    def __init__(self, interface, workspace=None, opener_wrapper=None):
+    def __init__(self, interface, workspace, opener_wrapper=None):
         assert isinstance(interface, AggregateAlgo)
-        self._workspace = workspace or self._DEFAULT_WORKSPACE_CLASS()
+        self._workspace = workspace
         self._opener_wrapper = opener_wrapper
         self._interface = interface
 
@@ -1081,31 +959,34 @@ class AggregateAlgoWrapper(object):
         if not os.path.isfile(path):
             raise exceptions.MissingFileError(f"Output model file {path} does not exists")
 
-    def _load_model(self, model_name):
+    def _load_model(self, model_path):
         """Load single model in memory from its name."""
         # load model from workspace and deserialize it
-        model_path = os.path.join(self._workspace.input_models_folder_path, model_name)
         logger.info("loading model from '{}'".format(model_path))
         return self._interface.load_model(model_path)
 
-    def _load_models_as_list(self, model_names):
-        return [self._load_model(model_name) for model_name in model_names]
+    def _load_models_as_list(self):
+        if not self._workspace.input_model_paths:
+            return []
+        return [self._load_model(model_path) for model_path in self._workspace.input_model_paths]
 
-    def _load_models_as_generator(self, model_names):
-        for model_name in model_names:
-            yield self._load_model(model_name)
+    def _load_models_as_generator(self):
+        if not self._workspace.input_data_folder_paths:
+            return
+        for model_path in self._workspace.input_model_paths:
+            yield self._load_model(model_path)
 
-    def _load_models(self, model_names):
+    def _load_models(self):
         """Load models either as list or as generator"""
         if self._interface.use_models_generator:
-            return self._load_models_as_generator(model_names)
-        return self._load_models_as_list(model_names)
+            return self._load_models_as_generator()
+        return self._load_models_as_list()
 
     @utils.Timer(logger)
-    def aggregate(self, model_names, rank=0):
+    def aggregate(self, rank=0):
         """Aggregate method wrapper."""
         # load models
-        models = self._load_models(model_names)
+        models = self._load_models()
 
         # train new model
         logger.info("launching aggregate task")
@@ -1118,7 +999,7 @@ class AggregateAlgoWrapper(object):
         return model
 
     @utils.Timer(logger)
-    def predict(self, model_name, fake_data=False, n_fake_samples=None):
+    def predict(self, fake_data=False, n_fake_samples=None):
         """Predict method wrapper."""
         # lazy load of opener wrapper as it is required only for the predict
         self._opener_wrapper = self._opener_wrapper or opener.load_from_module(workspace=self._workspace)
@@ -1126,7 +1007,10 @@ class AggregateAlgoWrapper(object):
         X = self._opener_wrapper.get_X(fake_data, n_fake_samples)
 
         # load models
-        model = self._load_model(model_name)
+        model_paths = self._workspace.input_model_paths
+        if len(model_paths) != 1:
+            raise exceptions.InvalidInputOutputsError("predict expects exactly one input model")
+        model = self._load_models()[0]
 
         # get predictions
         logger.info("launching predict task")
@@ -1142,104 +1026,34 @@ def _generate_aggregate_algo_cli(interface):
     """Helper to generate a command line interface client."""
 
     def _algo_from_args(args):
+        inputs = TaskResources(args.inputs)
+        outputs = TaskResources(args.outputs)
         workspace = AggregateAlgoWorkspace(
-            input_data_folder_paths=args.data_sample_paths,
-            input_models_folder_path=args.models_path,
+            input_data_folder_paths=inputs.get_optional_values(TASK_IO_DATASAMPLES),
+            input_model_paths=inputs.get_optional_values(TRAIN_IO_MODELS),
             log_path=args.log_path,
-            output_model_path=args.output_model_path,
-            output_predictions_path=args.output_predictions_path,
-            chainkeys_path=args.chainkeys_path,
-            compute_plan_path=args.compute_plan_path,
+            output_model_path=outputs.get_optional_value(TRAIN_IO_MODEL),
+            output_predictions_path=outputs.get_optional_value(TASK_IO_PREDICTIONS),
+            chainkeys_path=inputs.get_optional_value(TASK_IO_CHAINKEYS),
+            compute_plan_path=inputs.get_optional_value(TASK_IO_LOCALFOLDER),
         )
         utils.configure_logging(workspace.log_path, debug_mode=args.debug)
-        if args.opener_path:
+        if inputs.get_optional_value(TASK_IO_OPENER):
             opener_wrapper = opener.load_from_module(
-                path=args.opener_path,
+                path=inputs.get_optional_value(TASK_IO_OPENER),
                 workspace=workspace,
             )
         else:
             opener_wrapper = None
-        return AggregateAlgoWrapper(
-            interface,
-            workspace=workspace,
-            opener_wrapper=opener_wrapper,
-        )
-
-    def _parser_add_default_arguments(_parser):
-        _parser.add_argument(
-            "-d",
-            "--fake-data",
-            action="store_true",
-            default=False,
-            help="Enable fake data mode",
-        )
-        _parser.add_argument(
-            "--n-fake-samples",
-            default=None,
-            type=int,
-            help="Number of fake samples if fake data is used.",
-        )
-        _parser.add_argument(
-            "--data-sample-paths",
-            default=[],
-            nargs="*",
-            help="Define train/test data samples folder paths",
-        )
-        _parser.add_argument(
-            "--models-path",
-            default=None,
-            help="Define models folder path",
-        )
-        _parser.add_argument(
-            "--output-model-path",
-            default=None,
-            help="Define output model file path",
-        )
-        _parser.add_argument(
-            "--output-predictions-path",
-            default=None,
-            help="Define output predictions file path",
-        )
-        _parser.add_argument(
-            "--log-path",
-            default=None,
-            help="Define log filename path",
-        )
-        _parser.add_argument(
-            "--opener-path",
-            default=None,
-            help="Define path to opener python script",
-        )
-        _parser.add_argument(
-            "--debug",
-            action="store_true",
-            default=False,
-            help="Enable debug mode (logs printed in stdout)",
-        )
-        _parser.add_argument(
-            "--chainkeys-path",
-            default=None,
-            help="Define path to chainkeys",
-        )
-        _parser.add_argument(
-            "--compute-plan-path",
-            default=None,
-            help="Define path to the compute plan shared folder",
-        )
+        return AggregateAlgoWrapper(interface, workspace, opener_wrapper)
 
     def _aggregate(args):
         algo_wrapper = _algo_from_args(args)
-        algo_wrapper.aggregate(
-            args.models,
-            args.rank,
-        )
+        algo_wrapper.aggregate(args.rank)
 
     parser = argparse.ArgumentParser()
     parsers = parser.add_subparsers()
     aggregate_parser = parsers.add_parser("aggregate")
-    aggregate_parser.add_argument(
-        "models", type=str, nargs="*", help="Model names (must be located in default models folder)"
-    )
     aggregate_parser.add_argument(
         "-r",
         "--rank",
@@ -1252,10 +1066,9 @@ def _generate_aggregate_algo_cli(interface):
 
     def _predict(args):
         algo_wrapper = _algo_from_args(args)
-        algo_wrapper.predict(args.model, args.fake_data, args.n_fake_samples)
+        algo_wrapper.predict(args.fake_data, args.n_fake_samples)
 
     predict_parser = parsers.add_parser("predict")
-    predict_parser.add_argument("model", type=str, help="Model name (must be located in default models folder)")
     _parser_add_default_arguments(predict_parser)
     predict_parser.set_defaults(func=_predict)
 

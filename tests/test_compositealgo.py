@@ -1,10 +1,12 @@
 import json
-import pathlib
 
 import pytest
 
 from substratools import algo
 from substratools import exceptions
+from substratools.task_resources import COMPOSITE_IO_LOCAL
+from substratools.task_resources import COMPOSITE_IO_SHARED
+from substratools.task_resources import TASK_IO_DATASAMPLES
 from substratools.workspace import CompositeAlgoWorkspace
 
 
@@ -82,33 +84,34 @@ class WrongSavedHeadModelAggregateAlgo(DummyCompositeAlgo):
 
 @pytest.fixture
 def workspace(workdir):
-    models_dir = workdir / "input_models"
-    models_dir.mkdir()
+    output_dir = workdir / "outputs"
+    output_dir.mkdir()
     return CompositeAlgoWorkspace(
-        input_models_folder_path=str(models_dir),
+        output_head_model_path=str(output_dir / "head"),
+        output_trunk_model_path=str(output_dir / "trunk"),
+        output_predictions_path=str(output_dir / "predictions"),
     )
 
 
 @pytest.fixture
 def dummy_wrapper(workspace):
     a = DummyCompositeAlgo()
-    return algo.CompositeAlgoWrapper(a, workspace=workspace)
+    return algo.CompositeAlgoWrapper(a, workspace)
 
 
 @pytest.fixture
-def create_models(workspace):
+def create_models(workdir):
     head_model = {"value": 1}
     trunk_model = {"value": -1}
 
     def _create_model(model_data, name):
         filename = "{}.json".format(name)
-        path = pathlib.Path(workspace.input_models_folder_path) / filename
+        path = workdir / filename
         path.write_text(json.dumps(model_data))
-        return filename
+        return path
 
     return (
         [head_model, trunk_model],
-        workspace.input_models_folder_path,
         _create_model(head_model, "head"),
         _create_model(trunk_model, "trunk"),
     )
@@ -126,9 +129,12 @@ def test_train_no_model(dummy_wrapper):
 
 
 def test_train_input_head_trunk_models(create_models, dummy_wrapper):
-    _, _, head_filename, trunk_filename = create_models
+    _, head_path, trunk_path = create_models
 
-    head_model, trunk_model = dummy_wrapper.train(head_filename, trunk_filename)
+    dummy_wrapper._workspace.input_head_model_path = head_path
+    dummy_wrapper._workspace.input_trunk_model_path = trunk_path
+
+    head_model, trunk_model = dummy_wrapper.train()
     assert head_model["value"] == 2
     assert trunk_model["value"] == -2
 
@@ -147,11 +153,11 @@ def test_train_fake_data(dummy_wrapper):
     ],
 )
 def test_predict(fake_data, n_fake_samples, expected_pred, create_models, dummy_wrapper):
-    _, _, head_filename, trunk_filename = create_models
+    _, head_path, trunk_path = create_models
+    dummy_wrapper._workspace.input_head_model_path = head_path
+    dummy_wrapper._workspace.input_trunk_model_path = trunk_path
 
     pred = dummy_wrapper.predict(
-        head_filename,
-        trunk_filename,
         fake_data=fake_data,
         n_fake_samples=n_fake_samples,
     )
@@ -160,6 +166,7 @@ def test_predict(fake_data, n_fake_samples, expected_pred, create_models, dummy_
 
 def test_execute_train(workdir):
     output_models_path = workdir / "output_models"
+    output_models_path.mkdir()
     output_head_model_filename = "head_model"
     output_trunk_model_filename = "trunk_model"
 
@@ -168,13 +175,19 @@ def test_execute_train(workdir):
     output_trunk_model_path = output_models_path / output_trunk_model_filename
     assert not output_trunk_model_path.exists()
 
+    outputs = [
+        {"id": COMPOSITE_IO_LOCAL, "value": str(output_head_model_path)},
+        {"id": COMPOSITE_IO_SHARED, "value": str(output_trunk_model_path)},
+    ]
+    inputs = [
+        {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
+    ]
+
     common_args = [
-        "--output-models-path",
-        str(output_models_path),
-        "--output-head-model-filename",
-        output_head_model_filename,
-        "--output-trunk-model-filename",
-        output_trunk_model_filename,
+        "--outputs",
+        json.dumps(outputs),
+        "--inputs",
+        json.dumps(inputs),
     ]
 
     algo.execute(DummyCompositeAlgo(), sysargs=["train"] + common_args)
@@ -183,9 +196,10 @@ def test_execute_train(workdir):
 
 
 def test_execute_train_multiple_models(workdir, create_models):
-    _, input_models_folder, head_filename, trunk_filename = create_models
+    _, head_path, trunk_path = create_models
 
     output_models_folder_path = workdir / "output_models"
+    output_models_folder_path.mkdir()
 
     output_head_model_filename = "output_head_model"
     output_head_model_path = output_models_folder_path / output_head_model_filename
@@ -198,20 +212,22 @@ def test_execute_train_multiple_models(workdir, create_models):
     pred_path = workdir / "pred" / "pred"
     assert not pred_path.exists()
 
+    outputs = [
+        {"id": COMPOSITE_IO_LOCAL, "value": str(output_head_model_path)},
+        {"id": COMPOSITE_IO_SHARED, "value": str(output_trunk_model_path)},
+    ]
+    inputs = [
+        {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
+        {"id": COMPOSITE_IO_LOCAL, "value": str(head_path)},
+        {"id": COMPOSITE_IO_SHARED, "value": str(trunk_path)},
+    ]
+
     command = [
         "train",
-        "--input-models-path",
-        str(input_models_folder),
-        "--input-head-model-filename",
-        head_filename,
-        "--input-trunk-model-filename",
-        trunk_filename,
-        "--output-models-path",
-        str(output_models_folder_path),
-        "--output-head-model-filename",
-        output_head_model_filename,
-        "--output-trunk-model-filename",
-        output_trunk_model_filename,
+        "--outputs",
+        json.dumps(outputs),
+        "--inputs",
+        json.dumps(inputs),
     ]
 
     algo.execute(DummyCompositeAlgo(), sysargs=command)
@@ -229,19 +245,21 @@ def test_execute_train_multiple_models(workdir, create_models):
 
 
 def test_execute_predict(workdir, create_models):
-    _, input_models_folder, head_filename, trunk_filename = create_models
+    _, head_path, trunk_path = create_models
 
     pred_path = workdir / "pred" / "pred"
     assert not pred_path.exists()
 
+    inputs = [
+        {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
+        {"id": COMPOSITE_IO_LOCAL, "value": str(head_path)},
+        {"id": COMPOSITE_IO_SHARED, "value": str(trunk_path)},
+    ]
+
     command = [
         "predict",
-        "--input-models-path",
-        str(input_models_folder),
-        "--input-head-model-filename",
-        head_filename,
-        "--input-trunk-model-filename",
-        trunk_filename,
+        "--inputs",
+        json.dumps(inputs),
     ]
 
     algo.execute(DummyCompositeAlgo(), sysargs=command)
@@ -261,9 +279,9 @@ def test_execute_predict(workdir, create_models):
         WrongSavedHeadModelAggregateAlgo,
     ),
 )
-def test_model_check(algo_class):
+def test_model_check(algo_class, workdir, valid_composite_algo_workspace):
     a = algo_class()
-    wp = algo.CompositeAlgoWrapper(a)
+    wp = algo.CompositeAlgoWrapper(a, valid_composite_algo_workspace)
 
     with pytest.raises(exceptions.MissingFileError):
-        wp.train([])
+        wp.train()
