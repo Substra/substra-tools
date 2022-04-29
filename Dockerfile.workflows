@@ -4,6 +4,9 @@ FROM $CUDA_IMAGE
 
 # Modified by .github/workflows/publish_docker.yml
 ARG PYTHON_VERSION=3.7
+# TODO: find a way to parse this from the CUDA_IMAGE
+# with bash string manipulation: ${CUDA_IMAGE##*-}//.
+ARG DISTRO=ubuntu2004
 
 ARG USER_ID=1001
 ARG GROUP_ID=1001
@@ -14,6 +17,11 @@ ARG HOME_DIR=/sandbox
 COPY ./setup.py /tmp
 COPY ./README.md /tmp
 COPY ./substratools /tmp/substratools
+
+# Update the CUDA Linux GPG Repository Key
+# https://developer.nvidia.com/blog/updating-the-cuda-linux-gpg-repository-key/
+RUN apt-key del 7fa2af80 \
+ && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/${DISTRO}/x86_64/3bf863cc.pub
 
 # need the 3 first lines to get python${PYTHON_VERSION} on all ubuntu versions
 RUN apt-get update \
@@ -60,7 +68,7 @@ RUN apt-get update \
  && if python --version | grep -q "Python ${PYTHON_VERSION}"; then echo "pyhton command is properly set"; else exit 1 ; fi \
  && if python3 --version | grep -q "Python ${PYTHON_VERSION}"; then echo "pyhton3 command is properly set"; else exit 1 ; fi \
  && if pip --version | grep -q "python ${PYTHON_VERSION}"; then echo "pip command is properly set"; else exit 1 ; fi \
- && if pip3 --version | grep -q "python ${PYTHON_VERSION}"; then echo "pip3 command is properly set"; else exit 1 ; fi 
+ && if pip3 --version | grep -q "python ${PYTHON_VERSION}"; then echo "pip3 command is properly set"; else exit 1 ; fi
 
 # Create default user, group, and home directory
 RUN addgroup --gid ${GROUP_ID} ${GROUP_NAME}
