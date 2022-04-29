@@ -47,7 +47,7 @@ jobs:
         CONNECT_TOOLS_REF=$(echo "${{ github.event.inputs.release_tag || github.ref_name }}" | tr -d ':,/')
         CUDA_IMAGE_TAG=$(echo "${{ matrix.cuda_image }}" | tr -d ':,/')
 
-        if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+        if [ $CONNECT_TOOLS_REF = "main" ]; then
           echo "IMG_BASE_TAG=latest-$CUDA_IMAGE_TAG-python${{ matrix.python_version }}" >> $GITHUB_ENV
           # Set the most recent image to latest, latest-minimal, latest-workflows
           if [ "${{ matrix.cuda_image }}" == "nvidia/cuda:11.6.0-base-ubuntu20.04" ] &&  [ "${{ matrix.python_version }}" == "3.9" ]; then
