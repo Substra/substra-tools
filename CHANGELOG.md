@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [0.12.0](https://github.com/owkin/connect-tools/releases/tag/0.12.0) - 2022-04-29
+
+### Fixed
+
+- nvidia rotating keys (#39)
+
 ### Changed
 
 - (BREAKING) algos receive arguments are generic inputs/outputs dict (#27)
