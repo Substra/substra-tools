@@ -120,7 +120,7 @@ def test_execute_aggregate(output_model_path):
     assert output_model_path.exists()
 
     output_model_path.unlink()
-    algo.execute(DummyAggregateAlgo(), sysargs=["aggregate", "--outputs", json.dumps(outputs), "--debug"])
+    algo.execute(DummyAggregateAlgo(), sysargs=["aggregate", "--outputs", json.dumps(outputs), "--log-level", "debug"])
     assert output_model_path.exists()
 
 

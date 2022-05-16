@@ -10,9 +10,17 @@ from substratools import exceptions
 
 logger = logging.getLogger(__name__)
 
+MAPPING_LOG_LEVEL = {
+    "debug": logging.DEBUG,
+    "info": logging.INFO,
+    "warning": logging.WARNING,
+    "error": logging.ERROR,
+    "critical": logging.CRITICAL,
+}
 
-def configure_logging(path=None, debug_mode=True):
-    level = logging.DEBUG if debug_mode else logging.INFO
+
+def configure_logging(path=None, log_level="info"):
+    level = MAPPING_LOG_LEVEL[log_level]
 
     formatter = logging.Formatter(fmt="%(asctime)s %(levelname)-6s %(name)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 
@@ -24,7 +32,7 @@ def configure_logging(path=None, debug_mode=True):
     root.setLevel(level)
     root.addHandler(h)
 
-    if path and debug_mode:
+    if path and level == logging.DEBUG:
         fh = logging.FileHandler(path)
         fh.setLevel(level)
         fh.setFormatter(formatter)
@@ -32,9 +40,9 @@ def configure_logging(path=None, debug_mode=True):
         root.addHandler(h)
 
 
-def get_logger(name, path=None, debug_mode=True):
+def get_logger(name, path=None, log_level="info"):
     new_logger = logging.getLogger(f"substratools.{name}")
-    configure_logging(path, debug_mode)
+    configure_logging(path, log_level)
     return new_logger
 
 

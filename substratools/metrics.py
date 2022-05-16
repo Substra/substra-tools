@@ -65,7 +65,7 @@ class Metrics(abc.ABC):
     following command:
 
     ```sh
-    python <script_path> --fake-data --n-fake-samples 20 --debug
+    python <script_path> --fake-data --n-fake-samples 20 --log-level debug
     ```
 
     To see all the available options for metrics commands, run:
@@ -196,16 +196,17 @@ def _generate_cli():
         help="Define path to opener python script",
     )
     parser.add_argument(
-        "--debug",
-        action="store_true",
-        default=False,
-        help="Enable debug mode (logs printed in stdout)",
+        "--log-level",
+        default="info",
+        choices=utils.MAPPING_LOG_LEVEL.keys(),
+        help="Choose log level",
     )
     parser.add_argument(
         "--log-path",
         default="pred/metrics.log",
         help="Define log filename path",
     )
+
     return parser
 
 
@@ -230,7 +231,7 @@ def execute(interface=None, sysargs=None):
         path=args.opener_path,
         workspace=workspace,
     )
-    utils.configure_logging(path=workspace.log_path, debug_mode=args.debug)
+    utils.configure_logging(path=workspace.log_path, log_level=args.log_level)
     metrics_wrapper = MetricsWrapper(
         interface,
         workspace=workspace,

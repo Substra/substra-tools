@@ -62,7 +62,7 @@ substratools.Algo = class Algo(abc.ABC)
   For instance to train an algo using fake data, run the following command:
   
   ```sh
-  python <script_path> train --fake-data --n-fake-samples 20 --debug
+  python <script_path> train --fake-data --n-fake-samples 20 --log-level debug
   ```
   
   To see all the available options for the train and predict commands, run:
@@ -245,7 +245,7 @@ substratools.CompositeAlgo = class CompositeAlgo(abc.ABC)
   For instance to train an algo using fake data, run the following command:
   
   ```sh
-  python <script_path> train --fake-data --n-fake-samples 20 --debug
+  python <script_path> train --fake-data --n-fake-samples 20 --log-level debug
   ```
   
   To see all the available options for the train and predict commands, run:
@@ -449,7 +449,7 @@ substratools.AggregateAlgo = class AggregateAlgo(abc.ABC)
   For instance to train an algo using fake data, run the following command:
   
   ```sh
-  python <script_path> aggregate --models_path <models_path> --models <model_name> --model <model_name> --debug
+  python <script_path> aggregate --models_path <models_path> --models <model_name> --model <model_name>     --log-level debug
   ```
   
   To see all the available options for the aggregate and predict commands, run:
@@ -596,7 +596,7 @@ substratools.Metrics = class Metrics(abc.ABC)
   following command:
   
   ```sh
-  python <script_path> --fake-data --n-fake-samples 20 --debug
+  python <script_path> --fake-data --n-fake-samples 20 --log-level debug
   ```
   
   To see all the available options for metrics commands, run:

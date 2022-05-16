@@ -47,10 +47,10 @@ def _parser_add_default_arguments(parser):
         help="Define log filename path",
     )
     parser.add_argument(
-        "--debug",
-        action="store_true",
-        default=False,
-        help="Enable debug mode (logs printed in stdout)",
+        "--log-level",
+        default="info",
+        choices=utils.MAPPING_LOG_LEVEL.keys(),
+        help="Choose log level",
     )
     parser.add_argument(
         "--inputs",
@@ -128,7 +128,7 @@ class Algo(abc.ABC):
     For instance to train an algo using fake data, run the following command:
 
     ```sh
-    python <script_path> train --fake-data --n-fake-samples 20 --debug
+    python <script_path> train --fake-data --n-fake-samples 20 --log-level debug
     ```
 
     To see all the available options for the train and predict commands, run:
@@ -363,7 +363,7 @@ def _generate_algo_cli(interface):
             chainkeys_path=inputs.get_optional_value(TASK_IO_CHAINKEYS),
             compute_plan_path=inputs.get_optional_value(TASK_IO_LOCALFOLDER),
         )
-        utils.configure_logging(workspace.log_path, debug_mode=args.debug)
+        utils.configure_logging(workspace.log_path, log_level=args.log_level)
         opener_wrapper = opener.load_from_module(
             path=inputs.get_optional_value(TASK_IO_OPENER),
             workspace=workspace,
@@ -465,7 +465,7 @@ class CompositeAlgo(abc.ABC):
     For instance to train an algo using fake data, run the following command:
 
     ```sh
-    python <script_path> train --fake-data --n-fake-samples 20 --debug
+    python <script_path> train --fake-data --n-fake-samples 20 --log-level debug
     ```
 
     To see all the available options for the train and predict commands, run:
@@ -730,7 +730,7 @@ def _generate_composite_algo_cli(interface):
             path=inputs.get_optional_value(TASK_IO_OPENER),
             workspace=workspace,
         )
-        utils.configure_logging(workspace.log_path, debug_mode=args.debug)
+        utils.configure_logging(workspace.log_path, log_level=args.log_level)
         return CompositeAlgoWrapper(interface, workspace, opener_wrapper)
 
     def _train(args):
@@ -827,7 +827,8 @@ class AggregateAlgo(abc.ABC):
     For instance to train an algo using fake data, run the following command:
 
     ```sh
-    python <script_path> aggregate --models_path <models_path> --models <model_name> --model <model_name> --debug
+    python <script_path> aggregate --models_path <models_path> --models <model_name> --model <model_name> \
+    --log-level debug
     ```
 
     To see all the available options for the aggregate and predict commands, run:
@@ -1037,7 +1038,7 @@ def _generate_aggregate_algo_cli(interface):
             chainkeys_path=inputs.get_optional_value(TASK_IO_CHAINKEYS),
             compute_plan_path=inputs.get_optional_value(TASK_IO_LOCALFOLDER),
         )
-        utils.configure_logging(workspace.log_path, debug_mode=args.debug)
+        utils.configure_logging(workspace.log_path, log_level=args.log_level)
         if inputs.get_optional_value(TASK_IO_OPENER):
             opener_wrapper = opener.load_from_module(
                 path=inputs.get_optional_value(TASK_IO_OPENER),

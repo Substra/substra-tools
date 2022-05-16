@@ -137,10 +137,12 @@ def test_execute_train(workdir, output_model_path):
     algo.execute(DummyAlgo(), sysargs=["train"] + options)
     assert output_model_path.exists()
 
-    algo.execute(DummyAlgo(), sysargs=["train", "--fake-data", "--n-fake-samples", "1", "--outputs", json.dumps(outputs)])
+    algo.execute(
+        DummyAlgo(), sysargs=["train", "--fake-data", "--n-fake-samples", "1", "--outputs", json.dumps(outputs)]
+    )
     assert output_model_path.exists()
 
-    algo.execute(DummyAlgo(), sysargs=["train", "--debug"] + options)
+    algo.execute(DummyAlgo(), sysargs=["train", "--log-level", "debug"] + options)
     assert output_model_path.exists()
 
 
