@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [0.13.0](https://github.com/owkin/connect-tools/releases/tag/0.13.0) - 2022-05-22
+
 ### Changed
 
 - BREAKING CHANGE: change --debug (bool) to --log-level (str) (#42)
