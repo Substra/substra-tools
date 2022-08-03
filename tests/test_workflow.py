@@ -61,7 +61,7 @@ class DummyAlgo(Algo):
 
 class DummyMetrics(Metrics):
     def score(self, y, pred):
-        return pred
+        return pred["sum"]
 
 
 def test_workflow(workdir, dummy_opener):
@@ -76,9 +76,7 @@ def test_workflow(workdir, dummy_opener):
     assert os.path.exists(loop1_model_path)
 
     loop2_model_path = workdir / "loop2model"
-    loop2_workspace = AlgoWorkspace(
-        input_model_paths=[str(loop1_model_path)], output_model_path=str(loop2_model_path)
-    )
+    loop2_workspace = AlgoWorkspace(input_model_paths=[str(loop1_model_path)], output_model_path=str(loop2_model_path))
     loop2_wp = AlgoWrapper(a, workspace=loop2_workspace)
 
     # loop 2 (one model as input)
@@ -109,4 +107,4 @@ def test_workflow(workdir, dummy_opener):
     # metrics
     metrics_wp = MetricsWrapper(DummyMetrics())
     score = metrics_wp.score()
-    assert score == {"sum": 3}
+    assert score == 3.0

@@ -147,10 +147,17 @@ class MetricsWrapper(object):
             raise AssertionError
 
         logger.info("launching scoring task")
-        x = self._interface.score(y, y_pred)
-        logger.info("score: {}".format(x))
-        self._save_score(x)
-        return x
+        score = self._interface.score(y, y_pred)
+
+        # cast to float, to handle cases where the score is a numpy.float32/64
+        try:
+            score = float(score)
+        except TypeError:
+            raise TypeError("Metrics.score() return type should be float-castable")
+
+        logger.info("score: {}".format(score))
+        self._save_score(score)
+        return score
 
 
 def _generate_cli():
