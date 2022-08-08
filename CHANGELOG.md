@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- BREAKING CHANGE: drop Python 3.7 support (#49)
+
 ### Fixed
 
 - fix: metric with type np.float32() is not Json serializable #47

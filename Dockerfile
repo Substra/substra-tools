@@ -3,7 +3,7 @@ ARG CUDA_IMAGE=nvidia/cuda:11.6.0-base-ubuntu20.04
 FROM $CUDA_IMAGE
 
 # Modified by .github/workflows/publish_docker.yml
-ARG PYTHON_VERSION=3.7
+ARG PYTHON_VERSION=3.8
 # TODO: find a way to parse this from the CUDA_IMAGE
 # with bash string manipulation: ${CUDA_IMAGE##*-}//.
 ARG DISTRO=ubuntu2004
@@ -47,8 +47,8 @@ RUN apt-get update \
 # needed for pillow
  && python${PYTHON_VERSION} -m pip install --upgrade --no-cache-dir setuptools \
 # install essential datascience libraries
-# latest versions compatible with python>=3.7
- && python${PYTHON_VERSION} -m pip install --no-cache-dir pillow==9.0.1 pandas==1.3.5 numpy==1.21.5 scikit-learn==1.0.2 lifelines==0.26.4 scipy==1.7.3 \
+# latest versions compatible with python>=3.8
+ && python${PYTHON_VERSION} -m pip install --no-cache-dir pillow==9.2.0 pandas==1.4.3 numpy==1.23.1 scikit-learn==1.1.1 lifelines==0.27.1 scipy==1.9.0 \
 # install substratools
  && cd /tmp && python${PYTHON_VERSION} -m pip install --no-cache-dir . \
 # clean the apt cache

@@ -15,7 +15,7 @@ on:
         description: 'cuda_images. Example: ["nvidia/cuda:11.6.0-base-ubuntu20.04"]'
         required: true
       python_versions:
-        description: 'python_versions. Example: ["3.7", "3.8", "3.9"]'
+        description: 'python_versions. Example: ["3.8", "3.9"]'
         required: true
       release_tag:
         description: 'release_tag. Example: 0.9.1'
@@ -28,7 +28,7 @@ jobs:
     outputs:
       # Add a version to this list to automatically build Dockerfiles from it for the next releases
       default_cuda_images: '["nvidia/cuda:11.6.0-base-ubuntu20.04"]'
-      default_python_versions:  '["3.7", "3.8", "3.9"]'
+      default_python_versions:  '["3.8", "3.9"]'
     steps:
       - run: true
 
