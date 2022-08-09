@@ -22,7 +22,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/Substra/substra-tools",
     keywords=["substra"],
-    author="Owkin",
+    author="Owkin, Inc.",
     author_email="fldev@owkin.com",
     license="Apache 2.0",
     packages=find_packages(),
