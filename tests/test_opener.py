@@ -3,6 +3,7 @@ import os
 import pytest
 
 from substratools import exceptions
+from substratools.algo import InputIdentifiers
 from substratools.opener import load_from_module
 from substratools.utils import import_module
 from substratools.workspace import DEFAULT_INPUT_DATA_FOLDER_PATH
@@ -54,16 +55,12 @@ def fake_X(n_samples):
     return 'fakeX'
 def fake_y(n_samples):
     return 'fakey'
-def get_predictions(path):
-    return 'pred'
-def save_predictions(y_pred, path):
-    return 'pred'
 """
 
     import_module("opener", script)
 
     o = load_from_module()
-    assert o.get_X() == "X"
+    assert o.get_X() == InputIdentifiers.X
 
 
 def test_load_opener_as_class(tmp_cwd):
@@ -78,10 +75,6 @@ class MyOpener(Opener):
         return 'fakeX'
     def fake_y(self, n_samples):
         return 'fakey'
-    def get_predictions(self, path):
-        return 'pred'
-    def save_predictions(self, y_pred, path):
-        return 'pred'
 """
 
     import_module("opener", script)
@@ -96,7 +89,7 @@ def test_load_opener_from_path(tmp_cwd, valid_opener_code):
     path = dirpath / "my_opener.py"
     path.write_text(valid_opener_code)
     o = load_from_module(path=path)
-    assert o.get_X() == "X"
+    assert o.get_X() == InputIdentifiers.X
 
 
 def test_opener_check_folders(tmp_cwd):
@@ -112,10 +105,6 @@ class MyOpener(Opener):
         return 'fakeX'
     def fake_y(self, n_samples):
         return 'fakey'
-    def get_predictions(self, path):
-        return 'pred'
-    def save_predictions(self, y_pred, path):
-        return 'pred'
 """
 
     import_module("opener", script)
@@ -129,48 +118,3 @@ class MyOpener(Opener):
 
     o._workspace.input_data_folder_paths = data_paths
     assert o.get_X() == "Xclass"
-
-
-@pytest.mark.parametrize(
-    "save_predictions_method_body",
-    (
-        """
-        pass
-    """,
-        """
-        with open(path + '.npy', 'w') as f:
-            json.dump(pred, f)
-    """,
-    ),
-)
-def test_predictions_check(tmp_cwd, save_predictions_method_body):
-    script = f"""
-import json
-from substratools import Opener
-
-class MyOpener(Opener):
-    def get_X(self, folder):
-        return 'X'
-
-    def get_y(self, folder):
-        return list(range(0, 3))
-
-    def fake_X(self, n_samples):
-        return 'Xfake'
-
-    def fake_y(self, n_samples):
-        return [0] * 3
-
-    def get_predictions(self, path):
-        with open(path, 'r') as f:
-            return json.load(f)
-
-    def save_predictions(self, pred, path):
-        {save_predictions_method_body}
-"""
-    import_module("opener", script)
-
-    o = load_from_module()
-
-    with pytest.raises(exceptions.MissingFileError):
-        o.save_predictions({"foo": "bar"})

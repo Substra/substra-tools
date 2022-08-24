@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- BREAKING CHANGES:
+  - methods from algo, composite algo, aggregate and metrics now take `inputs` (TypeDict) and `outputs` (TypeDict) as arguments
+  - the user must load and save all the inputs and outputs of those methods (except for the datasamples)
+  - `load_predictions` and `get_predictions` methods have been removed from the opener
+  - `load_trunk_model`, `save_trunk_model`, `load_head_model`, `save_head_model` have been removed from the `tools.CompositeAlgo` class
+  - `load_model` and `save_model` have been removed from both `tools.Algo` and `tools.AggregateAlgo` classes
+
+  The full extend of those changes are detailed within [this](https://github.com/owkin/tech-team/pull/134) ADR.
+
 ## [0.14.0](https://github.com/owkin/connect-tools/releases/tag/0.14.0) - 2022-08-09
 
 ### Changed

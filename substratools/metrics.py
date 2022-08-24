@@ -1,33 +1,21 @@
 import abc
 import argparse
-import enum
 import json
 import logging
+import os
 import sys
+from typing import Any
+from typing import TypedDict
 
+from substratools import exceptions
 from substratools import opener
 from substratools import utils
+from substratools.algo import InputIdentifiers
+from substratools.algo import OutputIdentifiers
 from substratools.workspace import MetricsWorkspace
 
 logger = logging.getLogger(__name__)
 REQUIRED_FUNCTIONS = set(["score"])
-
-
-class FakeDataMode(enum.IntEnum):
-    DISABLED = 0
-    FAKE_Y = 1
-    FAKE_Y_PRED = 2
-
-    @classmethod
-    def from_value(cls, val):
-        if isinstance(val, bool):
-            # for backward compatibility with boolean fake_data values
-            return cls.DISABLED if not val else cls.FAKE_Y_PRED
-        return cls(val)
-
-    @classmethod
-    def from_str(cls, val):
-        return FakeDataMode[val]
 
 
 class Metrics(abc.ABC):
@@ -49,8 +37,14 @@ class Metrics(abc.ABC):
 
 
     class AccuracyMetrics(tools.Metrics):
-        def score(self, y_true, y_pred):
-            return accuracy_score(y_true, y_pred)
+        def score(self, inputs, outputs):
+            y_true = inputs["y"]
+            y_pred = self.load_predictions(inputs["predictions"])
+            perf = accuracy_score(y_true, y_pred)
+            tools.save_performance(perf, outputs["performance"])
+
+        def load_predictions(self, predictions_path):
+            return json.load(predictions_path)
 
     if __name__ == '__main__':
          tools.metrics.execute(AccuracyMetrics())
@@ -94,24 +88,36 @@ class Metrics(abc.ABC):
     predictions_path = './sandbox/predictions'
 
     y_true = o.get_y(data_sample_folders)
-    y_pred = o.get_predictions(predictions_path)
 
-    score = m.score(y_true, y_pred)
+    inputs = {"y": y_true, "predictions":predictions_path}
+    outputs = {"performance": performance_path}
+    m.score(inputs, outputs)
     ```
     """
 
     @abc.abstractmethod
-    def score(self, y_true, y_pred):
+    def score(
+        self,
+        inputs: TypedDict("inputs", {InputIdentifiers.y: Any, InputIdentifiers.predictions: os.PathLike}),
+        outputs: TypedDict("outputs", {OutputIdentifiers.performance: os.PathLike}),
+    ):
         """Compute model perf from actual and predicted values.
 
         # Arguments
 
-        y_true: actual values.
-        y_pred: predicted values.
-
-        # Returns
-
-        perf (float): performance of the model.
+        inputs: TypedDict(
+            "inputs",
+            {
+                InputIdentifiers.y: Any: actual values.
+                InputIdentifiers.predictions: Any: path to predicted values.
+            }
+        ),
+        outputs: TypedDict(
+            "outputs",
+            {
+                OutputIdentifiers.performance: os.PathLike: path to save the performance of the model.
+            }
+        )
         """
         raise NotImplementedError
 
@@ -128,36 +134,31 @@ class MetricsWrapper(object):
         with open(path, "w") as f:
             json.dump({"all": score}, f)
 
+    def _assert_output_exists(self, path, key):
+
+        if os.path.isdir(path):
+            raise exceptions.NotAFileError(f"Expected output file at {path}, found dir for output `{key}`")
+        if not os.path.isfile(path):
+            raise exceptions.MissingFileError(f"Output file {path} used to save argument `{key}` does not exists.")
+
     def score(self, fake_data=False, n_fake_samples=None):
         """Load labels and predictions and save score results."""
-        mode = FakeDataMode.from_value(fake_data)
-        if mode == FakeDataMode.DISABLED:
+        y_pred_path = self._workspace.input_predictions_path
+
+        if not fake_data:
             y = self._opener_wrapper.get_y()
-            y_pred = self._opener_wrapper.get_predictions()
 
-        elif mode == FakeDataMode.FAKE_Y:
+        elif fake_data:
             y = self._opener_wrapper.get_y(fake_data=True, n_fake_samples=n_fake_samples)
-            y_pred = self._opener_wrapper.get_predictions()
-
-        elif mode == FakeDataMode.FAKE_Y_PRED:
-            y = self._opener_wrapper.get_y(fake_data=True, n_fake_samples=n_fake_samples)
-            y_pred = y
-
-        else:
-            raise AssertionError
 
         logger.info("launching scoring task")
-        score = self._interface.score(y, y_pred)
 
-        # cast to float, to handle cases where the score is a numpy.float32/64
-        try:
-            score = float(score)
-        except TypeError:
-            raise TypeError("Metrics.score() return type should be float-castable")
+        inputs = {InputIdentifiers.y: y, InputIdentifiers.predictions: y_pred_path}
+        outputs = {OutputIdentifiers.performance: self._workspace.output_perf_path}
 
-        logger.info("score: {}".format(score))
-        self._save_score(score)
-        return score
+        self._interface.score(inputs, outputs)
+
+        self._assert_output_exists(self._workspace.output_perf_path, OutputIdentifiers.performance)
 
 
 def _generate_cli():
@@ -168,12 +169,6 @@ def _generate_cli():
         action="store_true",
         default=False,
         help="Enable fake data mode (fake y)",
-    )
-    parser.add_argument(
-        "--fake-data-mode",
-        default=FakeDataMode.DISABLED.name,
-        choices=[e.name for e in FakeDataMode],
-        help="Set fake data mode",
     )
     parser.add_argument(
         "--n-fake-samples",
@@ -217,6 +212,17 @@ def _generate_cli():
     return parser
 
 
+def save_performance(performance: Any, path: os.PathLike):
+    with open(path, "w") as f:
+        json.dump({"all": performance}, f)
+
+
+def load_performance(path: os.PathLike) -> Any:
+    with open(path, "r") as f:
+        performance = json.load(f)["all"]
+    return performance
+
+
 def execute(interface=None, sysargs=None):
     """Launch metrics command line interface."""
     if not interface:
@@ -244,9 +250,11 @@ def execute(interface=None, sysargs=None):
         workspace=workspace,
         opener_wrapper=opener_wrapper,
     )
-    fake_data = args.fake_data or FakeDataMode.from_str(args.fake_data_mode)
+    fake_data = args.fake_data
     n_fake_samples = args.n_fake_samples
-    return metrics_wrapper.score(
+    metrics_wrapper.score(
         fake_data,
         n_fake_samples,
     )
+
+    return metrics_wrapper._workspace.output_perf_path

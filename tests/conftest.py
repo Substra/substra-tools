@@ -43,14 +43,6 @@ class FakeOpener(Opener):
 
     def fake_y(self, n_samples):
         return [0] * n_samples
-
-    def get_predictions(self, path):
-        with open(path, 'r') as f:
-            return json.load(f)
-
-    def save_predictions(self, pred, path):
-        with open(path, 'w') as f:
-            json.dump(pred, f)
 """
 
 
@@ -75,6 +67,5 @@ def valid_algo_workspace(output_model_path: str) -> AlgoWorkspace:
 def valid_composite_algo_workspace(workdir) -> CompositeAlgoWorkspace:
     return CompositeAlgoWorkspace(
         output_head_model_path=str(workdir / "model" / "model_head"),
-        output_trunk_model_path=str(workdir / "model" / "model_trunk")
+        output_trunk_model_path=str(workdir / "model" / "model_trunk"),
     )
-

@@ -4,6 +4,11 @@ import argparse
 import logging
 import os
 import sys
+from enum import Enum
+from typing import Any
+from typing import List
+from typing import Optional
+from typing import TypedDict
 
 from substratools import exceptions
 from substratools import opener
@@ -25,6 +30,28 @@ from substratools.workspace import CompositeAlgoWorkspace
 logger = logging.getLogger(__name__)
 
 # TODO rework how to handle input args of command line commands and wrapper methods
+
+
+class InputIdentifiers(str, Enum):
+    local = "local"
+    shared = "shared"
+    model = "model"
+    models = "models"
+    predictions = "predictions"
+    performance = "performance"
+    opener = "opener"
+    datasamples = "datasamples"
+    rank = "rank"
+    X = "X"
+    y = "y"
+
+
+class OutputIdentifiers(str, Enum):
+    local = "local"
+    shared = "shared"
+    model = "model"
+    predictions = "predictions"
+    performance = "performance"
 
 
 def _parser_add_default_arguments(parser):
@@ -74,12 +101,6 @@ class Algo(abc.ABC):
 
     - #Algo.train()
     - #Algo.predict()
-    - #Algo.load_model()
-    - #Algo.save_model()
-
-    This class has an `use_models_generator` class property:
-    - if True, models will be passed to the `train` method as a generator
-    - (default) if False, models will be passed to the `train` method as a list
 
     The class has a `chainkeys_path` class property: it contains the path to the chainkeys folder.
     If the chainkey support is on, this folder contains the chainkeys.
@@ -101,13 +122,14 @@ class Algo(abc.ABC):
 
 
     class DummyAlgo(tools.Algo):
-        def train(self, X, y, models, rank):
+        def train(self, inputs, outputs):
             new_model = None
-            return new_model
+            self.save_model(new_model, outputs["model"])
 
-        def predict(self, X, model):
+        def predict(self, inputs, outputs):
+            model = self.load_model(inputs["model"])
             predictions = 0
-            return predictions
+            self.save_predictions(predictions, outputs["predictions"])
 
         def load_model(self, path):
             return json.load(path)
@@ -115,6 +137,8 @@ class Algo(abc.ABC):
         def save_model(self, model, path):
             json.dump(model, path)
 
+        def save_predictions(self, predictions, path):
+            json.dump(predictions, path)
 
     if __name__ == '__main__':
         tools.algo.execute(DummyAlgo())
@@ -154,18 +178,41 @@ class Algo(abc.ABC):
     y = o.get_y(["dataset/train/train1"])
 
     a = algo.MyAlgo()
-    model = a.train(X, y, None, None, 0)
-    y_pred = a.predict(X, model)
+
+    train_inputs={"X":X, "y":y, "model":None, "rank":0}
+    train_outputs={"model":output_model_path}
+
+    a.train(train_inputs, train_outputs)
+
+    predict_inputs={"X":X, "model":input_model_path}
+    predict_outputs={"predictions":output_predictions_path}
+
+    a.predict(predict_inputs, predict_outputs)
     ```
 
     """
 
-    use_models_generator = False
     chainkeys_path = None
     compute_plan_path = None
 
     @abc.abstractmethod
-    def train(self, X, y, models, rank):
+    def train(
+        self,
+        inputs: TypedDict(
+            "inputs",
+            {
+                InputIdentifiers.X: List[Any],  # cf valid_opener_code # TODO: rename "data" , del Y ?
+                InputIdentifiers.y: List[Any],  # datasamples contains loaded datasamples, if any, or None
+                InputIdentifiers.models: Optional[
+                    os.PathLike
+                ],  # inputs contains a dict where keys are identifiers and values are paths on the disk
+                InputIdentifiers.rank: int,
+            },
+        ),
+        outputs: TypedDict(
+            "outputs", {OutputIdentifiers.model: os.PathLike}
+        ),  # outputs contains a dict where keys are identifiers and values are paths on disk
+    ) -> None:
         """Train model and produce new model from train data.
 
         This task corresponds to the creation of a traintuple on the Substra
@@ -173,19 +220,39 @@ class Algo(abc.ABC):
 
         # Arguments
 
-        X: training data samples loaded with `Opener.get_X()`.
-        y: training data samples labels loaded with `Opener.get_y()`.
-        models: list or generator of models loaded with `Algo.load_model()`.
-        rank: rank of the training task.
-
-        # Returns
-
-        model: model object.
+        inputs: TypedDict(
+            "inputs",
+            {
+                InputIdentifiers.X: List[Any]: training data samples loaded with `Opener.get_X()`.
+                InputIdentifiers.y: List[Any]: training data samples labels loaded with `Opener.get_y()`.
+                InputIdentifiers.models: Optional[
+                    os.PathLike
+                ]: list or generator of models loaded with `Algo.load_model()`.
+                InputIdentifiers.rank: int: rank of the training task.
+            },
+        outputs: TypedDict(
+            "outputs", {OutputIdentifiers.model: os.PathLike}: output model path to save the model.
+        )
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def predict(self, X, model):
+    def predict(
+        self,
+        inputs: TypedDict(
+            "inputs",
+            {
+                InputIdentifiers.X: Any,
+                InputIdentifiers.model: List[os.PathLike],
+            },
+        ),
+        outputs: TypedDict(
+            "outputs",
+            {
+                OutputIdentifiers.predictions: os.PathLike,
+            },
+        ),
+    ) -> None:
         """Get predictions from test data.
 
         This task corresponds to the creation of a testtuple on the Substra
@@ -193,12 +260,20 @@ class Algo(abc.ABC):
 
         # Arguments
 
-        X: testing data samples loaded with `Opener.get_X()`.
-        model: input model load with `Algo.load_model()` used for predictions.
-
-        # Returns
-
-        predictions: predictions object.
+        inputs: TypedDict(
+            "inputs",
+            {
+                InputIdentifiers.X: Any: testing data samples loaded with `Opener.get_X()`.
+                InputIdentifiers.model: List[os.PathLike]: input model load with `Algo.load_model()` used for
+                    predictions.
+            },
+        ),
+        outputs: TypedDict(
+            "outputs",
+            {
+                OutputIdentifiers.predictions: os.PathLike: output predictions path to save the predictions.
+            },
+        )
         """
         raise NotImplementedError
 
@@ -226,37 +301,6 @@ class Algo(abc.ABC):
         """
         return self.predict(*args, **kwargs)
 
-    @abc.abstractmethod
-    def load_model(self, path):
-        """Deserialize model from file.
-
-        This method will be executed before the call to the methods
-        `Algo.train()` and `Algo.predict()` to deserialize the model objects.
-
-        # Arguments
-
-        path: path of the model to load.
-
-        # Returns
-
-        model: the deserialized model object.
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def save_model(self, model, path):
-        """Serialize model in file.
-
-        This method will be executed after the call to the methods
-        `Algo.train()` and `Algo.predict()` to save the model objects.
-
-        # Arguments
-
-        path: path of file to write.
-        model: the model to serialize.
-        """
-        raise NotImplementedError
-
 
 class AlgoWrapper(object):
     """Algo wrapper to execute an algo instance on the platform."""
@@ -272,35 +316,17 @@ class AlgoWrapper(object):
         self._interface.chainkeys_path = self._workspace.chainkeys_path
         self._interface.compute_plan_path = self._workspace.compute_plan_path
 
-    def _assert_output_model_exists(self):
-        path = self._workspace.output_model_path
+    def _assert_output_exists(self, path, key):
+
         if os.path.isdir(path):
-            raise exceptions.NotAFileError(f"Expected output model file at {path}, found dir")
+            raise exceptions.NotAFileError(f"Expected output file at {path}, found dir for output `{key}`")
         if not os.path.isfile(path):
-            raise exceptions.MissingFileError(f"Output model file {path} does not exists")
+            raise exceptions.MissingFileError(f"Output file {path} used to save argument `{key}` does not exists.")
 
-    def _load_model(self, model_path):
-        """Load single model in memory."""
-        # load model from workspace and deserialize it
-        logger.info("loading model from '{}'".format(model_path))
-        return self._interface.load_model(model_path)
-
-    def _load_models_as_list(self):
+    def _load_models_paths(self):
         if not self._workspace.input_model_paths:
             return []
-        return [self._load_model(model_path) for model_path in self._workspace.input_model_paths]
-
-    def _load_models_as_generator(self):
-        if not self._workspace.input_data_folder_paths:
-            return
-        for model_path in self._workspace.input_model_paths:
-            yield self._load_model(model_path)
-
-    def _load_models(self):
-        """Load models either as list or as generator"""
-        if self._interface.use_models_generator:
-            return self._load_models_as_generator()
-        return self._load_models_as_list()
+        return self._workspace.input_model_paths
 
     @utils.Timer(logger)
     def train(self, rank=0, fake_data=False, n_fake_samples=None):
@@ -310,19 +336,24 @@ class AlgoWrapper(object):
         y = self._opener_wrapper.get_y(fake_data, n_fake_samples)
 
         # load models
-        models = self._load_models()
+        models = self._load_models_paths()
 
         # train new model
         logger.info("launching training task")
         method = self._interface.train if not fake_data else self._interface._train_fake_data
-        model = method(X, y, models, rank)
 
-        # serialize output model and save it to workspace
-        logger.info("saving output model to '{}'".format(self._workspace.output_model_path))
-        self._interface.save_model(model, self._workspace.output_model_path)
-        self._assert_output_model_exists()
+        # TODO get data and models labels from --inputs
+        method(
+            inputs={
+                InputIdentifiers.X: X,
+                InputIdentifiers.y: y,
+                InputIdentifiers.models: models,
+                InputIdentifiers.rank: rank,
+            },
+            outputs={OutputIdentifiers.model: self._workspace.output_model_path},
+        )
 
-        return model
+        self._assert_output_exists(self._workspace.output_model_path, OutputIdentifiers.model)
 
     @utils.Timer(logger)
     def predict(self, fake_data=False, n_fake_samples=None):
@@ -334,16 +365,17 @@ class AlgoWrapper(object):
         model_paths = self._workspace.input_model_paths
         if not model_paths or len(model_paths) != 1:
             raise exceptions.InvalidInputOutputsError("predict expects exactly one input model")
-        model = self._load_models()[0]
+        model_path = model_paths[0]
 
         # get predictions
         logger.info("launching predict task")
         method = self._interface.predict if not fake_data else self._interface._predict_fake_data
-        pred = method(X, model)
+        inputs = {InputIdentifiers.X: X, InputIdentifiers.model: model_path}
+        outputs = {OutputIdentifiers.predictions: self._workspace.output_predictions_path}
 
-        # save predictions
-        self._opener_wrapper.save_predictions(pred)
-        return pred
+        method(inputs, outputs)
+
+        self._assert_output_exists(self._workspace.output_predictions_path, OutputIdentifiers.predictions)
 
 
 def _generate_algo_cli(interface):
@@ -406,10 +438,6 @@ class CompositeAlgo(abc.ABC):
 
     - #CompositeAlgo.train()
     - #CompositeAlgo.predict()
-    - #CompositeAlgo.load_head_model()
-    - #CompositeAlgo.save_head_model()
-    - #CompositeAlgo.load_trunk_model()
-    - #CompositeAlgo.save_trunk_model()
 
     To add a composite algo to the Substra Platform, the line
     `tools.algo.execute(<CompositeAlgoClass>())` must be added to the main of the algo
@@ -431,26 +459,24 @@ class CompositeAlgo(abc.ABC):
 
 
     class DummyCompositeAlgo(tools.CompositeAlgo):
-        def train(self, X, y, head_model, trunk_model, rank):
+        def train(self, inputs, outputs):
             new_head_model = None
             new_trunk_model = None
-            return new_head_model, new_trunk_model
+            self.save_model(new_head_model, outputs["local"])
+            self.save_model(new_trunk_model, outputs["shared"])
 
-        def predict(self, X, head_model, trunk_model):
+        def predict(self, inputs, outputs):
             predictions = 0
-            return predictions
+            self.save_predictions(predictions, outputs["predictions”])
 
-        def load_head_model(self, path):
+        def load_model(self, path):
             return json.load(path)
 
-        def save_head_model(self, model, path):
+        def save_model(self, model, path):
             json.dump(model, path)
 
-        def load_trunk_model(self, path):
-            return json.load(path)
-
-        def save_trunk_model(self, model, path):
-            json.dump(model, path)
+        def save_predictions(self, predictions, path):
+            json.dump(predictions, path)
 
 
     if __name__ == '__main__':
@@ -492,8 +518,13 @@ class CompositeAlgo(abc.ABC):
     y = o.get_y(["dataset/train/train1"])
 
     a = composite_algo.MyCompositeAlgo()
-    head_model, trunk_model = a.train(X, y, None, None, 0)
-    y_pred = a.predict(X, head_model, trunk_model)
+    inputs_train = {"X":X, "y":y, "local":None, "shared":None, "rank":0}
+    outputs_train = {"local":head_model_path, "shared":trunk_model_path}
+    head_model, trunk_model = a.train(inputs_train, outputs_train)
+
+    inputs_predict = {"X":X, "local":None, "shared":None}
+    outputs_predict = {"predictions":predictions_path}
+    y_pred = a.predict(inputs_predict, outputs_predict)
     ```
     """
 
@@ -501,7 +532,26 @@ class CompositeAlgo(abc.ABC):
     compute_plan_path = None
 
     @abc.abstractmethod
-    def train(self, X, y, head_model, trunk_model, rank):
+    def train(
+        self,
+        inputs: TypedDict(
+            "inputs",
+            {
+                InputIdentifiers.X: Any,
+                InputIdentifiers.y: Any,
+                InputIdentifiers.local: Optional[os.PathLike],
+                InputIdentifiers.shared: Optional[os.PathLike],
+                InputIdentifiers.rank: int,
+            },
+        ),
+        outputs: TypedDict(
+            "outputs",
+            {
+                OutputIdentifiers.local: os.PathLike,
+                OutputIdentifiers.shared: os.PathLike,
+            },
+        ),  # outputs contains a dict where keys are identifiers and values are paths on disk
+    ) -> None:
         """Train model and produce new composite models from train data.
 
         This task corresponds to the creation of a composite traintuple on the Substra
@@ -509,20 +559,45 @@ class CompositeAlgo(abc.ABC):
 
         # Arguments
 
-        X: training data samples loaded with `Opener.get_X()`.
-        y: training data samples labels loaded with `Opener.get_y()`.
-        head_model: head model loaded with `CompositeAlgo.load_head_model()` (may be None).
-        trunk_model: trunk model loaded with `CompositeAlgo.load_trunk_model()` (may be None).
-        rank: rank of the training task.
-
-        # Returns
-
-        tuple: (head_model, trunk_model).
+        inputs: TypedDict(
+            "inputs",
+            {
+                InputIdentifiers.X: Any: training data samples loaded with `Opener.get_X()`.
+                InputIdentifiers.y: Any: training data samples labels loaded with `Opener.get_y()`.
+                InputIdentifiers.local: Optional[os.PathLike]: head model loaded with `CompositeAlgo.load_head_model()`
+                    (may be None).
+                InputIdentifiers.shared: Optional[os.PathLike]: trunk model loaded with
+                    `CompositeAlgo.load_trunk_model()` (may be None).
+                InputIdentifiers.rank: int: rank of the training task.
+            },
+        ),
+        outputs: TypedDict(
+            "outputs",
+            {
+                OutputIdentifiers.local: os.PathLike: output head model path to save the head model.
+                OutputIdentifiers.shared: os.PathLike: output trunk model path to save the trunk model.
+            }
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def predict(self, X, head_model, trunk_model):
+    def predict(
+        self,
+        inputs: TypedDict(
+            "inputs",
+            {
+                InputIdentifiers.X: Any,
+                InputIdentifiers.local: os.PathLike,
+                InputIdentifiers.shared: os.PathLike,
+            },
+        ),
+        outputs: TypedDict(
+            "outputs",
+            {
+                OutputIdentifiers.predictions: os.PathLike,
+            },
+        ),
+    ) -> None:
         """Get predictions from test data.
 
         This task corresponds to the creation of a composite testtuple on the Substra
@@ -530,13 +605,20 @@ class CompositeAlgo(abc.ABC):
 
         # Arguments
 
-        X: testing data samples loaded with `Opener.get_X()`.
-        head_model: head model loaded with `CompositeAlgo.load_head_model()`.
-        trunk_model: trunk model loaded with `CompositeAlgo.load_trunk_model()`.
-
-        # Returns
-
-        predictions: predictions object.
+        inputs: TypedDict(
+            "inputs",
+            {
+                InputIdentifiers.X: Any: testing data samples loaded with `Opener.get_X()`.
+                InputIdentifiers.local: os.PathLike: head model loaded with `CompositeAlgo.load_head_model()`.
+                InputIdentifiers.shared: os.PathLike: trunk model loaded with `CompositeAlgo.load_trunk_model()`.
+            },
+        ),
+        outputs: TypedDict(
+            "outputs",
+            {
+                OutputIdentifiers.predictions: os.PathLike: output predictions path to save the predictions.
+            },
+        )
         """
         raise NotImplementedError
 
@@ -564,95 +646,21 @@ class CompositeAlgo(abc.ABC):
         """
         return self.predict(*args, **kwargs)
 
-    @abc.abstractmethod
-    def load_head_model(self, path):
-        """Deserialize head model from file.
-
-        This method will be executed before the call to the methods
-        `Algo.train()` and `Algo.predict()` to deserialize the model objects.
-
-        # Arguments
-
-        path: path of the model to load.
-
-        # Returns
-
-        model: the deserialized model object.
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def save_head_model(self, model, path):
-        """Serialize head model in file.
-
-        This method will be executed after the call to the methods
-        `Algo.train()` and `Algo.predict()` to save the model objects.
-
-        # Arguments
-
-        path: path of file to write.
-        model: the model to serialize.
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def load_trunk_model(self, path):
-        """Deserialize trunk model from file.
-
-        This method will be executed before the call to the methods
-        `Algo.train()` and `Algo.predict()` to deserialize the model objects.
-
-        # Arguments
-
-        path: path of the model to load.
-
-        # Returns
-
-        model: the deserialized model object.
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def save_trunk_model(self, model, path):
-        """Serialize trunk model in file.
-
-        This method will be executed after the call to the methods
-        `Algo.train()` and `Algo.predict()` to save the model objects.
-
-        # Arguments
-
-        path: path of file to write.
-        model: the model to serialize.
-        """
-        raise NotImplementedError
-
 
 class CompositeAlgoWrapper(AlgoWrapper):
     """Algo wrapper to execute an algo instance on the platform."""
 
     _INTERFACE_CLASS = CompositeAlgo
 
-    def _load_head_trunk_models(self):
+    def _load_models_paths(self):
         """Load head and trunk models from their filename."""
-        head_model = None
+        head_model_path = None
         if self._workspace.input_head_model_path:
-            head_model = self._interface.load_head_model(self._workspace.input_head_model_path)
-        trunk_model = None
+            head_model_path = self._workspace.input_head_model_path
+        trunk_model_path = None
         if self._workspace.input_trunk_model_path:
-            trunk_model = self._interface.load_trunk_model(self._workspace.input_trunk_model_path)
-        return head_model, trunk_model
-
-    def _assert_output_model_exists(self, path, part):
-        if os.path.isdir(path):
-            raise exceptions.NotAFileError(f"Expected output {part} model file at {path}, found dir")
-        if not os.path.isfile(path):
-            raise exceptions.MissingFileError(f"Output {part} model file {path} does not exists")
-
-    def _assert_output_trunkmodel_exists(self):
-        self._assert_output_model_exists(self._workspace.output_trunk_model_path, "trunk")
-
-    def _assert_output_headmodel_exists(self):
-        self._assert_output_model_exists(self._workspace.output_head_model_path, "head")
+            trunk_model_path = self._workspace.input_trunk_model_path
+        return head_model_path, trunk_model_path
 
     @utils.Timer(logger)
     def train(
@@ -667,25 +675,28 @@ class CompositeAlgoWrapper(AlgoWrapper):
         y = self._opener_wrapper.get_y(fake_data, n_fake_samples)
 
         # load head and trunk models
-        head_model, trunk_model = self._load_head_trunk_models()
+        head_model_path, trunk_model_path = self._load_models_paths()
 
         # train new models
         logger.info("launching training task")
         method = self._interface.train if not fake_data else self._interface._train_fake_data
-        head_model, trunk_model = method(X, y, head_model, trunk_model, rank)
 
-        # serialize output head and trunk models and save them to workspace
-        output_head_model_path = self._workspace.output_head_model_path
-        logger.info("saving output head model to '{}'".format(output_head_model_path))
-        self._interface.save_head_model(head_model, output_head_model_path)
-        self._assert_output_headmodel_exists()
+        method(
+            inputs={
+                InputIdentifiers.X: X,
+                InputIdentifiers.y: y,
+                InputIdentifiers.shared: trunk_model_path,
+                InputIdentifiers.local: head_model_path,
+                InputIdentifiers.rank: rank,
+            },
+            outputs={
+                OutputIdentifiers.local: self._workspace.output_head_model_path,
+                OutputIdentifiers.shared: self._workspace.output_trunk_model_path,
+            },
+        )
 
-        output_trunk_model_path = self._workspace.output_trunk_model_path
-        logger.info("saving output trunk model to '{}'".format(output_trunk_model_path))
-        self._interface.save_trunk_model(trunk_model, output_trunk_model_path)
-        self._assert_output_trunkmodel_exists()
-
-        return head_model, trunk_model
+        self._assert_output_exists(self._workspace.output_head_model_path, OutputIdentifiers.local)
+        self._assert_output_exists(self._workspace.output_trunk_model_path, OutputIdentifiers.shared)
 
     @utils.Timer(logger)
     def predict(self, fake_data=False, n_fake_samples=None):
@@ -694,17 +705,24 @@ class CompositeAlgoWrapper(AlgoWrapper):
         X = self._opener_wrapper.get_X(fake_data, n_fake_samples)
 
         # load head and trunk models
-        head_model, trunk_model = self._load_head_trunk_models()
-        assert head_model and trunk_model  # should not be None
+        head_model_path, trunk_model_path = self._load_models_paths()
+        assert head_model_path and trunk_model_path  # should not be None
 
         # get predictions
-        logger.info("launching predict task")
+        logger.info("launching predict taske")
         method = self._interface.predict if not fake_data else self._interface._predict_fake_data
-        pred = method(X, head_model, trunk_model)
 
-        # save predictions
-        self._opener_wrapper.save_predictions(pred)
-        return pred
+        inputs = {
+            InputIdentifiers.X: X,
+            InputIdentifiers.local: head_model_path,
+            InputIdentifiers.shared: trunk_model_path,
+        }
+
+        outputs = {OutputIdentifiers.predictions: self._workspace.output_predictions_path}
+
+        method(inputs, outputs)
+
+        self._assert_output_exists(self._workspace.output_predictions_path, OutputIdentifiers.predictions)
 
 
 def _generate_composite_algo_cli(interface):
@@ -773,12 +791,6 @@ class AggregateAlgo(abc.ABC):
 
     - #AggregateAlgo.aggregate()
     - #AggregateAlgo.predict()
-    - #AggregateAlgo.load_model()
-    - #AggregateAlgo.save_model()
-
-    This class has an `use_models_generator` class property:
-    - if True, models will be passed to the `aggregate` method as a generator
-    - (default) if False, models will be passed to the `aggregate` method as a list
 
     The class has a `chainkeys_path` class property: it contains the path to the chainkeys folder.
     If the chainkey support is on, this folder contains the chainkeys.
@@ -800,19 +812,22 @@ class AggregateAlgo(abc.ABC):
 
 
     class DummyAggregateAlgo(tools.AggregateAlgo):
-        def aggregate(self, models, rank):
+        def aggregate(self, inputs, outputs):
             new_model = None
-            return new_model
+            self.save_model(outputs["model"])
 
-        def predict(self, X, model):
+        def predict(self, inputs, outputs):
             predictions = 0
-            return predictions
+            self.save_predictions(predictions, outputs["predictions”])
 
         def load_model(self, path):
             return json.load(path)
 
         def save_model(self, model, path):
             json.dump(model, path)
+
+        def save_predictions(self, predictions, path):
+            json.dump(predictions, path)
 
 
     if __name__ == '__main__':
@@ -857,12 +872,21 @@ class AggregateAlgo(abc.ABC):
     ```
     """
 
-    use_models_generator = False
     chainkeys_path = None
     compute_plan_path = None
 
     @abc.abstractmethod
-    def aggregate(self, models, rank):
+    def aggregate(
+        self,
+        inputs: TypedDict(
+            "inputs",
+            {
+                InputIdentifiers.models: List[os.PathLike],
+                InputIdentifiers.rank: int,
+            },
+        ),
+        outputs: TypedDict("outputs", {OutputIdentifiers.model: os.PathLike}),
+    ):
         """Aggregate models and produce a new model.
 
         This task corresponds to the creation of an aggregate tuple on the Substra
@@ -870,17 +894,30 @@ class AggregateAlgo(abc.ABC):
 
         # Arguments
 
-        models: list of models loaded with `AggregateAlgo.load_model()`.
-        rank: rank of the aggregate task.
-
-        # Returns
-
-        model: aggregated model.
+        inputs: TypedDict(
+            "inputs",
+            {
+                InputIdentifiers.models: List[os.PathLike]: list of models path loaded with `AggregateAlgo.load_model()`
+                InputIdentifiers.rank: int: rank of the aggregate task.
+            },
+        ),
+        outputs: TypedDict("outputs", {OutputIdentifiers.model: os.PathLike}): output model path to save the aggregated
+            model.
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def predict(self, X, model):
+    def predict(
+        self,
+        inputs: TypedDict(
+            "inputs",
+            {
+                InputIdentifiers.X: Any,
+                InputIdentifiers.model: os.PathLike,
+            },
+        ),
+        outputs: TypedDict("outputs", {"model": os.PathLike}),
+    ):
         """Get predictions from test data.
 
         This task corresponds to the creation of a testtuple on the Substra
@@ -888,12 +925,15 @@ class AggregateAlgo(abc.ABC):
 
         # Arguments
 
-        X: testing data samples loaded with `Opener.get_X()`.
-        model: input model load with `AggregateAlgo.load_model()` used for predictions.
-
-        # Returns
-
-        predictions: predictions object.
+        inputs: TypedDict(
+            "inputs",
+            {
+                InputIdentifiers.X: Any: testing data samples loaded with `Opener.get_X()`.
+                InputIdentifiers.model: os.PathLike: input model load with `AggregateAlgo.load_model()` used for
+                predictions.
+            },
+        ),
+        outputs: TypedDict("outputs", {"model": os.PathLike}): output predictions path to save the predictions.
         """
         raise NotImplementedError
 
@@ -909,37 +949,6 @@ class AggregateAlgo(abc.ABC):
         """
         return self.predict(*args, **kwargs)
 
-    @abc.abstractmethod
-    def load_model(self, path):
-        """Deserialize model from file.
-
-        This method will be executed before the call to the method `Algo.aggregate()`
-        to deserialize the model objects.
-
-        # Arguments
-
-        path: path of the model to load.
-
-        # Returns
-
-        model: the deserialized model object.
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def save_model(self, model, path):
-        """Serialize model in file.
-
-        This method will be executed after the call to the method `Algo.aggregate()`
-        to save the model objects.
-
-        # Arguments
-
-        path: path of file to write.
-        model: the model to serialize.
-        """
-        raise NotImplementedError
-
 
 class AggregateAlgoWrapper(object):
     """Aggregate algo wrapper to execute an aggregate algo instance on the platform."""
@@ -953,51 +962,35 @@ class AggregateAlgoWrapper(object):
         self._interface.chainkeys_path = self._workspace.chainkeys_path
         self._interface.compute_plan_path = self._workspace.compute_plan_path
 
-    def _assert_output_model_exists(self):
-        path = self._workspace.output_model_path
-        if os.path.isdir(path):
-            raise exceptions.NotAFileError(f"Expected output model file at {path}, found dir")
-        if not os.path.isfile(path):
-            raise exceptions.MissingFileError(f"Output model file {path} does not exists")
-
-    def _load_model(self, model_path):
-        """Load single model in memory from its name."""
-        # load model from workspace and deserialize it
-        logger.info("loading model from '{}'".format(model_path))
-        return self._interface.load_model(model_path)
-
-    def _load_models_as_list(self):
+    def _get_models_paths(self):
         if not self._workspace.input_model_paths:
             return []
-        return [self._load_model(model_path) for model_path in self._workspace.input_model_paths]
+        return self._workspace.input_model_paths
 
-    def _load_models_as_generator(self):
-        if not self._workspace.input_data_folder_paths:
-            return
-        for model_path in self._workspace.input_model_paths:
-            yield self._load_model(model_path)
+    def _assert_output_exists(self, path, key):
 
-    def _load_models(self):
-        """Load models either as list or as generator"""
-        if self._interface.use_models_generator:
-            return self._load_models_as_generator()
-        return self._load_models_as_list()
+        if os.path.isdir(path):
+            raise exceptions.NotAFileError(f"Expected output file at {path}, found dir for output `{key}`")
+        if not os.path.isfile(path):
+            raise exceptions.MissingFileError(f"Output file {path} used to save argument `{key}` does not exists.")
 
     @utils.Timer(logger)
     def aggregate(self, rank=0):
         """Aggregate method wrapper."""
         # load models
-        models = self._load_models()
+        models = self._get_models_paths()
 
         # train new model
         logger.info("launching aggregate task")
-        model = self._interface.aggregate(models, rank)
+
+        inputs = {InputIdentifiers.models: models, InputIdentifiers.rank: rank}
+        outputs = {OutputIdentifiers.model: self._workspace.output_model_path}
+
+        self._interface.aggregate(inputs, outputs)
 
         # serialize output model and save it to workspace
         logger.info("saving output model to '{}'".format(self._workspace.output_model_path))
-        self._interface.save_model(model, self._workspace.output_model_path)
-        self._assert_output_model_exists()
-        return model
+        self._assert_output_exists(self._workspace.output_model_path, OutputIdentifiers.model)
 
     @utils.Timer(logger)
     def predict(self, fake_data=False, n_fake_samples=None):
@@ -1011,16 +1004,18 @@ class AggregateAlgoWrapper(object):
         model_paths = self._workspace.input_model_paths
         if len(model_paths) != 1:
             raise exceptions.InvalidInputOutputsError("predict expects exactly one input model")
-        model = self._load_models()[0]
+        model_path = self._get_models_paths()[0]
 
         # get predictions
         logger.info("launching predict task")
         method = self._interface.predict if not fake_data else self._interface._predict_fake_data
-        pred = method(X, model)
 
-        # save predictions
-        self._opener_wrapper.save_predictions(pred)
-        return pred
+        inputs = {InputIdentifiers.X: X, InputIdentifiers.model: model_path}
+        outputs = {OutputIdentifiers.predictions: self._workspace.output_predictions_path}
+
+        method(inputs, outputs)
+
+        self._assert_output_exists(self._workspace.output_predictions_path, OutputIdentifiers.predictions)
 
 
 def _generate_aggregate_algo_cli(interface):

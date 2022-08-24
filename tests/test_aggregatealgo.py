@@ -1,14 +1,20 @@
 import json
-import types
+from os import PathLike
+from typing import Any
+from typing import List
+from typing import TypedDict
 
 import pytest
 
 from substratools import algo
 from substratools import exceptions
+from substratools.algo import InputIdentifiers
+from substratools.algo import OutputIdentifiers
 from substratools.task_resources import TASK_IO_PREDICTIONS
 from substratools.task_resources import TRAIN_IO_MODEL
 from substratools.task_resources import TRAIN_IO_MODELS
 from substratools.workspace import AggregateAlgoWorkspace
+from tests import utils
 
 
 @pytest.fixture(autouse=True)
@@ -17,36 +23,69 @@ def setup(valid_opener):
 
 
 class DummyAggregateAlgo(algo.AggregateAlgo):
-    def aggregate(self, models, rank):
+    def aggregate(
+        self,
+        inputs: TypedDict(
+            "inputs",
+            {
+                InputIdentifiers.models: List[PathLike],
+                InputIdentifiers.rank: int,
+            },
+        ),
+        outputs: TypedDict("outputs", {"model": PathLike}),
+    ) -> None:
+
+        models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
+
         new_model = {"value": 0}
         for m in models:
             new_model["value"] += m["value"]
-        return new_model
 
-    def predict(self, X, model):
-        pred = model["value"]
-        return X * pred
+        utils.save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
 
-    def load_model(self, path):
-        with open(path, "r") as f:
-            return json.load(f)
+    def predict(
+        self,
+        inputs: TypedDict(
+            "inputs",
+            {
+                InputIdentifiers.X: Any,
+                "model": PathLike,
+            },
+        ),
+        outputs: TypedDict("outputs", {"model": PathLike}),
+    ):
+        model = utils.load_model(path=inputs.get(InputIdentifiers.model))
 
-    def save_model(self, model, path):
-        with open(path, "w") as f:
-            json.dump(model, f)
+        # Predict
+        X = inputs.get(InputIdentifiers.X)
+        pred = X * model["value"]
+
+        # save predictions
+        utils.save_predictions(predictions=pred, path=outputs.get(OutputIdentifiers.predictions))
 
 
 class NoSavedModelAggregateAlgo(DummyAggregateAlgo):
-    def save_model(self, model, path):
-        # do not save model at all
-        pass
+    def aggregate(self, inputs, outputs):
+
+        models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
+
+        new_model = {"value": 0}
+        for m in models:
+            new_model["value"] += m["value"]
+
+        utils.no_save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
 
 
 class WrongSavedModelAggregateAlgo(DummyAggregateAlgo):
-    def save_model(self, model, path):
-        # simulate numpy.save behavior
-        with open(path + ".npy", "w") as f:
-            json.dump(model, f)
+    def aggregate(self, inputs, outputs):
+
+        models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
+
+        new_model = {"value": 0}
+        for m in models:
+            new_model["value"] += m["value"]
+
+        utils.wrong_save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
 
 
 @pytest.fixture
@@ -78,7 +117,8 @@ def test_create():
 def test_aggregate_no_model(valid_algo_workspace):
     a = DummyAggregateAlgo()
     wp = algo.AggregateAlgoWrapper(a, valid_algo_workspace)
-    model = wp.aggregate()
+    wp.aggregate()
+    model = utils.load_model(valid_algo_workspace.output_model_path)
     assert model["value"] == 0
 
 
@@ -89,14 +129,16 @@ def test_aggregate_multiple_models(create_models, output_model_path):
     a = DummyAggregateAlgo()
     wp = algo.AggregateAlgoWrapper(a, workspace)
 
-    model = wp.aggregate()
+    wp.aggregate()
+    model = utils.load_model(wp._workspace.output_model_path)
+
     assert model["value"] == 3
 
 
 @pytest.mark.parametrize(
     "fake_data,expected_pred,n_fake_samples",
     [
-        (False, "X", None),
+        (False, InputIdentifiers.X, None),
         (True, ["Xfake"], 1),
     ],
 )
@@ -106,7 +148,8 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models):
     a = DummyAggregateAlgo()
     workspace = AggregateAlgoWorkspace(input_model_paths=[model_filenames[0]])
     wp = algo.AggregateAlgoWrapper(a, workspace)
-    pred = wp.predict(fake_data=fake_data, n_fake_samples=n_fake_samples)
+    wp.predict(fake_data=fake_data, n_fake_samples=n_fake_samples)
+    pred = utils.load_predictions(workspace.output_predictions_path)
     assert pred == expected_pred
 
 
@@ -182,29 +225,3 @@ def test_model_check(algo_class, valid_algo_workspace):
 
     with pytest.raises(exceptions.MissingFileError):
         wp.aggregate([])
-
-
-@pytest.mark.parametrize(
-    "use_models_generator,models_type",
-    (
-        (True, types.GeneratorType),
-        (False, list),
-    ),
-)
-def test_models_generator(mocker, workdir, create_models, use_models_generator, models_type, output_model_path):
-    _, model_filenames = create_models
-
-    inputs = [{"id": TRAIN_IO_MODELS, "value": str(workdir / model)} for model in model_filenames]
-    outputs = [{"id": TRAIN_IO_MODEL, "value": str(output_model_path)}]
-
-    command = ["aggregate"]
-    command.extend(["--inputs", json.dumps(inputs)])
-    command.extend(["--outputs", json.dumps(outputs)])
-
-    a = DummyAggregateAlgo()
-    a.use_models_generator = use_models_generator
-    mocker.patch.object(a, "aggregate", autospec=True, return_value={})
-
-    algo.execute(a, sysargs=command)
-    models = a.aggregate.call_args[0][0]
-    assert isinstance(models, models_type)

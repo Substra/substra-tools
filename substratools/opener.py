@@ -16,8 +16,6 @@ REQUIRED_FUNCTIONS = set(
         "get_y",
         "fake_X",
         "fake_y",
-        "get_predictions",
-        "save_predictions",
     ]
 )
 
@@ -32,8 +30,6 @@ class Opener(abc.ABC):
     - #Opener.get_y()
     - #Opener.fake_X()
     - #Opener.fake_y()
-    - #Opener.get_predictions()
-    - #Opener.save_predictions()
 
     # Example
 
@@ -63,13 +59,6 @@ class Opener(abc.ABC):
 
         def fake_y(self, n_samples):
             return []  # compute random fake data
-
-        def save_predictions(self, y_pred, path):
-            with open(path, 'w') as fp:
-                y_pred.to_csv(fp, index=False)
-
-        def get_predictions(self, path):
-            return pd.read_csv(path)
     ```
 
     # How to test locally an opener script
@@ -147,31 +136,6 @@ class Opener(abc.ABC):
         """
         raise NotImplementedError
 
-    @abc.abstractmethod
-    def get_predictions(self, path):
-        """Read file and return predictions vector.
-
-        # Arguments
-
-        path: string file path.
-
-        # Returns
-
-        predictions: predictions vector.
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def save_predictions(self, y_pred, path):
-        """Write predictions vector to file.
-
-        # Arguments
-
-        y_pred: predictions vector.
-        path: string file path.
-        """
-        raise NotImplementedError
-
 
 class OpenerWrapper(object):
     """Internal wrapper to call opener interface."""
@@ -202,24 +166,12 @@ class OpenerWrapper(object):
             logger.info("loading y from '{}'".format(self.data_folder_paths))
             return self._interface.get_y(self.data_folder_paths)
 
-    def get_predictions(self):
-        path = self._workspace.input_predictions_path
-        logger.info("loading predictions from '{}'".format(path))
-        return self._interface.get_predictions(path)
+    def _assert_output_exists(self, path, key):
 
-    def _assert_predictions_file_exists(self):
-        path = self._workspace.output_predictions_path
         if os.path.isdir(path):
-            raise exceptions.NotAFileError(f"Expected predictions file at {path}, found dir")
+            raise exceptions.NotAFileError(f"Expected output file at {path}, found dir for output `{key}`")
         if not os.path.isfile(path):
-            raise exceptions.MissingFileError(f"Predictions file {path} does not exists")
-
-    def save_predictions(self, y_pred):
-        path = self._workspace.output_predictions_path
-        logger.info("saving predictions to '{}'".format(path))
-        res = self._interface.save_predictions(y_pred, path)
-        self._assert_predictions_file_exists()
-        return res
+            raise exceptions.MissingFileError(f"Output file {path} used to save argument `{key}` does not exists.")
 
 
 def load_from_module(path=None, workspace=None):

@@ -1,14 +1,18 @@
-import json
 import os
 
 import pytest
 
 from substratools import Algo
 from substratools import Metrics
+from substratools import load_performance
+from substratools import save_performance
 from substratools.algo import AlgoWrapper
+from substratools.algo import InputIdentifiers
+from substratools.algo import OutputIdentifiers
 from substratools.metrics import MetricsWrapper
 from substratools.utils import import_module
 from substratools.workspace import AlgoWorkspace
+from tests import utils
 
 
 @pytest.fixture
@@ -29,39 +33,34 @@ class DummyOpener(Opener):
 
     def fake_y(self, n_samples):
         raise NotImplementedError
-
-    def get_predictions(self, path):
-        with open(path, 'r') as f:
-            return json.load(f)
-
-    def save_predictions(self, pred, path):
-        with open(path, 'w') as f:
-            json.dump(pred, f)
 """
     import_module("opener", script)
 
 
+# TODO change algo
 class DummyAlgo(Algo):
-    def train(self, X, y, models, rank):
+    def train(self, inputs, outputs):
+
+        models = utils.load_models(inputs.get(InputIdentifiers.models, []))
         total = sum([m["i"] for m in models])
         new_model = {"i": len(models) + 1, "total": total}
-        return new_model
 
-    def predict(self, X, model):
-        return {"sum": model["i"]}
+        utils.save_model(new_model, outputs.get(OutputIdentifiers.model))
 
-    def load_model(self, path):
-        with open(path, "r") as f:
-            return json.load(f)
-
-    def save_model(self, model, path):
-        with open(path, "w") as f:
-            json.dump(model, f)
+    def predict(self, inputs, outputs):
+        model = utils.load_model(inputs.get(InputIdentifiers.model))
+        pred = {"sum": model["i"]}
+        utils.save_predictions(pred, outputs.get(OutputIdentifiers.predictions))
 
 
 class DummyMetrics(Metrics):
-    def score(self, y, pred):
-        return pred["sum"]
+    def score(self, inputs, outputs):
+        y_pred_path = inputs.get(InputIdentifiers.predictions)
+        y_pred = utils.load_predictions(y_pred_path)
+
+        score = y_pred["sum"]
+
+        save_performance(performance=score, path=outputs.get(OutputIdentifiers.performance))
 
 
 def test_workflow(workdir, dummy_opener):
@@ -71,7 +70,9 @@ def test_workflow(workdir, dummy_opener):
     loop1_wp = AlgoWrapper(a, workspace=loop1_workspace)
 
     # loop 1 (no input)
-    model = loop1_wp.train()
+    loop1_wp.train()
+    model = utils.load_model(path=loop1_wp._workspace.output_model_path)
+
     assert model == {"i": 1, "total": 0}
     assert os.path.exists(loop1_model_path)
 
@@ -80,7 +81,8 @@ def test_workflow(workdir, dummy_opener):
     loop2_wp = AlgoWrapper(a, workspace=loop2_workspace)
 
     # loop 2 (one model as input)
-    model = loop2_wp.train()
+    loop2_wp.train()
+    model = utils.load_model(path=loop2_wp._workspace.output_model_path)
     assert model == {"i": 2, "total": 1}
     assert os.path.exists(loop2_model_path)
 
@@ -91,7 +93,8 @@ def test_workflow(workdir, dummy_opener):
     loop3_wp = AlgoWrapper(a, workspace=loop3_workspace)
 
     # loop 3 (two models as input)
-    model = loop3_wp.train()
+    loop3_wp.train()
+    model = utils.load_model(path=loop3_wp._workspace.output_model_path)
     assert model == {"i": 3, "total": 3}
     assert os.path.exists(loop3_model_path)
 
@@ -101,10 +104,12 @@ def test_workflow(workdir, dummy_opener):
     predict_wp = AlgoWrapper(a, workspace=predict_workspace)
 
     # predict
-    pred = predict_wp.predict()
+    predict_wp.predict()
+    pred = utils.load_predictions(path=predict_wp._workspace.output_predictions_path)
     assert pred == {"sum": 3}
 
     # metrics
     metrics_wp = MetricsWrapper(DummyMetrics())
-    score = metrics_wp.score()
+    metrics_wp.score()
+    score = load_performance(path=metrics_wp._workspace.output_perf_path)
     assert score == 3.0
