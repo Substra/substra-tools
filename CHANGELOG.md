@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- BREAKING CHANGES: rename connect-tools to substra-tools (except the github folder)
+
 ## [0.15.0](https://github.com/owkin/connect-tools/releases/tag/0.15.0) - 2022-08-29
 
 ### Changed

@@ -18,9 +18,8 @@ on:
         description: 'python_versions. Example: ["3.8", "3.9"]'
         required: true
       release_tag:
-        description: 'release_tag. Example: 0.9.1'
+        description: "release_tag. Example: 0.9.1"
         required: true
-
 
 jobs:
   create-matrix:
@@ -28,7 +27,7 @@ jobs:
     outputs:
       # Add a version to this list to automatically build Dockerfiles from it for the next releases
       default_cuda_images: '["nvidia/cuda:11.6.0-base-ubuntu20.04"]'
-      default_python_versions:  '["3.8", "3.9"]'
+      default_python_versions: '["3.8", "3.9"]'
     steps:
       - run: true
 
@@ -42,94 +41,94 @@ jobs:
         python_version: ${{ github.event_name == 'workflow_dispatch' && fromJson(github.event.inputs.python_versions) || fromJson(needs.create-matrix.outputs.default_python_versions) }}
 
     steps:
-    - name: Set variables
-      run: |
-        CONNECT_TOOLS_REF=$(echo "${{ github.event.inputs.release_tag || github.ref_name }}" | tr -d ':,/')
-        CUDA_IMAGE_TAG=$(echo "${{ matrix.cuda_image }}" | tr -d ':,/')
+      - name: Set variables
+        run: |
+          SUBSTRA_TOOLS_REF=$(echo "${{ github.event.inputs.release_tag || github.ref_name }}" | tr -d ':,/')
+          CUDA_IMAGE_TAG=$(echo "${{ matrix.cuda_image }}" | tr -d ':,/')
 
-        if [ $CONNECT_TOOLS_REF = "main" ]; then
-          echo "IMG_BASE_TAG=latest-$CUDA_IMAGE_TAG-python${{ matrix.python_version }}" >> $GITHUB_ENV
-          # Set the most recent image to latest, latest-minimal, latest-workflows
-          if [ "${{ matrix.cuda_image }}" == "nvidia/cuda:11.6.0-base-ubuntu20.04" ] &&  [ "${{ matrix.python_version }}" == "3.9" ]; then
-            echo "LATEST_TAG=latest" >> $GITHUB_ENV
+          if [ $SUBSTRA_TOOLS_REF = "main" ]; then
+            echo "IMG_BASE_TAG=latest-$CUDA_IMAGE_TAG-python${{ matrix.python_version }}" >> $GITHUB_ENV
+            # Set the most recent image to latest, latest-minimal, latest-workflows
+            if [ "${{ matrix.cuda_image }}" == "nvidia/cuda:11.6.0-base-ubuntu20.04" ] &&  [ "${{ matrix.python_version }}" == "3.9" ]; then
+              echo "LATEST_TAG=latest" >> $GITHUB_ENV
+            fi
+          else
+            echo "IMG_BASE_TAG=$SUBSTRA_TOOLS_REF-$CUDA_IMAGE_TAG-python${{ matrix.python_version }}" >> $GITHUB_ENV
           fi
-        else
-          echo "IMG_BASE_TAG=$CONNECT_TOOLS_REF-$CUDA_IMAGE_TAG-python${{ matrix.python_version }}" >> $GITHUB_ENV
-        fi
 
-    - uses: actions/checkout@v3
-      with:
-        ref: ${{ github.event.inputs.release_tag || github.ref }}
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.release_tag || github.ref }}
 
-    - name: Login to GCR
-      uses: docker/login-action@v1
-      if: ${{ github.event_name != 'pull_request' }}
-      with:
-        registry: gcr.io
-        username: _json_key
-        password: ${{ secrets.GCP_SA_KEY }}
+      - name: Login to GCR
+        uses: docker/login-action@v1
+        if: ${{ github.event_name != 'pull_request' }}
+        with:
+          registry: gcr.io
+          username: _json_key
+          password: ${{ secrets.GCP_SA_KEY }}
 
-    - name: Docker default image metadata
-      id: default-metadata
-      uses: docker/metadata-action@v3
-      with:
-        images: 'gcr.io/${{ secrets.GCP_PROJECT_ID }}/connect-tools'
-        tags: |
-          ${{ env.IMG_BASE_TAG }}
-          ${{ env.LATEST_TAG }}
+      - name: Docker default image metadata
+        id: default-metadata
+        uses: docker/metadata-action@v3
+        with:
+          images: "gcr.io/${{ secrets.GCP_PROJECT_ID }}/substra-tools"
+          tags: |
+            ${{ env.IMG_BASE_TAG }}
+            ${{ env.LATEST_TAG }}
 
-    - name: Docker minimal image metadata
-      id: minimal-metadata
-      uses: docker/metadata-action@v3
-      with:
-        images: 'gcr.io/${{ secrets.GCP_PROJECT_ID }}/connect-tools'
-        flavor: suffix=-minimal
-        tags: |
-          ${{ env.IMG_BASE_TAG }}
-          ${{ env.LATEST_TAG }}
+      - name: Docker minimal image metadata
+        id: minimal-metadata
+        uses: docker/metadata-action@v3
+        with:
+          images: "gcr.io/${{ secrets.GCP_PROJECT_ID }}/substra-tools"
+          flavor: suffix=-minimal
+          tags: |
+            ${{ env.IMG_BASE_TAG }}
+            ${{ env.LATEST_TAG }}
 
-    - name: Docker workflows image metadata
-      id: workflows-metadata
-      uses: docker/metadata-action@v3
-      with:
-        images: 'gcr.io/${{ secrets.GCP_PROJECT_ID }}/connect-tools'
-        flavor: suffix=-workflows
-        tags: |
-          ${{ env.IMG_BASE_TAG }}
-          ${{ env.LATEST_TAG }}
+      - name: Docker workflows image metadata
+        id: workflows-metadata
+        uses: docker/metadata-action@v3
+        with:
+          images: "gcr.io/${{ secrets.GCP_PROJECT_ID }}/substra-tools"
+          flavor: suffix=-workflows
+          tags: |
+            ${{ env.IMG_BASE_TAG }}
+            ${{ env.LATEST_TAG }}
 
-    - name: Build and Push default image
-      uses: docker/build-push-action@v2
-      with:
-        push: ${{ github.event_name != 'pull_request' }}
-        file: Dockerfile
-        context: .
-        tags: ${{ steps.default-metadata.outputs.tags }}
-        labels: ${{ steps.default-metadata.outputs.labels }}
-        build-args: |
-          CUDA_IMAGE=${{ matrix.cuda_image }}
-          PYTHON_VERSION=${{ matrix.python_version }}
+      - name: Build and Push default image
+        uses: docker/build-push-action@v2
+        with:
+          push: ${{ github.event_name != 'pull_request' }}
+          file: Dockerfile
+          context: .
+          tags: ${{ steps.default-metadata.outputs.tags }}
+          labels: ${{ steps.default-metadata.outputs.labels }}
+          build-args: |
+            CUDA_IMAGE=${{ matrix.cuda_image }}
+            PYTHON_VERSION=${{ matrix.python_version }}
 
-    - name: Build and Push minimal image
-      uses: docker/build-push-action@v2
-      with:
-        push: ${{ github.event_name != 'pull_request' }}
-        file: Dockerfile.minimal
-        context: .
-        tags: ${{ steps.minimal-metadata.outputs.tags }}
-        labels: ${{ steps.minimal-metadata.outputs.labels }}
-        build-args: |
-          CUDA_IMAGE=${{ matrix.cuda_image }}
-          PYTHON_VERSION=${{ matrix.python_version }}
+      - name: Build and Push minimal image
+        uses: docker/build-push-action@v2
+        with:
+          push: ${{ github.event_name != 'pull_request' }}
+          file: Dockerfile.minimal
+          context: .
+          tags: ${{ steps.minimal-metadata.outputs.tags }}
+          labels: ${{ steps.minimal-metadata.outputs.labels }}
+          build-args: |
+            CUDA_IMAGE=${{ matrix.cuda_image }}
+            PYTHON_VERSION=${{ matrix.python_version }}
 
-    - name: Build and Push workflows image
-      uses: docker/build-push-action@v2
-      with:
-        push: ${{ github.event_name != 'pull_request' }}
-        file: Dockerfile.workflows
-        context: .
-        tags: ${{ steps.workflows-metadata.outputs.tags }}
-        labels: ${{ steps.workflows-metadata.outputs.labels }}
-        build-args: |
-          CUDA_IMAGE=${{ matrix.cuda_image }}
-          PYTHON_VERSION=${{ matrix.python_version }}
+      - name: Build and Push workflows image
+        uses: docker/build-push-action@v2
+        with:
+          push: ${{ github.event_name != 'pull_request' }}
+          file: Dockerfile.workflows
+          context: .
+          tags: ${{ steps.workflows-metadata.outputs.tags }}
+          labels: ${{ steps.workflows-metadata.outputs.labels }}
+          build-args: |
+            CUDA_IMAGE=${{ matrix.cuda_image }}
+            PYTHON_VERSION=${{ matrix.python_version }}

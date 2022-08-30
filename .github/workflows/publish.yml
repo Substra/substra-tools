@@ -12,16 +12,16 @@ jobs:
       TWINE_NON_INTERACTIVE: "1"
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
-    - name: Prepare
-      run: |
-        pip install --upgrade setuptools wheel twine
-    - name: Build connect-tools
-      run: |
-        python setup.py sdist bdist_wheel
-    - name: Publish connect-tools on pypi.owkin.com
-      run: |
-        twine upload dist/*
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Prepare
+        run: |
+          pip install --upgrade setuptools wheel twine
+      - name: Build substra-tools
+        run: |
+          python setup.py sdist bdist_wheel
+      - name: Publish substra-tools on pypi.owkin.com
+        run: |
+          twine upload dist/*

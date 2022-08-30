@@ -1,6 +1,6 @@
 .PHONY: pyclean build test doc
 
-IMAGE = gcr.io/connect-314908/connect-tools
+IMAGE = gcr.io/connect-314908/substra-tools
 DOCS_FILEPATH = docs/api.md
 
 ifeq ($(TAG),)

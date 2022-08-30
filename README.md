@@ -30,13 +30,13 @@ currently based on Python 3.6.
 ### Pull from public docker registry
 
 ```sh
-docker pull gcr.io/connect-314908/connect-tools
+docker pull gcr.io/connect-314908/substra-tools
 ```
 
 ### Build from source
 
 ```sh
-docker build -t gcr.io/connect-314908/connect-tools .
+docker build -t gcr.io/connect-314908/substra-tools .
 ```
 
 ## Contributing
