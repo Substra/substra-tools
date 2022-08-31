@@ -202,15 +202,16 @@ def test_execute_train(workdir, output_model_path):
 
     assert not output_model_path.exists()
 
-    algo.execute(DummyAlgo(), sysargs=["train"] + options)
+    algo.execute(DummyAlgo(), sysargs=["--method-name", "train"] + options)
     assert output_model_path.exists()
 
     algo.execute(
-        DummyAlgo(), sysargs=["train", "--fake-data", "--n-fake-samples", "1", "--outputs", json.dumps(outputs)]
+        DummyAlgo(),
+        sysargs=["--method-name", "train", "--fake-data", "--n-fake-samples", "1", "--outputs", json.dumps(outputs)],
     )
     assert output_model_path.exists()
 
-    algo.execute(DummyAlgo(), sysargs=["train", "--log-level", "debug"] + options)
+    algo.execute(DummyAlgo(), sysargs=["--method-name", "train", "--log-level", "debug"] + options)
     assert output_model_path.exists()
 
 
@@ -229,7 +230,7 @@ def test_execute_train_multiple_models(workdir, output_model_path, create_models
     ]
     options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
 
-    command = ["train"]
+    command = ["--method-name", "train"]
     command.extend(options)
 
     algo.execute(DummyAlgo(), sysargs=command)
@@ -252,7 +253,7 @@ def test_execute_predict(workdir, output_model_path, create_models):
 
     # first train models
     assert not pred_path.exists()
-    command = ["train"]
+    command = ["--method-name", "train"]
     command.extend(train_options)
     algo.execute(DummyAlgo(), sysargs=command)
     assert output_model_path.exists()
@@ -266,7 +267,7 @@ def test_execute_predict(workdir, output_model_path, create_models):
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
     assert not pred_path.exists()
-    algo.execute(DummyAlgo(), sysargs=["predict"] + pred_options)
+    algo.execute(DummyAlgo(), sysargs=["--method-name", "predict"] + pred_options)
     assert pred_path.exists()
     with open(pred_path, "r") as f:
         pred = json.load(f)
@@ -289,7 +290,7 @@ def test_execute_predict(workdir, output_model_path, create_models):
     assert not pred_path.exists()
     algo.execute(
         DummyAlgo(),
-        sysargs=["predict"] + pred_options,
+        sysargs=["--method-name", "predict"] + pred_options,
     )
     assert pred_path.exists()
     with open(pred_path, "r") as f:

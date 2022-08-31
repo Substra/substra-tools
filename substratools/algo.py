@@ -56,6 +56,18 @@ class OutputIdentifiers(str, Enum):
 
 def _parser_add_default_arguments(parser):
     parser.add_argument(
+        "--method-name",
+        type=str,
+        help="The name of the method to execute from the given file",
+    )
+    parser.add_argument(
+        "-r",
+        "--rank",
+        type=int,
+        default=0,
+        help="Define machine learning task rank",
+    ),
+    parser.add_argument(
         "-d",
         "--fake-data",
         action="store_true",
@@ -356,7 +368,7 @@ class AlgoWrapper(object):
         self._assert_output_exists(self._workspace.output_model_path, OutputIdentifiers.model)
 
     @utils.Timer(logger)
-    def predict(self, fake_data=False, n_fake_samples=None):
+    def predict(self, fake_data=False, n_fake_samples=None, **kwargs):
         """Predict method wrapper."""
         # load data from opener
         X = self._opener_wrapper.get_X(fake_data, n_fake_samples)
@@ -402,30 +414,18 @@ def _generate_algo_cli(interface):
         )
         return AlgoWrapper(interface, workspace, opener_wrapper)
 
-    def _train(args):
+    def _user_func(args):
         algo_wrapper = _algo_from_args(args)
-        algo_wrapper.train(args.rank, args.fake_data, args.n_fake_samples)
+        method = getattr(algo_wrapper, args.method_name)
+        method(
+            rank=args.rank,
+            fake_data=args.fake_data,
+            n_fake_samples=args.n_fake_samples,
+        )
 
     parser = argparse.ArgumentParser()
-    parsers = parser.add_subparsers()
-    train_parser = parsers.add_parser("train")
-    train_parser.add_argument(
-        "-r",
-        "--rank",
-        type=int,
-        default=0,
-        help="Define machine learning task rank",
-    )
-    _parser_add_default_arguments(train_parser)
-    train_parser.set_defaults(func=_train)
-
-    def _predict(args):
-        algo_wrapper = _algo_from_args(args)
-        algo_wrapper.predict(args.fake_data, args.n_fake_samples)
-
-    predict_parser = parsers.add_parser("predict")
-    _parser_add_default_arguments(predict_parser)
-    predict_parser.set_defaults(func=_predict)
+    _parser_add_default_arguments(parser)
+    parser.set_defaults(func=_user_func)
 
     return parser
 
@@ -699,7 +699,7 @@ class CompositeAlgoWrapper(AlgoWrapper):
         self._assert_output_exists(self._workspace.output_trunk_model_path, OutputIdentifiers.shared)
 
     @utils.Timer(logger)
-    def predict(self, fake_data=False, n_fake_samples=None):
+    def predict(self, fake_data=False, n_fake_samples=None, **kwargs):
         """Predict method wrapper."""
         # load data from opener
         X = self._opener_wrapper.get_X(fake_data, n_fake_samples)
@@ -751,34 +751,18 @@ def _generate_composite_algo_cli(interface):
         utils.configure_logging(workspace.log_path, log_level=args.log_level)
         return CompositeAlgoWrapper(interface, workspace, opener_wrapper)
 
-    def _train(args):
+    def _user_func(args):
         algo_wrapper = _algo_from_args(args)
-        algo_wrapper.train(
-            args.rank,
-            args.fake_data,
-            args.n_fake_samples,
+        method = getattr(algo_wrapper, args.method_name)
+        method(
+            rank=args.rank,
+            fake_data=args.fake_data,
+            n_fake_samples=args.n_fake_samples,
         )
 
     parser = argparse.ArgumentParser()
-    parsers = parser.add_subparsers()
-    train_parser = parsers.add_parser("train")
-    train_parser.add_argument(
-        "-r",
-        "--rank",
-        type=int,
-        default=0,
-        help="Define machine learning task rank",
-    )
-    _parser_add_default_arguments(train_parser)
-    train_parser.set_defaults(func=_train)
-
-    def _predict(args):
-        algo_wrapper = _algo_from_args(args)
-        algo_wrapper.predict(args.fake_data, args.n_fake_samples)
-
-    predict_parser = parsers.add_parser("predict")
-    _parser_add_default_arguments(predict_parser)
-    predict_parser.set_defaults(func=_predict)
+    _parser_add_default_arguments(parser)
+    parser.set_defaults(func=_user_func)
 
     return parser
 
@@ -975,7 +959,7 @@ class AggregateAlgoWrapper(object):
             raise exceptions.MissingFileError(f"Output file {path} used to save argument `{key}` does not exists.")
 
     @utils.Timer(logger)
-    def aggregate(self, rank=0):
+    def aggregate(self, rank=0, **kwargs):
         """Aggregate method wrapper."""
         # load models
         models = self._get_models_paths()
@@ -993,7 +977,7 @@ class AggregateAlgoWrapper(object):
         self._assert_output_exists(self._workspace.output_model_path, OutputIdentifiers.model)
 
     @utils.Timer(logger)
-    def predict(self, fake_data=False, n_fake_samples=None):
+    def predict(self, fake_data=False, n_fake_samples=None, **kwargs):
         """Predict method wrapper."""
         # lazy load of opener wrapper as it is required only for the predict
         self._opener_wrapper = self._opener_wrapper or opener.load_from_module(workspace=self._workspace)
@@ -1043,30 +1027,18 @@ def _generate_aggregate_algo_cli(interface):
             opener_wrapper = None
         return AggregateAlgoWrapper(interface, workspace, opener_wrapper)
 
-    def _aggregate(args):
+    def _user_func(args):
         algo_wrapper = _algo_from_args(args)
-        algo_wrapper.aggregate(args.rank)
+        method = getattr(algo_wrapper, args.method_name)
+        method(
+            rank=args.rank,
+            fake_data=args.fake_data,
+            n_fake_samples=args.n_fake_samples,
+        )
 
     parser = argparse.ArgumentParser()
-    parsers = parser.add_subparsers()
-    aggregate_parser = parsers.add_parser("aggregate")
-    aggregate_parser.add_argument(
-        "-r",
-        "--rank",
-        type=int,
-        default=0,
-        help="Define machine learning task rank",
-    )
-    _parser_add_default_arguments(aggregate_parser)
-    aggregate_parser.set_defaults(func=_aggregate)
-
-    def _predict(args):
-        algo_wrapper = _algo_from_args(args)
-        algo_wrapper.predict(args.fake_data, args.n_fake_samples)
-
-    predict_parser = parsers.add_parser("predict")
-    _parser_add_default_arguments(predict_parser)
-    predict_parser.set_defaults(func=_predict)
+    _parser_add_default_arguments(parser)
+    parser.set_defaults(func=_user_func)
 
     return parser
 

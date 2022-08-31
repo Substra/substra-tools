@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- BREAKING CHANGES: the user must now pass the method name to execute within the dockerfile of both `algo` and
+  `metric` under the `--method-name` argument. The method name still needs to be one of the `algo` or `metric`
+  allowed method name: train, predict, aggregate, score.
+
+  ```Dockerfile
+  ENTRYPOINT ["python3", "metrics.py"]
+  ```
+
+  shall be replaced by:
+
+  ```Dockerfile
+  ENTRYPOINT ["python3", "metrics.py", "--method-name", "score"]
+  ```
+
 - BREAKING CHANGES: rename connect-tools to substra-tools (except the github folder)
 
 ## [0.15.0](https://github.com/Substra/substra-tools/releases/tag/0.15.0) - 2022-08-29
@@ -14,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - BREAKING CHANGES:
+
   - methods from algo, composite algo, aggregate and metrics now take `inputs` (TypeDict) and `outputs` (TypeDict) as arguments
   - the user must load and save all the inputs and outputs of those methods (except for the datasamples)
   - `load_predictions` and `get_predictions` methods have been removed from the opener

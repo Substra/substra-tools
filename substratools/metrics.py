@@ -164,6 +164,11 @@ class MetricsWrapper(object):
 def _generate_cli():
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "--method-name",
+        type=str,
+        help="The name of the method to execute from the given file",
+    )
+    parser.add_argument(
         "-d",
         "--fake-data",
         action="store_true",

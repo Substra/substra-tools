@@ -304,7 +304,7 @@ def test_execute_train(workdir):
         json.dumps(inputs),
     ]
 
-    algo.execute(DummyCompositeAlgo(), sysargs=["train"] + common_args)
+    algo.execute(DummyCompositeAlgo(), sysargs=["--method-name", "train"] + common_args)
     assert output_head_model_path.exists()
     assert output_trunk_model_path.exists()
 
@@ -337,6 +337,7 @@ def test_execute_train_multiple_models(workdir, create_models):
     ]
 
     command = [
+        "--method-name",
         "train",
         "--outputs",
         json.dumps(outputs),
@@ -371,6 +372,7 @@ def test_execute_predict(workdir, create_models):
     ]
 
     command = [
+        "--method-name",
         "predict",
         "--inputs",
         json.dumps(inputs),

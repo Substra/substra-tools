@@ -159,11 +159,14 @@ def test_execute_aggregate(output_model_path):
 
     outputs = [{"id": TRAIN_IO_MODEL, "value": str(output_model_path)}]
 
-    algo.execute(DummyAggregateAlgo(), sysargs=["aggregate", "--outputs", json.dumps(outputs)])
+    algo.execute(DummyAggregateAlgo(), sysargs=["--method-name", "aggregate", "--outputs", json.dumps(outputs)])
     assert output_model_path.exists()
 
     output_model_path.unlink()
-    algo.execute(DummyAggregateAlgo(), sysargs=["aggregate", "--outputs", json.dumps(outputs), "--log-level", "debug"])
+    algo.execute(
+        DummyAggregateAlgo(),
+        sysargs=["--method-name", "aggregate", "--outputs", json.dumps(outputs), "--log-level", "debug"],
+    )
     assert output_model_path.exists()
 
 
@@ -178,7 +181,7 @@ def test_execute_aggregate_multiple_models(workdir, create_models, output_model_
     ]
     options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
 
-    command = ["aggregate"]
+    command = ["--method-name", "aggregate"]
     command.extend(options)
 
     algo.execute(DummyAggregateAlgo(), sysargs=command)
@@ -195,7 +198,7 @@ def test_execute_predict(workdir, create_models, output_model_path):
     inputs = [{"id": TRAIN_IO_MODELS, "value": str(workdir / model_name)} for model_name in model_filenames]
     outputs = [{"id": TRAIN_IO_MODEL, "value": str(output_model_path)}]
     options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
-    command = ["aggregate"]
+    command = ["--method-name", "aggregate"]
     command.extend(options)
     algo.execute(DummyAggregateAlgo(), sysargs=command)
     assert output_model_path.exists()
@@ -210,7 +213,7 @@ def test_execute_predict(workdir, create_models, output_model_path):
     pred_outputs = [{"id": TASK_IO_PREDICTIONS, "value": str(pred_path)}]
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
-    algo.execute(DummyAggregateAlgo(), sysargs=["predict"] + pred_options)
+    algo.execute(DummyAggregateAlgo(), sysargs=["--method-name", "predict"] + pred_options)
     assert pred_path.exists()
     with open(pred_path, "r") as f:
         pred = json.load(f)
