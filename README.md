@@ -1,6 +1,7 @@
 # Substra-tools
 
 Python package defining base classes for assets submitted on the platform:
+
 - Objective: metrics script
 - Algo: algo script
 - Dataset: data opener script
@@ -40,6 +41,7 @@ docker build -t gcr.io/connect-314908/substra-tools .
 ```
 
 ## Contributing
+
 ### Setup
 
 To setup the project in development mode, run:
