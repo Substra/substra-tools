@@ -1,7 +1,7 @@
 import os
 import sys
 from pathlib import Path
-
+import shutil
 import pytest
 
 from substratools.utils import import_module
@@ -69,3 +69,12 @@ def valid_composite_algo_workspace(workdir) -> CompositeAlgoWorkspace:
         output_head_model_path=str(workdir / "model" / "model_head"),
         output_trunk_model_path=str(workdir / "model" / "model_trunk"),
     )
+
+
+@pytest.fixture(scope="session")
+def session_dir():
+    temp_dir = Path.cwd() / "local-assets-tools"
+    temp_dir.mkdir(parents=True, exist_ok=True)
+
+    yield temp_dir
+    shutil.rmtree(temp_dir)

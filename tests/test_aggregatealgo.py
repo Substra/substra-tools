@@ -148,11 +148,11 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models):
     assert pred == expected_pred
 
 
-def test_execute_aggregate(output_model_path):
+def test_execute_aggregate(output_model_path, session_dir):
 
     assert not output_model_path.exists()
 
-    outputs = [{"id": TRAIN_IO_MODEL, "value": str(output_model_path)}]
+    outputs = [{"id": tmp_path / "model", "value": str(output_model_path)}]
 
     algo.execute(DummyAggregateAlgo(), sysargs=["--method-name", "aggregate", "--outputs", json.dumps(outputs)])
     assert output_model_path.exists()
