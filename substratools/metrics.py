@@ -10,8 +10,6 @@ from typing import TypedDict
 from substratools import exceptions
 from substratools import opener
 from substratools import utils
-from substratools.algo import InputIdentifiers
-from substratools.algo import OutputIdentifiers
 from substratools.workspace import MetricsWorkspace
 
 logger = logging.getLogger(__name__)
@@ -95,32 +93,6 @@ class Metrics(abc.ABC):
     ```
     """
 
-    @abc.abstractmethod
-    def score(
-        self,
-        inputs: TypedDict("inputs", {InputIdentifiers.y: Any, InputIdentifiers.predictions: os.PathLike}),
-        outputs: TypedDict("outputs", {OutputIdentifiers.performance: os.PathLike}),
-    ):
-        """Compute model perf from actual and predicted values.
-
-        # Arguments
-
-        inputs: TypedDict(
-            "inputs",
-            {
-                InputIdentifiers.y: Any: actual values.
-                InputIdentifiers.predictions: Any: path to predicted values.
-            }
-        ),
-        outputs: TypedDict(
-            "outputs",
-            {
-                OutputIdentifiers.performance: os.PathLike: path to save the performance of the model.
-            }
-        )
-        """
-        raise NotImplementedError
-
 
 class MetricsWrapper(object):
     def __init__(self, interface, workspace=None, opener_wrapper=None):
@@ -153,12 +125,12 @@ class MetricsWrapper(object):
 
         logger.info("launching scoring task")
 
-        inputs = {InputIdentifiers.y: y, InputIdentifiers.predictions: y_pred_path}
-        outputs = {OutputIdentifiers.performance: self._workspace.output_perf_path}
+        inputs = {"y": y, "predictions": y_pred_path}
+        outputs = {"performance": self._workspace.output_perf_path}
 
         self._interface.score(inputs, outputs)
 
-        self._assert_output_exists(self._workspace.output_perf_path, OutputIdentifiers.performance)
+        self._assert_output_exists(self._workspace.output_perf_path, "performance")
 
 
 def _generate_cli():

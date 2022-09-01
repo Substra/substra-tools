@@ -45,8 +45,6 @@ class OpenerWorkspace(Workspace):
         self,
         dirpath=None,
         input_data_folder_paths=None,
-        input_predictions_path=None,
-        output_predictions_path=None,
     ):
         super().__init__(dirpath=dirpath)
 
@@ -56,141 +54,60 @@ class OpenerWorkspace(Workspace):
             DEFAULT_INPUT_DATA_FOLDER_PATH
         )
 
-        self.input_predictions_path = input_predictions_path or self._get_default_path(DEFAULT_INPUT_PREDICTIONS_PATH)
+        for d in self.input_data_folder_paths:
+            if d:
+                makedir_safe(d)
 
-        self.output_predictions_path = output_predictions_path or self._get_default_path(
-            DEFAULT_OUTPUT_PREDICTIONS_PATH
-        )
 
-        dirs = []
-        dirs.extend(self.input_data_folder_paths)
-        paths = [
-            self.input_predictions_path,
-            self.output_predictions_path,
+class GenericAlgoWorkspace(OpenerWorkspace):
+    """Filesystem workspace for user defined method execution."""
+
+    def __init__(
+        self,
+        dirpath=None,
+        log_path=None,
+        chainkeys_path=None,
+        compute_plan_path=None,
+        inputs=None,
+        outputs=None,
+    ):
+
+        super().__init__(dirpath, inputs.input_data_folder_paths)
+
+        self.log_path = log_path or self._get_default_path(DEFAULT_LOG_PATH)
+        self.chainkeys_path = chainkeys_path or self._get_default_path(DEFAULT_CHAINKEYS_PATH)
+        self.compute_plan_path = compute_plan_path or self._get_default_path(DEFAULT_COMPUTE_PLAN_PATH)
+
+        self.opener_path = inputs.opener_path if inputs is not None else None
+
+        self.task_inputs = inputs.task_inputs if inputs is not None else None
+        self.task_outputs = outputs.task_outputs if outputs is not None else None
+
+        dirs = [
+            self.chainkeys_path,
+            self.compute_plan_path,
         ]
+        paths = [
+            self.log_path,
+        ]
+
         dirs.extend([os.path.dirname(p) for p in paths])
         for d in dirs:
             if d:
                 makedir_safe(d)
 
 
-class MetricsWorkspace(OpenerWorkspace):
+class MetricsWorkspace(GenericAlgoWorkspace):
     """Filesystem workspace for metrics execution."""
 
-    def __init__(
-        self,
-        dirpath=None,
-        input_data_folder_paths=None,
-        input_predictions_path=None,
-        output_perf_path=None,
-        log_path=None,
-    ):
-        super().__init__(
-            dirpath=dirpath,
-            input_data_folder_paths=input_data_folder_paths,
-            input_predictions_path=input_predictions_path,
-        )
 
-        self.output_perf_path = output_perf_path or self._get_default_path(DEFAULT_OUTPUT_PERF_PATH)
-
-        self.log_path = log_path or self._get_default_path(DEFAULT_LOG_PATH)
-
-        dirs = []
-        paths = [
-            self.output_perf_path,
-            self.log_path,
-        ]
-        dirs.extend([os.path.dirname(p) for p in paths])
-        for d in dirs:
-            if d:
-                makedir_safe(d)
-
-
-class AlgoWorkspace(OpenerWorkspace):
+class AlgoWorkspace(GenericAlgoWorkspace):
     """Filesystem workspace for algo execution."""
 
-    def __init__(
-        self,
-        dirpath=None,
-        input_data_folder_paths=None,
-        input_model_paths=None,
-        input_predictions_path=None,
-        output_model_path=None,
-        output_predictions_path=None,
-        log_path=None,
-        chainkeys_path=None,
-    ):
-        super().__init__(
-            dirpath=dirpath,
-            input_data_folder_paths=input_data_folder_paths,
-            input_predictions_path=input_predictions_path,
-            output_predictions_path=output_predictions_path,
-        )
 
-        self.input_model_paths = input_model_paths
-        self.output_model_path = output_model_path
-
-        self.log_path = log_path or self._get_default_path(DEFAULT_LOG_PATH)
-
-        self.chainkeys_path = chainkeys_path or self._get_default_path(DEFAULT_CHAINKEYS_PATH)
-
-        dirs = [
-            self.chainkeys_path,
-        ]
-        paths = [
-            self.log_path,
-        ]
-
-        dirs.extend([os.path.dirname(p) for p in paths])
-        for d in dirs:
-            if d:
-                makedir_safe(d)
-
-
-class CompositeAlgoWorkspace(OpenerWorkspace):
-    def __init__(
-        self,
-        dirpath=None,
-        input_data_folder_paths=None,
-        input_predictions_path=None,
-        input_head_model_path=None,
-        input_trunk_model_path=None,
-        output_head_model_path=None,
-        output_trunk_model_path=None,
-        output_predictions_path=None,
-        log_path=None,
-        chainkeys_path=None,
-    ):
-        super().__init__(
-            dirpath=dirpath,
-            input_data_folder_paths=input_data_folder_paths,
-            input_predictions_path=input_predictions_path,
-            output_predictions_path=output_predictions_path,
-        )
-
-        self.input_head_model_path = input_head_model_path
-        self.input_trunk_model_path = input_trunk_model_path
-
-        self.output_head_model_path = output_head_model_path
-        self.output_trunk_model_path = output_trunk_model_path
-
-        self.log_path = log_path or self._get_default_path(DEFAULT_LOG_PATH)
-
-        self.chainkeys_path = chainkeys_path or self._get_default_path(DEFAULT_CHAINKEYS_PATH)
-
-        dirs = [
-            self.chainkeys_path,
-        ]
-        paths = [
-            self.log_path,
-        ]
-        dirs.extend([os.path.dirname(p) for p in paths])
-        for d in dirs:
-            if d:
-                makedir_safe(d)
+class CompositeAlgoWorkspace(GenericAlgoWorkspace):
+    """Filesystem workspace for composite algo execution."""
 
 
 class AggregateAlgoWorkspace(AlgoWorkspace):
     """Filesystem workspace for aggregate algo execution."""
-
-    pass

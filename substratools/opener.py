@@ -174,17 +174,20 @@ class OpenerWrapper(object):
             raise exceptions.MissingFileError(f"Output file {path} used to save argument `{key}` does not exists.")
 
 
-def load_from_module(path=None, workspace=None):
+def load_from_module(workspace=None):
     """Load opener interface from path or from python environment.
 
     Opener can be defined as an Opener subclass or directly has a module.
 
     Return an OpenerWrapper instance.
     """
+    if workspace.opener_path is None:
+        return None
+
     interface = utils.load_interface_from_module(
         "opener",
         interface_class=Opener,
         interface_signature=None,  # XXX does not support interface for debugging
-        path=path,
+        path=workspace.opener_path,
     )
     return OpenerWrapper(interface, workspace=workspace)
