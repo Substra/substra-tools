@@ -5,7 +5,6 @@ import logging
 import os
 import sys
 from typing import Any
-from typing import TypedDict
 
 from substratools import exceptions
 from substratools import opener
@@ -95,9 +94,9 @@ class Metrics(abc.ABC):
 
 
 class MetricsWrapper(object):
-    def __init__(self, interface, workspace=None, opener_wrapper=None):
-        self._workspace = workspace or MetricsWorkspace()
-        self._opener_wrapper = opener_wrapper or opener.load_from_module(workspace=self._workspace)
+    def __init__(self, interface, workspace, opener_wrapper):
+        self._workspace = workspace
+        self._opener_wrapper = opener_wrapper
         self._interface = interface
 
     def _save_score(self, score):
@@ -216,14 +215,16 @@ def execute(interface=None, sysargs=None):
         input_predictions_path=args.input_predictions_path,
         log_path=args.log_path,
         output_perf_path=args.output_perf_path,
+        opener_path=args.opener_path,
     )
+
     opener_wrapper = opener.load_from_module(
-        path=args.opener_path,
         workspace=workspace,
     )
     utils.configure_logging(path=workspace.log_path, log_level=args.log_level)
+
     metrics_wrapper = MetricsWrapper(
-        interface,
+        interface=interface,
         workspace=workspace,
         opener_wrapper=opener_wrapper,
     )

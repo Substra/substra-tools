@@ -12,7 +12,6 @@ def makedir_safe(path):
 
 DEFAULT_INPUT_DATA_FOLDER_PATH = "data/"
 DEFAULT_INPUT_PREDICTIONS_PATH = "pred/pred"
-DEFAULT_OUTPUT_PREDICTIONS_PATH = "pred/pred"
 DEFAULT_OUTPUT_PERF_PATH = "pred/perf.json"
 DEFAULT_LOG_PATH = "model/log_model.log"
 DEFAULT_CHAINKEYS_PATH = "chainkeys/"
@@ -94,8 +93,39 @@ class GenericAlgoWorkspace(OpenerWorkspace):
                 makedir_safe(d)
 
 
-class MetricsWorkspace(GenericAlgoWorkspace):
+class MetricsWorkspace(OpenerWorkspace):
     """Filesystem workspace for metrics execution."""
+
+    def __init__(
+        self,
+        opener_path,
+        dirpath=None,
+        input_data_folder_paths=None,
+        input_predictions_path=None,
+        output_perf_path=None,
+        log_path=None,
+        chainkeys_path=None,
+    ):
+        super().__init__(
+            dirpath=dirpath,
+            input_data_folder_paths=input_data_folder_paths,
+        )
+
+        self.output_perf_path = output_perf_path or self._get_default_path(DEFAULT_OUTPUT_PERF_PATH)
+        self.log_path = log_path or self._get_default_path(DEFAULT_LOG_PATH)
+        self.chainkeys_path = chainkeys_path or self._get_default_path(DEFAULT_CHAINKEYS_PATH)
+        self.input_predictions_path = input_predictions_path or self._get_default_path(DEFAULT_INPUT_PREDICTIONS_PATH)
+        self.opener_path = opener_path
+
+        dirs = []
+        paths = [
+            self.output_perf_path,
+            self.log_path,
+        ]
+        dirs.extend([os.path.dirname(p) for p in paths])
+        for d in dirs:
+            if d:
+                makedir_safe(d)
 
 
 class AlgoWorkspace(GenericAlgoWorkspace):
