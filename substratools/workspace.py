@@ -67,7 +67,6 @@ class GenericAlgoWorkspace(OpenerWorkspace):
         dirpath=None,
         log_path=None,
         chainkeys_path=None,
-        compute_plan_path=None,
         inputs=None,
         outputs=None,
     ):
@@ -76,7 +75,6 @@ class GenericAlgoWorkspace(OpenerWorkspace):
 
         self.log_path = log_path or self._get_default_path(DEFAULT_LOG_PATH)
         self.chainkeys_path = chainkeys_path or self._get_default_path(DEFAULT_CHAINKEYS_PATH)
-        self.compute_plan_path = compute_plan_path or self._get_default_path(DEFAULT_COMPUTE_PLAN_PATH)
 
         self.opener_path = inputs.opener_path if inputs is not None else None
 
@@ -85,7 +83,6 @@ class GenericAlgoWorkspace(OpenerWorkspace):
 
         dirs = [
             self.chainkeys_path,
-            self.compute_plan_path,
         ]
         paths = [
             self.log_path,

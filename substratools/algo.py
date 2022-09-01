@@ -80,7 +80,6 @@ class GenericAlgoWrapper(object):
         self._workspace = workspace
         self._opener_wrapper = opener_wrapper
         self._interface = interface
-
         self._interface.chainkeys_path = self._workspace.chainkeys_path
 
     def _assert_outputs_exists(self, outputs: dict):
@@ -130,12 +129,10 @@ def _generate_generic_algo_cli(interface):
         outputs = TaskOutputResources(args.outputs)
         log_path = args.log_path
         chainkeys_path = inputs.chainkeys_path
-        compute_plan_path = inputs.compute_plan_path
 
         workspace = GenericAlgoWorkspace(
             log_path=log_path,
             chainkeys_path=chainkeys_path,
-            compute_plan_path=compute_plan_path,
             inputs=inputs,
             outputs=outputs,
         )

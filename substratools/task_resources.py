@@ -68,7 +68,6 @@ class TaskInputResources(TaskResources):
         self.opener_path = self.get_optional_value(TASK_IO_OPENER)
         self.input_data_folder_paths = self.get_optional_values(TASK_IO_DATASAMPLES)
         self.chainkeys_path = self.get_optional_value(TASK_IO_CHAINKEYS)
-        self.compute_plan_path = self.get_optional_value(TASK_IO_LOCALFOLDER)
 
         self.task_inputs = {
             k: v
