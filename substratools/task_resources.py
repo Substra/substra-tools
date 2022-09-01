@@ -8,7 +8,6 @@ from substratools import exceptions
 # TODO: share those constant with backend
 TASK_IO_PREDICTIONS = "predictions"
 TASK_IO_OPENER = "opener"
-TASK_IO_LOCALFOLDER = "localfolder"
 TASK_IO_CHAINKEYS = "chainkeys"
 TASK_IO_DATASAMPLES = "datasamples"
 TRAIN_IO_MODELS = "models"
@@ -21,8 +20,7 @@ _RESOURCE_VALUE = "value"
 
 
 class TaskResources:
-    """TaskResources is created from stdin to provide a nice abstraction over inputs/outputs
-    """
+    """TaskResources is created from stdin to provide a nice abstraction over inputs/outputs"""
 
     # TODO: we may want to pass List[str] instead
     _values: Dict[str, List[str]]

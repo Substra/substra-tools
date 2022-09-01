@@ -12,10 +12,6 @@ substratools.Algo = class Algo(abc.ABC)
   The class has a `chainkeys_path` class property: it contains the path to the chainkeys folder.
   If the chainkey support is on, this folder contains the chainkeys.
   
-  The class has a `compute_plan_path` class property: it contains the path to the compute plan local folder.
-  If the algo is executed as part of a compute plan, this folder contains the shared data between the tasks of
-  the compute plan.
-  
   To add an algo to the Substra Platform, the line
   `tools.algo.execute(<AlgoClass>())` must be added to the main of the algo
   python script. It defines the algo command line interface and thus enables
@@ -164,8 +160,6 @@ substratools.Algo = class Algo(abc.ABC)
   __abstractmethods__ = frozenset({'predict', 'train'})
   
   chainkeys_path = None
-  
-  compute_plan_path = None
 
 Help on class CompositeAlgo in substratools:
 
@@ -185,10 +179,6 @@ substratools.CompositeAlgo = class CompositeAlgo(abc.ABC)
   
   The class has a `chainkeys_path` class property: it contains the path to the chainkeys folder.
   If the chainkey support is on, this folder contains the chainkeys.
-  
-  The class has a `compute_plan_path` class property: it contains the path to the compute plan local folder.
-  If the algo is executed as part of a compute plan, this folder contains the shared data between the tasks of
-  the compute plan.
   
   # Example
   
@@ -338,8 +328,6 @@ substratools.CompositeAlgo = class CompositeAlgo(abc.ABC)
   __abstractmethods__ = frozenset({'predict', 'train'})
   
   chainkeys_path = None
-  
-  compute_plan_path = None
 
 Help on class AggregateAlgo in substratools:
 
@@ -354,10 +342,6 @@ substratools.AggregateAlgo = class AggregateAlgo(abc.ABC)
   
   The class has a `chainkeys_path` class property: it contains the path to the chainkeys folder.
   If the chainkey support is on, this folder contains the chainkeys.
-  
-  The class has a `compute_plan_path` class property: it contains the path to the compute plan local folder.
-  If the algo is executed as part of a compute plan, this folder contains the shared data between the tasks of
-  the compute plan.
   
   To add a aggregate algo to the Substra Platform, the line
   `tools.algo.execute(<AggregateAlgoClass>())` must be added to the main of the algo
@@ -488,8 +472,6 @@ substratools.AggregateAlgo = class AggregateAlgo(abc.ABC)
   __abstractmethods__ = frozenset({'aggregate', 'predict'})
   
   chainkeys_path = None
-  
-  compute_plan_path = None
 
 Help on class Metrics in substratools:
 

@@ -17,7 +17,6 @@ from substratools.task_resources import COMPOSITE_IO_LOCAL
 from substratools.task_resources import COMPOSITE_IO_SHARED
 from substratools.task_resources import TASK_IO_CHAINKEYS
 from substratools.task_resources import TASK_IO_DATASAMPLES
-from substratools.task_resources import TASK_IO_LOCALFOLDER
 from substratools.task_resources import TASK_IO_OPENER
 from substratools.task_resources import TASK_IO_PREDICTIONS
 from substratools.task_resources import TRAIN_IO_MODEL
@@ -117,10 +116,6 @@ class Algo(abc.ABC):
     The class has a `chainkeys_path` class property: it contains the path to the chainkeys folder.
     If the chainkey support is on, this folder contains the chainkeys.
 
-    The class has a `compute_plan_path` class property: it contains the path to the compute plan local folder.
-    If the algo is executed as part of a compute plan, this folder contains the shared data between the tasks of
-    the compute plan.
-
     To add an algo to the Substra Platform, the line
     `tools.algo.execute(<AlgoClass>())` must be added to the main of the algo
     python script. It defines the algo command line interface and thus enables
@@ -205,7 +200,6 @@ class Algo(abc.ABC):
     """
 
     chainkeys_path = None
-    compute_plan_path = None
 
     @abc.abstractmethod
     def train(
@@ -326,7 +320,6 @@ class AlgoWrapper(object):
         self._interface = interface
 
         self._interface.chainkeys_path = self._workspace.chainkeys_path
-        self._interface.compute_plan_path = self._workspace.compute_plan_path
 
     def _assert_output_exists(self, path, key):
 
@@ -405,7 +398,6 @@ def _generate_algo_cli(interface):
             output_model_path=outputs.get_optional_value(TRAIN_IO_MODEL),
             output_predictions_path=outputs.get_optional_value(TASK_IO_PREDICTIONS),
             chainkeys_path=inputs.get_optional_value(TASK_IO_CHAINKEYS),
-            compute_plan_path=inputs.get_optional_value(TASK_IO_LOCALFOLDER),
         )
         utils.configure_logging(workspace.log_path, log_level=args.log_level)
         opener_wrapper = opener.load_from_module(
@@ -446,10 +438,6 @@ class CompositeAlgo(abc.ABC):
 
     The class has a `chainkeys_path` class property: it contains the path to the chainkeys folder.
     If the chainkey support is on, this folder contains the chainkeys.
-
-    The class has a `compute_plan_path` class property: it contains the path to the compute plan local folder.
-    If the algo is executed as part of a compute plan, this folder contains the shared data between the tasks of
-    the compute plan.
 
     # Example
 
@@ -529,7 +517,6 @@ class CompositeAlgo(abc.ABC):
     """
 
     chainkeys_path = None
-    compute_plan_path = None
 
     @abc.abstractmethod
     def train(
@@ -737,7 +724,6 @@ def _generate_composite_algo_cli(interface):
             input_data_folder_paths=inputs.get_optional_values(TASK_IO_DATASAMPLES),
             log_path=args.log_path,
             chainkeys_path=inputs.get_optional_value(TASK_IO_CHAINKEYS),
-            compute_plan_path=inputs.get_optional_value(TASK_IO_LOCALFOLDER),
             input_head_model_path=inputs.get_optional_value(COMPOSITE_IO_LOCAL),
             input_trunk_model_path=inputs.get_optional_value(COMPOSITE_IO_SHARED),
             output_head_model_path=outputs.get_optional_value(COMPOSITE_IO_LOCAL),
@@ -778,10 +764,6 @@ class AggregateAlgo(abc.ABC):
 
     The class has a `chainkeys_path` class property: it contains the path to the chainkeys folder.
     If the chainkey support is on, this folder contains the chainkeys.
-
-    The class has a `compute_plan_path` class property: it contains the path to the compute plan local folder.
-    If the algo is executed as part of a compute plan, this folder contains the shared data between the tasks of
-    the compute plan.
 
     To add a aggregate algo to the Substra Platform, the line
     `tools.algo.execute(<AggregateAlgoClass>())` must be added to the main of the algo
@@ -857,7 +839,6 @@ class AggregateAlgo(abc.ABC):
     """
 
     chainkeys_path = None
-    compute_plan_path = None
 
     @abc.abstractmethod
     def aggregate(
@@ -944,7 +925,6 @@ class AggregateAlgoWrapper(object):
         self._interface = interface
 
         self._interface.chainkeys_path = self._workspace.chainkeys_path
-        self._interface.compute_plan_path = self._workspace.compute_plan_path
 
     def _get_models_paths(self):
         if not self._workspace.input_model_paths:
@@ -1015,7 +995,6 @@ def _generate_aggregate_algo_cli(interface):
             output_model_path=outputs.get_optional_value(TRAIN_IO_MODEL),
             output_predictions_path=outputs.get_optional_value(TASK_IO_PREDICTIONS),
             chainkeys_path=inputs.get_optional_value(TASK_IO_CHAINKEYS),
-            compute_plan_path=inputs.get_optional_value(TASK_IO_LOCALFOLDER),
         )
         utils.configure_logging(workspace.log_path, log_level=args.log_level)
         if inputs.get_optional_value(TASK_IO_OPENER):

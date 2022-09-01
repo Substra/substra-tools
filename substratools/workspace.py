@@ -16,7 +16,6 @@ DEFAULT_OUTPUT_PREDICTIONS_PATH = "pred/pred"
 DEFAULT_OUTPUT_PERF_PATH = "pred/perf.json"
 DEFAULT_LOG_PATH = "model/log_model.log"
 DEFAULT_CHAINKEYS_PATH = "chainkeys/"
-DEFAULT_COMPUTE_PLAN_PATH = "local/"
 
 
 class Workspace(abc.ABC):
@@ -120,7 +119,6 @@ class AlgoWorkspace(OpenerWorkspace):
         output_predictions_path=None,
         log_path=None,
         chainkeys_path=None,
-        compute_plan_path=None,
     ):
         super().__init__(
             dirpath=dirpath,
@@ -136,11 +134,8 @@ class AlgoWorkspace(OpenerWorkspace):
 
         self.chainkeys_path = chainkeys_path or self._get_default_path(DEFAULT_CHAINKEYS_PATH)
 
-        self.compute_plan_path = compute_plan_path or self._get_default_path(DEFAULT_COMPUTE_PLAN_PATH)
-
         dirs = [
             self.chainkeys_path,
-            self.compute_plan_path,
         ]
         paths = [
             self.log_path,
@@ -165,7 +160,6 @@ class CompositeAlgoWorkspace(OpenerWorkspace):
         output_predictions_path=None,
         log_path=None,
         chainkeys_path=None,
-        compute_plan_path=None,
     ):
         super().__init__(
             dirpath=dirpath,
@@ -184,11 +178,8 @@ class CompositeAlgoWorkspace(OpenerWorkspace):
 
         self.chainkeys_path = chainkeys_path or self._get_default_path(DEFAULT_CHAINKEYS_PATH)
 
-        self.compute_plan_path = compute_plan_path or self._get_default_path(DEFAULT_COMPUTE_PLAN_PATH)
-
         dirs = [
             self.chainkeys_path,
-            self.compute_plan_path,
         ]
         paths = [
             self.log_path,
