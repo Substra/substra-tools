@@ -3,7 +3,6 @@ import os
 import pytest
 
 from substratools import exceptions
-from substratools.algo import InputIdentifiers
 from substratools.opener import load_from_module
 from substratools.utils import import_module
 from substratools.workspace import DEFAULT_INPUT_DATA_FOLDER_PATH
@@ -60,7 +59,7 @@ def fake_y(n_samples):
     import_module("opener", script)
 
     o = load_from_module()
-    assert o.get_X() == InputIdentifiers.X
+    assert o.get_X() == "X"
 
 
 def test_load_opener_as_class(tmp_cwd):
@@ -89,7 +88,7 @@ def test_load_opener_from_path(tmp_cwd, valid_opener_code):
     path = dirpath / "my_opener.py"
     path.write_text(valid_opener_code)
     o = load_from_module(path=path)
-    assert o.get_X() == InputIdentifiers.X
+    assert o.get_X() == "X"
 
 
 def test_opener_check_folders(tmp_cwd):
