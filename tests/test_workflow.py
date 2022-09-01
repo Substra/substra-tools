@@ -4,14 +4,13 @@ import pytest
 
 from substratools import Algo
 from substratools import Metrics
+from substratools.algo import GenericAlgoWrapper
 from substratools import load_performance
 from substratools import save_performance
-from substratools.algo import AlgoWrapper
-from substratools.algo import InputIdentifiers
-from substratools.algo import OutputIdentifiers
 from substratools.metrics import MetricsWrapper
 from substratools.utils import import_module
 from substratools.workspace import AlgoWorkspace
+
 from tests import utils
 
 
@@ -41,33 +40,33 @@ class DummyOpener(Opener):
 class DummyAlgo(Algo):
     def train(self, inputs, outputs):
 
-        models = utils.load_models(inputs.get(InputIdentifiers.models, []))
+        models = utils.load_models(inputs.get("models", []))
         total = sum([m["i"] for m in models])
         new_model = {"i": len(models) + 1, "total": total}
 
-        utils.save_model(new_model, outputs.get(OutputIdentifiers.model))
+        utils.save_model(new_model, outputs.get("model"))
 
     def predict(self, inputs, outputs):
-        model = utils.load_model(inputs.get(InputIdentifiers.model))
+        model = utils.load_model(inputs.get("model"))
         pred = {"sum": model["i"]}
-        utils.save_predictions(pred, outputs.get(OutputIdentifiers.predictions))
+        utils.save_predictions(pred, outputs.get("predictions"))
 
 
 class DummyMetrics(Metrics):
     def score(self, inputs, outputs):
-        y_pred_path = inputs.get(InputIdentifiers.predictions)
+        y_pred_path = inputs.get("predictions")
         y_pred = utils.load_predictions(y_pred_path)
 
         score = y_pred["sum"]
 
-        save_performance(performance=score, path=outputs.get(OutputIdentifiers.performance))
+        save_performance(performance=score, path=outputs.get("performance"))
 
 
 def test_workflow(workdir, dummy_opener):
     a = DummyAlgo()
     loop1_model_path = workdir / "loop1model"
     loop1_workspace = AlgoWorkspace(output_model_path=str(loop1_model_path))
-    loop1_wp = AlgoWrapper(a, workspace=loop1_workspace)
+    loop1_wp = GenericAlgoWrapper(a, workspace=loop1_workspace)
 
     # loop 1 (no input)
     loop1_wp.train()

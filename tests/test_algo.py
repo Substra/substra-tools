@@ -1,6 +1,10 @@
 import json
 import shutil
 from typing import TypedDict
+from typing import List
+from typing import Any
+from typing import Optional
+from os import PathLike
 
 import pytest
 
@@ -22,21 +26,21 @@ class DummyAlgo(algo.Algo):
         inputs: TypedDict(
             "inputs",
             {
-                InputIdentifiers.X: List["str"],  # cf valid_opener_code # TODO: rename "data" , del Y
-                InputIdentifiers.y: List[int],  # datasamples contains loaded datasamples, if any, or None
-                InputIdentifiers.models: Optional[
+                "X": List["str"],  # cf valid_opener_code # TODO: rename "data" , del Y
+                "y": List[int],  # datasamples contains loaded datasamples, if any, or None
+                "models": Optional[
                     PathLike
                 ],  # inputs contains a dict where keys are identifiers and values are paths on the disk
-                InputIdentifiers.rank: int,
+                "rank": int,
             },
         ),
         outputs: TypedDict(
-            "outputs", {OutputIdentifiers.model: PathLike}
+            "outputs", {"model": PathLike}
         ),  # outputs contains a dict where keys are identifiers and values are paths on disk
     ) -> None:
         # TODO: checks on data
         # load models
-        models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
+        models = utils.load_models(paths=inputs.get("models", []))
 
         # init model
         new_model = {"value": 0}
@@ -48,31 +52,31 @@ class DummyAlgo(algo.Algo):
             new_model["value"] += m["value"]
 
         # save model
-        utils.save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
+        utils.save_model(model=new_model, path=outputs.get("model"))
 
     def predict(
         self,
-        inputs: TypedDict("inputs", {InputIdentifiers.X: Any, InputIdentifiers.model: List[PathLike]}),
-        outputs: TypedDict("outputs", {OutputIdentifiers.predictions: PathLike}),
+        inputs: TypedDict("inputs", {"X": Any, "model": List[PathLike]}),
+        outputs: TypedDict("outputs", {"predictions": PathLike}),
     ) -> None:
         # TODO: checks on data
 
         # load_model
-        model = utils.load_model(path=inputs.get(InputIdentifiers.model))
+        model = utils.load_model(path=inputs.get("model"))
 
         # predict
-        X = inputs.get(InputIdentifiers.X)
+        X = inputs.get("X")
         pred = X * model["value"]
 
         # save predictions
-        utils.save_predictions(predictions=pred, path=outputs.get(OutputIdentifiers.predictions))
+        utils.save_predictions(predictions=pred, path=outputs.get("predictions"))
 
 
 class NoSavedModelAlgo(DummyAlgo):
     def train(self, inputs, outputs):
         # TODO: checks on data
         # load models
-        models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
+        models = utils.load_models(paths=inputs.get("models", []))
 
         # init model
         new_model = {"value": 0}
@@ -84,14 +88,14 @@ class NoSavedModelAlgo(DummyAlgo):
             new_model["value"] += m["value"]
 
         # save model
-        utils.no_save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
+        utils.no_save_model(model=new_model, path=outputs.get("model"))
 
 
 class WrongSavedModelAlgo(DummyAlgo):
     def train(self, inputs, outputs):
         # TODO: checks on data
         # load models
-        models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
+        models = utils.load_models(paths=inputs.get("models", []))
 
         # init model
         new_model = {"value": 0}
@@ -165,7 +169,7 @@ def test_train_fake_data(output_model_path):
 @pytest.mark.parametrize(
     "fake_data,expected_pred,n_fake_samples",
     [
-        (False, InputIdentifiers.X, None),
+        (False, "X", None),
         (True, ["Xfake"], 1),
     ],
 )
@@ -187,7 +191,7 @@ def test_execute_train(workdir, output_model_path):
         {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
     ]
     outputs = [
-        {"id": TRAIN_IO_MODEL, "value": str(output_model_path)},
+        {"id": "model", "value": str(output_model_path)},
     ]
     options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
 
@@ -215,9 +219,9 @@ def test_execute_train_multiple_models(workdir, output_model_path, create_models
 
     inputs = [
         {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
-    ] + [{"id": TRAIN_IO_MODELS, "value": str(workdir / model)} for model in model_filenames]
+    ] + [{"id": "models", "value": str(workdir / model)} for model in model_filenames]
     outputs = [
-        {"id": TRAIN_IO_MODEL, "value": str(output_model_path)},
+        {"id": "model", "value": str(output_model_path)},
     ]
     options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
 
@@ -238,8 +242,8 @@ def test_execute_predict(workdir, output_model_path, create_models):
     pred_path = workdir / "pred" / "pred"
     train_inputs = [
         {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
-    ] + [{"id": TRAIN_IO_MODELS, "value": str(workdir / model)} for model in model_filenames]
-    train_outputs = [{"id": TRAIN_IO_MODEL, "value": str(output_model_path)}]
+    ] + [{"id": "models", "value": str(workdir / model)} for model in model_filenames]
+    train_outputs = [{"id": "model", "value": str(output_model_path)}]
     train_options = ["--inputs", json.dumps(train_inputs), "--outputs", json.dumps(train_outputs)]
 
     # first train models
@@ -252,9 +256,9 @@ def test_execute_predict(workdir, output_model_path, create_models):
     # do predict on output model
     pred_inputs = [
         {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
-        {"id": TRAIN_IO_MODELS, "value": str(output_model_path)},
+        {"id": "models", "value": str(output_model_path)},
     ]
-    pred_outputs = [{"id": TASK_IO_PREDICTIONS, "value": str(pred_path)}]
+    pred_outputs = [{"id": "predictions", "value": str(pred_path)}]
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
     assert not pred_path.exists()
@@ -273,9 +277,9 @@ def test_execute_predict(workdir, output_model_path, create_models):
 
     pred_inputs = [
         {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
-        {"id": TRAIN_IO_MODELS, "value": str(input_model_path)},
+        {"id": "models", "value": str(input_model_path)},
     ]
-    pred_outputs = [{"id": TASK_IO_PREDICTIONS, "value": str(pred_path)}]
+    pred_outputs = [{"id": "predictions", "value": str(pred_path)}]
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
     assert not pred_path.exists()

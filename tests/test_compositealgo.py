@@ -8,10 +8,6 @@ import pytest
 
 from substratools import algo
 from substratools import exceptions
-from substratools.algo import InputIdentifiers
-from substratools.algo import OutputIdentifiers
-from substratools.task_resources import COMPOSITE_IO_LOCAL
-from substratools.task_resources import COMPOSITE_IO_SHARED
 from substratools.task_resources import TASK_IO_DATASAMPLES
 from substratools.workspace import CompositeAlgoWorkspace
 from tests import utils
@@ -28,25 +24,25 @@ class DummyCompositeAlgo(algo.CompositeAlgo):
         inputs: TypedDict(
             "inputs",
             {
-                InputIdentifiers.X: Any,
-                InputIdentifiers.y: Any,
-                InputIdentifiers.local: Optional[os.PathLike],
-                InputIdentifiers.shared: Optional[os.PathLike],
-                InputIdentifiers.rank: int,
+                "X": Any,
+                "y": Any,
+                "local": Optional[os.PathLike],
+                "shared": Optional[os.PathLike],
+                "rank": int,
             },
         ),
         outputs: TypedDict(
             "outputs",
             {
-                OutputIdentifiers.local: os.PathLike,
-                OutputIdentifiers.shared: os.PathLike,
+                "local": os.PathLike,
+                "shared": os.PathLike,
             },
         ),
     ):
         # init phase
         # load models
-        head_model = utils.load_model(path=inputs.get(InputIdentifiers.local))
-        trunk_model = utils.load_model(path=inputs.get(InputIdentifiers.shared))
+        head_model = utils.load_model(path=inputs.get("local"))
+        trunk_model = utils.load_model(path=inputs.get("shared"))
 
         if head_model and trunk_model:
             new_head_model = dict(head_model)
@@ -60,44 +56,44 @@ class DummyCompositeAlgo(algo.CompositeAlgo):
         new_trunk_model["value"] -= 1
 
         # save model
-        utils.save_model(model=new_head_model, path=outputs.get(OutputIdentifiers.local))
-        utils.save_model(model=new_trunk_model, path=outputs.get(OutputIdentifiers.shared))
+        utils.save_model(model=new_head_model, path=outputs.get("local"))
+        utils.save_model(model=new_trunk_model, path=outputs.get("shared"))
 
     def predict(
         self,
         inputs: TypedDict(
             "inputs",
             {
-                InputIdentifiers.X: Any,
-                InputIdentifiers.local: os.PathLike,
-                InputIdentifiers.shared: os.PathLike,
+                "X": Any,
+                "local": os.PathLike,
+                "shared": os.PathLike,
             },
         ),
         outputs: TypedDict(
             "outputs",
             {
-                OutputIdentifiers.predictions: os.PathLike,
+                "predictions": os.PathLike,
             },
         ),
     ):
 
         # init phase
         # load models
-        head_model = utils.load_model(path=inputs.get(InputIdentifiers.local))
-        trunk_model = utils.load_model(path=inputs.get(InputIdentifiers.shared))
+        head_model = utils.load_model(path=inputs.get("local"))
+        trunk_model = utils.load_model(path=inputs.get("shared"))
 
         pred = list(range(head_model["value"], trunk_model["value"]))
 
         # save predictions
-        utils.save_predictions(predictions=pred, path=outputs.get(OutputIdentifiers.predictions))
+        utils.save_predictions(predictions=pred, path=outputs.get("predictions"))
 
 
 class NoSavedTrunkModelAggregateAlgo(DummyCompositeAlgo):
     def train(self, inputs, outputs):
         # init phase
         # load models
-        head_model = utils.load_model(path=inputs.get(InputIdentifiers.local))
-        trunk_model = utils.load_model(path=inputs.get(InputIdentifiers.shared))
+        head_model = utils.load_model(path=inputs.get("local"))
+        trunk_model = utils.load_model(path=inputs.get("shared"))
 
         if head_model and trunk_model:
             new_head_model = dict(head_model)
@@ -111,16 +107,16 @@ class NoSavedTrunkModelAggregateAlgo(DummyCompositeAlgo):
         new_trunk_model["value"] -= 1
 
         # save model
-        utils.save_model(model=new_head_model, path=outputs.get(OutputIdentifiers.local))
-        utils.no_save_model(model=new_trunk_model, path=outputs.get(OutputIdentifiers.shared))
+        utils.save_model(model=new_head_model, path=outputs.get("local"))
+        utils.no_save_model(model=new_trunk_model, path=outputs.get("shared"))
 
 
 class NoSavedHeadModelAggregateAlgo(DummyCompositeAlgo):
     def train(self, inputs, outputs):
         # init phase
         # load models
-        head_model = utils.load_model(path=inputs.get(InputIdentifiers.local))
-        trunk_model = utils.load_model(path=inputs.get(InputIdentifiers.shared))
+        head_model = utils.load_model(path=inputs.get("local"))
+        trunk_model = utils.load_model(path=inputs.get("shared"))
 
         if head_model and trunk_model:
             new_head_model = dict(head_model)
@@ -134,16 +130,16 @@ class NoSavedHeadModelAggregateAlgo(DummyCompositeAlgo):
         new_trunk_model["value"] -= 1
 
         # save model
-        utils.no_save_model(model=new_head_model, path=outputs.get(OutputIdentifiers.local))
-        utils.save_model(model=new_trunk_model, path=outputs.get(OutputIdentifiers.shared))
+        utils.no_save_model(model=new_head_model, path=outputs.get("local"))
+        utils.save_model(model=new_trunk_model, path=outputs.get("shared"))
 
 
 class WrongSavedTrunkModelAggregateAlgo(DummyCompositeAlgo):
     def train(self, inputs, outputs):
         # init phase
         # load models
-        head_model = utils.load_model(path=inputs.get(InputIdentifiers.local))
-        trunk_model = utils.load_model(path=inputs.get(InputIdentifiers.shared))
+        head_model = utils.load_model(path=inputs.get("local"))
+        trunk_model = utils.load_model(path=inputs.get("shared"))
 
         if head_model and trunk_model:
             new_head_model = dict(head_model)
@@ -157,16 +153,16 @@ class WrongSavedTrunkModelAggregateAlgo(DummyCompositeAlgo):
         new_trunk_model["value"] -= 1
 
         # save model
-        utils.save_model(model=new_head_model, path=outputs.get(OutputIdentifiers.local))
-        utils.wrong_save_model(model=new_trunk_model, path=outputs.get(OutputIdentifiers.shared))
+        utils.save_model(model=new_head_model, path=outputs.get("local"))
+        utils.wrong_save_model(model=new_trunk_model, path=outputs.get("shared"))
 
 
 class WrongSavedHeadModelAggregateAlgo(DummyCompositeAlgo):
     def train(self, inputs, outputs):
         # init phase
         # load models
-        head_model = utils.load_model(path=inputs.get(InputIdentifiers.local))
-        trunk_model = utils.load_model(path=inputs.get(InputIdentifiers.shared))
+        head_model = utils.load_model(path=inputs.get("local"))
+        trunk_model = utils.load_model(path=inputs.get("shared"))
 
         if head_model and trunk_model:
             new_head_model = dict(head_model)
@@ -180,8 +176,8 @@ class WrongSavedHeadModelAggregateAlgo(DummyCompositeAlgo):
         new_trunk_model["value"] -= 1
 
         # save model
-        utils.wrong_save_model(model=new_head_model, path=outputs.get(OutputIdentifiers.local))
-        utils.save_model(model=new_trunk_model, path=outputs.get(OutputIdentifiers.shared))
+        utils.wrong_save_model(model=new_head_model, path=outputs.get("local"))
+        utils.save_model(model=new_trunk_model, path=outputs.get("shared"))
 
 
 @pytest.fixture
@@ -281,8 +277,8 @@ def test_predict(fake_data, n_fake_samples, expected_pred, create_models, dummy_
 def test_execute_train(workdir):
     output_models_path = workdir / "output_models"
     output_models_path.mkdir()
-    output_head_model_filename = OutputIdentifiers.local
-    output_trunk_model_filename = OutputIdentifiers.shared
+    output_head_model_filename = "local"
+    output_trunk_model_filename = "shared"
 
     output_head_model_path = output_models_path / output_head_model_filename
     assert not output_head_model_path.exists()
@@ -290,8 +286,8 @@ def test_execute_train(workdir):
     assert not output_trunk_model_path.exists()
 
     outputs = [
-        {"id": COMPOSITE_IO_LOCAL, "value": str(output_head_model_path)},
-        {"id": COMPOSITE_IO_SHARED, "value": str(output_trunk_model_path)},
+        {"id": "local", "value": str(output_head_model_path)},
+        {"id": "shared", "value": str(output_trunk_model_path)},
     ]
     inputs = [
         {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
@@ -327,13 +323,13 @@ def test_execute_train_multiple_models(workdir, create_models):
     assert not pred_path.exists()
 
     outputs = [
-        {"id": COMPOSITE_IO_LOCAL, "value": str(output_head_model_path)},
-        {"id": COMPOSITE_IO_SHARED, "value": str(output_trunk_model_path)},
+        {"id": "local", "value": str(output_head_model_path)},
+        {"id": "shared", "value": str(output_trunk_model_path)},
     ]
     inputs = [
         {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
-        {"id": COMPOSITE_IO_LOCAL, "value": str(head_path)},
-        {"id": COMPOSITE_IO_SHARED, "value": str(trunk_path)},
+        {"id": "local", "value": str(head_path)},
+        {"id": "shared", "value": str(trunk_path)},
     ]
 
     command = [
@@ -367,8 +363,8 @@ def test_execute_predict(workdir, create_models):
 
     inputs = [
         {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
-        {"id": COMPOSITE_IO_LOCAL, "value": str(head_path)},
-        {"id": COMPOSITE_IO_SHARED, "value": str(trunk_path)},
+        {"id": "local", "value": str(head_path)},
+        {"id": "shared", "value": str(trunk_path)},
     ]
 
     command = [
