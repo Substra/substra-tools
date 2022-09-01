@@ -148,11 +148,11 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models):
     assert pred == expected_pred
 
 
-def test_execute_aggregate(output_model_path, session_dir):
+def test_execute_aggregate(output_model_path):
 
     assert not output_model_path.exists()
 
-    outputs = [{"id": tmp_path / "model", "value": str(output_model_path)}]
+    outputs = [{"id": "model", "value": str(output_model_path), "multiple": False}]
 
     algo.execute(DummyAggregateAlgo(), sysargs=["--method-name", "aggregate", "--outputs", json.dumps(outputs)])
     assert output_model_path.exists()
@@ -170,9 +170,9 @@ def test_execute_aggregate_multiple_models(workdir, create_models, output_model_
 
     assert not output_model_path.exists()
 
-    inputs = [{"id": TRAIN_IO_MODELS, "value": str(workdir / model)} for model in model_filenames]
+    inputs = [{"id": "models", "value": str(workdir / model), "multiple": True} for model in model_filenames]
     outputs = [
-        {"id": TRAIN_IO_MODEL, "value": str(output_model_path)},
+        {"id": "model", "value": str(output_model_path), "multiple": False},
     ]
     options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
 
@@ -190,8 +190,8 @@ def test_execute_predict(workdir, create_models, output_model_path):
     _, model_filenames = create_models
     assert not output_model_path.exists()
 
-    inputs = [{"id": TRAIN_IO_MODELS, "value": str(workdir / model_name)} for model_name in model_filenames]
-    outputs = [{"id": TRAIN_IO_MODEL, "value": str(output_model_path)}]
+    inputs = [{"id": "models", "value": str(workdir / model_name), "multiple": True} for model_name in model_filenames]
+    outputs = [{"id": "model", "value": str(output_model_path), "multiple": False}]
     options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
     command = ["--method-name", "aggregate"]
     command.extend(options)
@@ -203,9 +203,9 @@ def test_execute_predict(workdir, create_models, output_model_path):
     assert not pred_path.exists()
 
     pred_inputs = [
-        {"id": TRAIN_IO_MODELS, "value": str(output_model_path)},
+        {"id": "models", "value": str(output_model_path), "multiple": True},
     ]
-    pred_outputs = [{"id": TASK_IO_PREDICTIONS, "value": str(pred_path)}]
+    pred_outputs = [{"id": "predictions", "value": str(pred_path), "multiple": False}]
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
     algo.execute(DummyAggregateAlgo(), sysargs=["--method-name", "predict"] + pred_options)

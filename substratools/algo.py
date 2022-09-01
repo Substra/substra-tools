@@ -4,7 +4,10 @@ import argparse
 from copy import deepcopy
 import logging
 import sys
+import os
 
+
+from substratools import exceptions
 from substratools import opener
 from substratools import utils
 from substratools.task_resources import TaskResources
@@ -82,7 +85,11 @@ class GenericAlgoWrapper(object):
         self._interface.chainkeys_path = self._workspace.chainkeys_path
 
     def _assert_outputs_exists(self, outputs: dict):
-        pass
+        for path in outputs:
+            if os.path.isdir(path):
+                raise exceptions.NotAFileError(f"Expected output file at {path}, found dir for output `{key}`")
+            if not os.path.isfile(path):
+                raise exceptions.MissingFileError(f"Output file {path} used to save argument `{key}` does not exists.")
 
     @utils.Timer(logger)
     def task_launcher(self, method_name: str, rank: int = 0, fake_data: bool = False, n_fake_samples: int = None):
