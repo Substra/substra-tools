@@ -8,11 +8,6 @@ import pytest
 
 from substratools import algo
 from substratools import exceptions
-from substratools.algo import InputIdentifiers
-from substratools.algo import OutputIdentifiers
-from substratools.task_resources import TASK_IO_PREDICTIONS
-from substratools.task_resources import TRAIN_IO_MODEL
-from substratools.task_resources import TRAIN_IO_MODELS
 from substratools.workspace import AggregateAlgoWorkspace
 from tests import utils
 
@@ -28,64 +23,64 @@ class DummyAggregateAlgo(algo.AggregateAlgo):
         inputs: TypedDict(
             "inputs",
             {
-                InputIdentifiers.models: List[PathLike],
-                InputIdentifiers.rank: int,
+                "models": List[PathLike],
+                "rank": int,
             },
         ),
         outputs: TypedDict("outputs", {"model": PathLike}),
     ) -> None:
 
-        models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
+        models = utils.load_models(paths=inputs.get("models", []))
 
         new_model = {"value": 0}
         for m in models:
             new_model["value"] += m["value"]
 
-        utils.save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
+        utils.save_model(model=new_model, path=outputs.get("model"))
 
     def predict(
         self,
         inputs: TypedDict(
             "inputs",
             {
-                InputIdentifiers.X: Any,
+                "X": Any,
                 "model": PathLike,
             },
         ),
         outputs: TypedDict("outputs", {"model": PathLike}),
     ):
-        model = utils.load_model(path=inputs.get(InputIdentifiers.model))
+        model = utils.load_model(path=inputs.get("model"))
 
         # Predict
-        X = inputs.get(InputIdentifiers.X)
+        X = inputs.get("X")
         pred = X * model["value"]
 
         # save predictions
-        utils.save_predictions(predictions=pred, path=outputs.get(OutputIdentifiers.predictions))
+        utils.save_predictions(predictions=pred, path=outputs.get("predictions"))
 
 
 class NoSavedModelAggregateAlgo(DummyAggregateAlgo):
     def aggregate(self, inputs, outputs):
 
-        models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
+        models = utils.load_models(paths=inputs.get("models", []))
 
         new_model = {"value": 0}
         for m in models:
             new_model["value"] += m["value"]
 
-        utils.no_save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
+        utils.no_save_model(model=new_model, path=outputs.get("model"))
 
 
 class WrongSavedModelAggregateAlgo(DummyAggregateAlgo):
     def aggregate(self, inputs, outputs):
 
-        models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
+        models = utils.load_models(paths=inputs.get("models", []))
 
         new_model = {"value": 0}
         for m in models:
             new_model["value"] += m["value"]
 
-        utils.wrong_save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
+        utils.wrong_save_model(model=new_model, path=outputs.get("model"))
 
 
 @pytest.fixture
@@ -138,7 +133,7 @@ def test_aggregate_multiple_models(create_models, output_model_path):
 @pytest.mark.parametrize(
     "fake_data,expected_pred,n_fake_samples",
     [
-        (False, InputIdentifiers.X, None),
+        (False, "X", None),
         (True, ["Xfake"], 1),
     ],
 )

@@ -1,21 +1,12 @@
 import json
 import shutil
-from os import PathLike
-from typing import Any
-from typing import List
-from typing import Optional
 from typing import TypedDict
 
 import pytest
 
 from substratools import algo
 from substratools import exceptions
-from substratools.algo import InputIdentifiers
-from substratools.algo import OutputIdentifiers
 from substratools.task_resources import TASK_IO_DATASAMPLES
-from substratools.task_resources import TASK_IO_PREDICTIONS
-from substratools.task_resources import TRAIN_IO_MODEL
-from substratools.task_resources import TRAIN_IO_MODELS
 from substratools.workspace import AlgoWorkspace
 from tests import utils
 
