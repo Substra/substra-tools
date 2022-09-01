@@ -7,8 +7,7 @@ import sys
 
 from substratools import opener
 from substratools import utils
-from substratools.task_resources import TaskInputResources
-from substratools.task_resources import TaskOutputResources
+from substratools.task_resources import TaskResources
 from substratools.workspace import GenericAlgoWorkspace
 
 
@@ -125,8 +124,8 @@ def _generate_generic_algo_cli(interface):
     """Helper to generate a command line interface client."""
 
     def _algo_from_args(args):
-        inputs = TaskInputResources(args.inputs)
-        outputs = TaskOutputResources(args.outputs)
+        inputs = TaskResources(args.inputs)
+        outputs = TaskResources(args.outputs)
         log_path = args.log_path
         chainkeys_path = inputs.chainkeys_path
 

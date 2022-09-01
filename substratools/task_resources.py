@@ -2,18 +2,13 @@ import json
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Union
 from substratools import exceptions
 
 TASK_IO_OPENER = "opener"
 TASK_IO_DATASAMPLES = "datasamples"
-
-TASK_IO_PREDICTIONS = "predictions"
-TASK_IO_LOCALFOLDER = "localfolder"
 TASK_IO_CHAINKEYS = "chainkeys"
-TRAIN_IO_MODELS = "models"
-TRAIN_IO_MODEL = "model"
-COMPOSITE_IO_SHARED = "shared"
-COMPOSITE_IO_LOCAL = "local"
+
 
 _RESOURCE_ID = "id"
 _RESOURCE_VALUE = "value"
@@ -30,7 +25,7 @@ class TaskResources:
 
         Argument is expected to be a JSON array like:
         [
-            {"id": "local", "value": "/sandbox/output/model/uuid"},
+            {"id": "local", "value": "/sandbox/output/model/uuid", "multiple": False},
             {"id": "shared", ...}
         ]
         """
@@ -40,44 +35,47 @@ class TaskResources:
 
         for item in argument_list:
             self._values.setdefault(
-                item[_RESOURCE_ID], dict(_RESOURCE_VALUE=[], _RESOURCE_MULTIPLE=item[_RESOURCE_MULTIPLE])
+                item[_RESOURCE_ID], {_RESOURCE_VALUE: [], _RESOURCE_MULTIPLE: item[_RESOURCE_MULTIPLE]}
             )
-            self._values[item[_RESOURCE_ID]][_RESOURCE_VALUE].append(item[_RESOURCE_ID])
+            self._values[item[_RESOURCE_ID]][_RESOURCE_VALUE].append(item[_RESOURCE_VALUE])
 
-    def get_optional_value(self, key: str) -> Optional[str]:
-        """Return value for given key, won't raise if there is no matching resource.
-        Will raise if there are more than one value."""
+        self.opener_path = self.get_value(TASK_IO_OPENER)
+        self.input_data_folder_paths = self.get_value(TASK_IO_DATASAMPLES)
+        self.chainkeys_path = self.get_value(TASK_IO_CHAINKEYS)
+
+    def get_value(self, key: str) -> Optional[Union[List[str], str]]:
+        """Returns the value for a given key. Won't raise if there is no matching resource.
+        Will raise if there is a mismatch between the given multiplicity and teh number of returned
+        elements.
+
+        If multiple is True, will return a list else will return a single value
+        """
         if key not in self._values:
             return None
-        val = self._values[key][_RESOURCE_VALUE]
 
-        if len(val) > 1:
-            raise exceptions.InvalidInputOutputsError("there are more than one path")
+        val = self._values[key][_RESOURCE_VALUE]
+        multiple = self._values[key][_RESOURCE_MULTIPLE]
+
+        if not multiple and len(val) > 1:
+            raise exceptions.InvalidInputOutputsError(
+                f"There is more than one path for the non multiple resource {key}"
+            )
+
+        if multiple:
+            return val
 
         return val[0]
 
-    def get_optional_values(self, key: str) -> Optional[List[str]]:
-        """Return values for given key, won't raise if there is no matching resource."""
-        return self._values.get(key, {}).get(_RESOURCE_VALUE)
+    @property
+    def formatted_dynamic_resources(self) -> Union[List[str], str]:
+        """Returns all the resources (except the datasamples, the opener and the chainkeys_path under the user format:
+        A dict where each input is an element where
+            - the key is the user identifier
+            - the value is a list of Path for multiple resources and a Path for non multiple resources
+        """
 
-
-class TaskInputResources(TaskResources):
-    def __init__(self, argstr: str) -> None:
-        super().__init__(argstr)
-
-        self.opener_path = self.get_optional_value(TASK_IO_OPENER)
-        self.input_data_folder_paths = self.get_optional_values(TASK_IO_DATASAMPLES)
-        self.chainkeys_path = self.get_optional_value(TASK_IO_CHAINKEYS)
-
-        self.task_inputs = {
-            k: v
-            for k, v in self._values.items()
-            if k not in (TASK_IO_OPENER, TASK_IO_DATASAMPLES, TASK_IO_LOCALFOLDER, TASK_IO_CHAINKEYS)
+        return {
+            k: self.get_value(k)
+            for k in self._values.keys()
+            if k not in (TASK_IO_OPENER, TASK_IO_DATASAMPLES, TASK_IO_CHAINKEYS)
         }
-
-
-class TaskOutputResources(TaskResources):
-    def __init__(self, argstr: str) -> None:
-        super().__init__(argstr)
-        # If there is only one path, the user expects a Path not a list
-        self.task_outputs = self._values
