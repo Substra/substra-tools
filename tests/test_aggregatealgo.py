@@ -8,6 +8,7 @@ import pytest
 
 from substratools import algo
 from substratools import exceptions
+from substratools.task_resources import TaskResources
 from substratools.workspace import AggregateAlgoWorkspace
 from tests import utils
 
@@ -96,7 +97,7 @@ def create_models(workdir):
         filename = "{}.json".format(model_name)
         path = model_dir / filename
         path.write_text(json.dumps(model_data))
-        return path
+        return str(path)
 
     model_datas = [model_a, model_b]
     model_filenames = [_create_model(d) for d in model_datas]
@@ -120,12 +121,17 @@ def test_aggregate_no_model(valid_algo_workspace):
 def test_aggregate_multiple_models(create_models, output_model_path):
     _, model_filenames = create_models
 
-    workspace = AggregateAlgoWorkspace(input_model_paths=model_filenames, output_model_path=output_model_path)
-    a = DummyAggregateAlgo()
-    wp = algo.AggregateAlgoWrapper(a, workspace)
+    workspace_inputs = TaskResources(
+        json.dumps([{"id": "models", "value": f, "multiple": True} for f in model_filenames])
+    )
+    workspace_outputs = TaskResources(json.dumps([{"id": "model", "value": output_model_path, "multiple": False}]))
 
-    wp.aggregate()
-    model = utils.load_model(wp._workspace.output_model_path)
+    workspace = AggregateAlgoWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
+    a = DummyAggregateAlgo()
+    wp = algo.GenericAlgoWrapper(a, workspace, opener_wrapper=None)
+
+    wp.task_launcher(method_name="aggregate")
+    model = utils.load_model(wp._workspace.task_outputs["model"])
 
     assert model["value"] == 3
 

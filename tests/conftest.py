@@ -1,7 +1,8 @@
 import os
+import shutil
 import sys
 from pathlib import Path
-import shutil
+
 import pytest
 
 from substratools.utils import import_module
@@ -54,8 +55,8 @@ def valid_opener(valid_opener_code):
 
 
 @pytest.fixture()
-def output_model_path(workdir: str) -> Path:
-    return workdir / "model" / "model"
+def output_model_path(workdir: Path) -> str:
+    return str(workdir / "model" / "model")
 
 
 @pytest.fixture()
