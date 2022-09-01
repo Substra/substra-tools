@@ -136,5 +136,5 @@ class CompositeAlgoWorkspace(GenericAlgoWorkspace):
     """Filesystem workspace for composite algo execution."""
 
 
-class AggregateAlgoWorkspace(AlgoWorkspace):
+class AggregateAlgoWorkspace(GenericAlgoWorkspace):
     """Filesystem workspace for aggregate algo execution."""
