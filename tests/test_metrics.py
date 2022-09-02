@@ -8,6 +8,7 @@ import pytest
 
 from substratools import load_performance
 from substratools import metrics
+from substratools import opener
 from substratools import save_performance
 from substratools.utils import import_module
 from substratools.workspace import MetricsWorkspace
@@ -115,14 +116,15 @@ def test_create():
 
 def test_score():
     m = DummyMetrics()
-    wp = metrics.MetricsWrapper(m)
+    workspace = MetricsWorkspace(opener_path=None)
+    wp = metrics.MetricsWrapper(m, workspace=workspace, opener_wrapper=opener.load_from_module())
     wp.score()
     s = load_performance(wp._workspace.output_perf_path)
     assert s == 15
 
 
-def test_execute(load_float_metrics_module):
-    perf_path = metrics.execute(sysargs=[])
+def test_execute(load_float_metrics_module, valid_opener_script):
+    perf_path = metrics.execute(sysargs=["--opener-path", valid_opener_script])
     s = load_performance(perf_path)
     assert s == 15
 
@@ -134,25 +136,25 @@ def test_execute(load_float_metrics_module):
         (["--fake-data", "--n-fake-samples", "3"], 12),
     ],
 )
-def test_execute_fake_data_modes(fake_data_mode, expected_score, load_float_metrics_module):
-    perf_path = metrics.execute(sysargs=fake_data_mode)
+def test_execute_fake_data_modes(fake_data_mode, expected_score, load_float_metrics_module, valid_opener_script):
+    perf_path = metrics.execute(sysargs=fake_data_mode + ["--opener-path", valid_opener_script])
     s = load_performance(perf_path)
     assert s == expected_score
 
 
-def test_execute_np(load_np_metrics_module):
-    perf_path = metrics.execute(sysargs=[])
+def test_execute_np(load_np_metrics_module, valid_opener_script):
+    perf_path = metrics.execute(sysargs=["--opener-path", valid_opener_script])
     s = load_performance(perf_path)
     assert s == pytest.approx(0.99)
 
 
-def test_execute_int(load_int_metrics_module):
-    perf_path = metrics.execute(sysargs=[])
+def test_execute_int(load_int_metrics_module, valid_opener_script):
+    perf_path = metrics.execute(sysargs=["--opener-path", valid_opener_script])
     s = load_performance(perf_path)
     assert s == 1
 
 
-def test_execute_dict(load_dict_metrics_module):
-    perf_path = metrics.execute(sysargs=[])
+def test_execute_dict(load_dict_metrics_module, valid_opener_script):
+    perf_path = metrics.execute(sysargs=["--opener-path", valid_opener_script])
     s = load_performance(perf_path)
     assert s["a"] == 1
