@@ -210,14 +210,12 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models, output
 
 def test_execute_train(workdir, output_model_path):
     inputs = [
-        {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
+        {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused"), "multiple": True},
     ]
     outputs = [
-        {"id": "model", "value": output_model_path},
+        {"id": "model", "value": str(output_model_path), "multiple": False},
     ]
     options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
-
-    output_model_path = Path(output_model_path)
 
     assert not output_model_path.exists()
 
@@ -240,14 +238,12 @@ def test_execute_train_multiple_models(workdir, output_model_path, create_models
     output_model_path = Path(output_model_path)
 
     assert not output_model_path.exists()
-    pred_path = workdir / "pred" / "pred"
+    pred_path = workdir / "pred"
     assert not pred_path.exists()
 
-    inputs = [
-        {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
-    ] + [{"id": "models", "value": str(workdir / model)} for model in model_filenames]
+    inputs = [{"id": "models", "value": str(workdir / model), "multiple": True} for model in model_filenames]
     outputs = [
-        {"id": "model", "value": str(output_model_path)},
+        {"id": "model", "value": str(output_model_path), "multiple": False},
     ]
     options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
 
@@ -263,13 +259,11 @@ def test_execute_train_multiple_models(workdir, output_model_path, create_models
     assert not pred_path.exists()
 
 
-def test_execute_predict(workdir, output_model_path, create_models):
+def test_execute_predict(workdir, output_model_path, create_models, valid_opener_script):
     _, model_filenames = create_models
-    pred_path = workdir / "pred" / "pred"
-    train_inputs = [
-        {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
-    ] + [{"id": "models", "value": str(workdir / model)} for model in model_filenames]
-    train_outputs = [{"id": "model", "value": str(output_model_path)}]
+    pred_path = workdir / "pred"
+    train_inputs = [{"id": "models", "value": str(workdir / model), "multiple": True} for model in model_filenames]
+    train_outputs = [{"id": "model", "value": str(output_model_path), "multiple": False}]
     train_options = ["--inputs", json.dumps(train_inputs), "--outputs", json.dumps(train_outputs)]
 
     # first train models
@@ -281,10 +275,10 @@ def test_execute_predict(workdir, output_model_path, create_models):
 
     # do predict on output model
     pred_inputs = [
-        {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
-        {"id": "models", "value": str(output_model_path)},
+        {"id": "opener", "value": valid_opener_script, "multiple": False},
+        {"id": "model", "value": str(output_model_path), "multiple": False},
     ]
-    pred_outputs = [{"id": "predictions", "value": str(pred_path)}]
+    pred_outputs = [{"id": "predictions", "value": str(pred_path), "multiple": False}]
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
     assert not pred_path.exists()
@@ -302,10 +296,10 @@ def test_execute_predict(workdir, output_model_path, create_models):
     shutil.move(output_model_path, input_model_path)
 
     pred_inputs = [
-        {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
-        {"id": "models", "value": str(input_model_path)},
+        {"id": "model", "value": str(input_model_path), "multiple": False},
+        {"id": "opener", "value": valid_opener_script, "multiple": False},
     ]
-    pred_outputs = [{"id": "predictions", "value": str(pred_path)}]
+    pred_outputs = [{"id": "predictions", "value": str(pred_path), "multiple": False}]
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
     assert not pred_path.exists()

@@ -10,6 +10,7 @@ def makedir_safe(path):
         pass
 
 
+# Will be deleted when Metric and GenericAlgo will be merge
 DEFAULT_INPUT_DATA_FOLDER_PATH = "data/"
 DEFAULT_INPUT_PREDICTIONS_PATH = "pred/pred"
 DEFAULT_OUTPUT_PERF_PATH = "pred/perf.json"
