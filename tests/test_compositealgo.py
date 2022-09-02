@@ -318,9 +318,10 @@ def test_predict_fake_data(composite_inputs, predict_outputs, n_fake_samples):
         WrongSavedHeadModelAggregateAlgo,
     ),
 )
-def test_model_check(algo_class, train_workspace):
+def test_model_check(algo_class, train_outputs):
     a = algo_class()
-    wp = algo.GenericAlgoWrapper(interface=a, workspace=train_workspace, opener_wrapper=None)
+    dummy_train_workspace = CompositeAlgoWorkspace(outputs=train_outputs)
+    wp = algo.GenericAlgoWrapper(interface=a, workspace=dummy_train_workspace, opener_wrapper=None)
 
     with pytest.raises(exceptions.MissingFileError):
         wp.task_launcher("train")
