@@ -18,9 +18,9 @@ from tests import utils
 def write_pred_file():
     workspace = MetricsWorkspace(opener_path=None)
     data = list(range(3, 6))
-    with open(workspace.output_predictions_path, "w") as f:
+    with open(workspace.input_predictions_path, "w") as f:
         json.dump(data, f)
-    return workspace.output_predictions_path, data
+    return workspace.input_predictions_path, data
 
 
 @pytest.fixture
