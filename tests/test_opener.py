@@ -85,7 +85,7 @@ class MyOpener(Opener):
     assert o.get_X() == "Xclass"
 
 
-def test_load_opener_from_path(tmp_cwd, valid_opener_code’):
+def test_load_opener_from_path(tmp_cwd, valid_opener_code):
     dirpath = tmp_cwd / "myopener"
     dirpath.mkdir()
     path = dirpath / "my_opener.py"
