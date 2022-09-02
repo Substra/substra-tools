@@ -57,8 +57,8 @@ def valid_opener(valid_opener_code):
 
 
 @pytest.fixture()
-def valid_opener_script(session_dir, valid_opener_code):
-    opener_path = session_dir / "my_opener.py"
+def valid_opener_script(workdir, valid_opener_code):
+    opener_path = workdir / "my_opener.py"
     opener_path.write_text(valid_opener_code)
 
     return str(opener_path)
@@ -85,12 +85,3 @@ def valid_composite_algo_workspace(workdir) -> CompositeAlgoWorkspace:
         output_head_model_path=str(workdir / "model" / "model_head"),
         output_trunk_model_path=str(workdir / "model" / "model_trunk"),
     )
-
-
-@pytest.fixture(scope="session")
-def session_dir():
-    temp_dir = Path.cwd() / "local-assets-tools"
-    temp_dir.mkdir(parents=True, exist_ok=True)
-
-    yield temp_dir
-    shutil.rmtree(temp_dir)
