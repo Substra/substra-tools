@@ -242,6 +242,7 @@ def test_execute_train_multiple_models(workdir, output_model_path, create_models
     assert not pred_path.exists()
 
     inputs = [{"id": "models", "value": str(workdir / model), "multiple": True} for model in model_filenames]
+
     outputs = [
         {"id": "model", "value": str(output_model_path), "multiple": False},
     ]
@@ -263,9 +264,11 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     _, model_filenames = create_models
     pred_path = workdir / "pred"
     train_inputs = [{"id": "models", "value": str(workdir / model), "multiple": True} for model in model_filenames]
+
     train_outputs = [{"id": "model", "value": str(output_model_path), "multiple": False}]
     train_options = ["--inputs", json.dumps(train_inputs), "--outputs", json.dumps(train_outputs)]
 
+    output_model_path = Path(output_model_path)
     # first train models
     assert not pred_path.exists()
     command = ["--method-name", "train"]
