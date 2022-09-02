@@ -66,7 +66,10 @@ class DummyAggregateAlgo(algo.AggregateAlgo):
 class NoSavedModelAggregateAlgo(DummyAggregateAlgo):
     def aggregate(self, inputs, outputs):
 
-        models = utils.load_models(paths=inputs.get("models", []))
+        if inputs is not None:
+            models = utils.load_models(paths=inputs.get("models", []))
+        else:
+            models = []
 
         new_model = {"value": 0}
         for m in models:
@@ -78,7 +81,10 @@ class NoSavedModelAggregateAlgo(DummyAggregateAlgo):
 class WrongSavedModelAggregateAlgo(DummyAggregateAlgo):
     def aggregate(self, inputs, outputs):
 
-        models = utils.load_models(paths=inputs.get("models", []))
+        if inputs is not None:
+            models = utils.load_models(paths=inputs.get("models", []))
+        else:
+            models = []
 
         new_model = {"value": 0}
         for m in models:
@@ -149,11 +155,15 @@ def test_aggregate_multiple_models(create_models, output_model_path):
 def test_predict(fake_data, expected_pred, n_fake_samples, create_models):
     _, model_filenames = create_models
 
+    workspace_inputs = TaskResources(json.dumps([{"id": "models", "value": model_filenames[0], "multiple": True}]))
+
+    workspace = AggregateAlgoWorkspace(inputs=workspace_inputs)
     a = DummyAggregateAlgo()
-    workspace = AggregateAlgoWorkspace(input_model_paths=[model_filenames[0]])
-    wp = algo.AggregateAlgoWrapper(a, workspace)
-    wp.predict(fake_data=fake_data, n_fake_samples=n_fake_samples)
-    pred = utils.load_predictions(workspace.output_predictions_path)
+    wp = algo.GenericAlgoWrapper(a, workspace, opener_wrapper=None)
+
+    wp.task_launcher(method_name="predict", fake_data=fake_data, n_fake_samples=n_fake_samples)
+
+    pred = utils.load_predictions(wp._workspace.task_outputs["predictions"])
     assert pred == expected_pred
 
 
@@ -200,7 +210,7 @@ def test_execute_predict(workdir, create_models, output_model_path):
     assert not Path(output_model_path).exists()
 
     inputs = [{"id": "models", "value": str(workdir / model_name), "multiple": True} for model_name in model_filenames]
-    outputs = [{"id": "model", "value": str(output_model_path), "multiple": False}]
+    outputs = [{"id": "model", "value": output_model_path, "multiple": False}]
     options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
     command = ["--method-name", "aggregate"]
     command.extend(options)
@@ -211,9 +221,7 @@ def test_execute_predict(workdir, create_models, output_model_path):
     pred_path = workdir / "pred" / "pred"
     assert not pred_path.exists()
 
-    pred_inputs = [
-        {"id": "models", "value": str(output_model_path), "multiple": True},
-    ]
+    pred_inputs = [{"id": "model", "value": output_model_path, "multiple": False}]
     pred_outputs = [{"id": "predictions", "value": str(pred_path), "multiple": False}]
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
@@ -228,7 +236,7 @@ def test_execute_predict(workdir, create_models, output_model_path):
 @pytest.mark.parametrize("algo_class", (NoSavedModelAggregateAlgo, WrongSavedModelAggregateAlgo))
 def test_model_check(algo_class, valid_algo_workspace):
     a = algo_class()
-    wp = algo.AggregateAlgoWrapper(a, valid_algo_workspace)
+    wp = algo.GenericAlgoWrapper(a, valid_algo_workspace, opener_wrapper=None)
 
     with pytest.raises(exceptions.MissingFileError):
-        wp.aggregate([])
+        wp.task_launcher(method_name="aggregate")

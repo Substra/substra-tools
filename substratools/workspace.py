@@ -69,6 +69,7 @@ class GenericAlgoWorkspace(OpenerWorkspace):
         inputs=None,
         outputs=None,
     ):
+
         super().__init__(dirpath, inputs.input_data_folder_paths) if inputs is not None else super().__init__(dirpath)
 
         self.log_path = log_path or self._get_default_path(DEFAULT_LOG_PATH)
