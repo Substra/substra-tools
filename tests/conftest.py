@@ -57,6 +57,14 @@ def valid_opener(valid_opener_code):
 
 
 @pytest.fixture()
+def valid_opener_script(session_dir, valid_opener_code):
+    opener_path = session_dir / "my_opener.py"
+    opener_path.write_text(valid_opener_code)
+
+    return str(opener_path)
+
+
+@pytest.fixture()
 def output_model_path(workdir: Path) -> str:
     return workdir / "model" / "model"
 

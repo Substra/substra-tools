@@ -3,6 +3,7 @@ from os import PathLike
 from typing import Any
 from typing import List
 from typing import TypedDict
+from uuid import uuid4
 
 import pytest
 
@@ -209,7 +210,7 @@ def test_execute_aggregate_multiple_models(workdir, create_models, output_model_
     assert model["value"] == 3
 
 
-def test_execute_predict(workdir, create_models, output_model_path):
+def test_execute_predict(workdir, create_models, output_model_path, valid_opener_script):
     _, model_filenames = create_models
     assert not output_model_path.exists()
 
@@ -222,10 +223,13 @@ def test_execute_predict(workdir, create_models, output_model_path):
     assert output_model_path.exists()
 
     # do predict on output model
-    pred_path = workdir / "pred" / "pred"
+    pred_path = workdir / str(uuid4())
     assert not pred_path.exists()
 
-    pred_inputs = [{"id": "model", "value": str(output_model_path), "multiple": False}]
+    pred_inputs = [
+        {"id": "model", "value": str(output_model_path), "multiple": False},
+        {"id": "opener", "value": valid_opener_script, "multiple": False},
+    ]
     pred_outputs = [{"id": "predictions", "value": str(pred_path), "multiple": False}]
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
