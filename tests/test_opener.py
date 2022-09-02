@@ -4,8 +4,11 @@ import pytest
 
 from substratools import exceptions
 from substratools.opener import load_from_module
+from substratools.opener import Opener
 from substratools.utils import import_module
+from substratools.utils import load_interface_from_module
 from substratools.workspace import DEFAULT_INPUT_DATA_FOLDER_PATH
+from substratools.opener import OpenerWrapper
 
 
 @pytest.fixture
@@ -87,7 +90,14 @@ def test_load_opener_from_path(tmp_cwd, valid_opener_code):
     dirpath.mkdir()
     path = dirpath / "my_opener.py"
     path.write_text(valid_opener_code)
-    o = load_from_module(path=path)
+
+    interface = load_interface_from_module(
+        "opener",
+        interface_class=Opener,
+        interface_signature=None,  # XXX does not support interface for debugging
+        path=path,
+    )
+    o = OpenerWrapper(interface, workspace=None)
     assert o.get_X() == "X"
 
 
