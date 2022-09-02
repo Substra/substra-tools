@@ -13,6 +13,7 @@ from substratools.metrics import MetricsWrapper
 from substratools.task_resources import TaskResources
 from substratools.utils import import_module
 from substratools.workspace import AlgoWorkspace
+from substratools.workspace import MetricsWorkspace
 from tests import utils
 
 
@@ -84,7 +85,7 @@ def test_workflow(workdir, dummy_opener):
     loop2_model_path = workdir / "loop2model"
 
     loop2_workspace_inputs = TaskResources(
-        json.dumps([{"id": "model", "value": str(loop1_model_path), "multiple": False}])
+        json.dumps([{"id": "models", "value": str(loop1_model_path), "multiple": True}])
     )
     loop2_workspace_outputs = TaskResources(
         json.dumps([{"id": "model", "value": str(loop2_model_path), "multiple": False}])
@@ -102,8 +103,8 @@ def test_workflow(workdir, dummy_opener):
     loop3_workspace_inputs = TaskResources(
         json.dumps(
             [
-                {"id": "model", "value": str(loop1_model_path), "multiple": False},
-                {"id": "model", "value": str(loop2_model_path), "multiple": False},
+                {"id": "models", "value": str(loop1_model_path), "multiple": True},
+                {"id": "models", "value": str(loop2_model_path), "multiple": True},
             ]
         )
     )
@@ -115,22 +116,31 @@ def test_workflow(workdir, dummy_opener):
 
     # loop 3 (two models as input)
     loop3_wp.task_launcher("train")
-    model = utils.load_model(path=loop3_wp._workspace.output_model_path)
+    model = utils.load_model(path=loop3_wp._workspace.task_outputs["model"])
     assert model == {"i": 3, "total": 3}
     assert os.path.exists(loop3_model_path)
 
-    predict_workspace = AlgoWorkspace(
-        input_model_paths=[str(loop3_model_path)],
+    predictions_path = workdir / "predictions"
+    predict_workspace_inputs = TaskResources(
+        json.dumps([{"id": "model", "value": str(loop3_model_path), "multiple": False}])
     )
-    predict_wp = GenericAlgoWrapper(a, workspace=predict_workspace, opener_wrapper=opener.load_from_module())
+    predict_workspace_outputs = TaskResources(
+        json.dumps([{"id": "predictions", "value": str(predictions_path), "multiple": False}])
+    )
+    predict_workspace = AlgoWorkspace(inputs=predict_workspace_inputs, outputs=predict_workspace_outputs)
+    predict_wp = GenericAlgoWrapper(a, workspace=predict_workspace, opener_wrapper=None)
 
     # predict
-    predict_wp.predict()
-    pred = utils.load_predictions(path=predict_wp._workspace.output_predictions_path)
+    predict_wp.task_launcher(method_name="predict")
+    pred = utils.load_predictions(path=predict_wp._workspace.task_outputs["predictions"])
     assert pred == {"sum": 3}
 
     # metrics
-    metrics_wp = MetricsWrapper(DummyMetrics())
+    performance_path = workdir / "performance"
+    metric_workspace = MetricsWorkspace(
+        opener_path=None, output_perf_path=performance_path, input_predictions_path=predictions_path
+    )
+    metrics_wp = MetricsWrapper(DummyMetrics(), workspace=metric_workspace, opener_wrapper=opener.load_from_module())
     metrics_wp.score()
     score = load_performance(path=metrics_wp._workspace.output_perf_path)
     assert score == 3.0
