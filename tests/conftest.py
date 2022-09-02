@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import sys
@@ -5,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from substratools.task_resources import TaskResources
 from substratools.utils import import_module
 from substratools.workspace import AlgoWorkspace
 from substratools.workspace import CompositeAlgoWorkspace
@@ -61,7 +63,12 @@ def output_model_path(workdir: Path) -> str:
 
 @pytest.fixture()
 def valid_algo_workspace(output_model_path: str) -> AlgoWorkspace:
-    return AlgoWorkspace(output_model_path=str(output_model_path))
+
+    workspace_outputs = TaskResources(json.dumps([{"id": "model", "value": output_model_path, "multiple": False}]))
+
+    workspace = AlgoWorkspace(outputs=workspace_outputs)
+
+    return workspace
 
 
 @pytest.fixture()

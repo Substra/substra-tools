@@ -1,18 +1,16 @@
 # coding: utf8
 import abc
 import argparse
-from copy import deepcopy
 import logging
-import sys
 import os
-
+import sys
+from copy import deepcopy
 
 from substratools import exceptions
 from substratools import opener
 from substratools import utils
 from substratools.task_resources import TaskResources
 from substratools.workspace import GenericAlgoWorkspace
-
 
 logger = logging.getLogger(__name__)
 
@@ -97,18 +95,20 @@ class GenericAlgoWrapper(object):
 
         # load inputs
         inputs = deepcopy(self._workspace.task_inputs)
-        inputs.update({"rank": rank})
 
-        # load data from opener
-        if self._opener_wrapper is not None:
-            X = self._opener_wrapper.get_X(fake_data, n_fake_samples)
-            y = self._opener_wrapper.get_y(fake_data, n_fake_samples)
+        if inputs is not None:
+            inputs.update({"rank": rank})
 
-            if fake_data:
-                logger.info("Using fake data with %i fake samples." % int(n_fake_samples))
+            # load data from opener
+            if self._opener_wrapper is not None:
+                X = self._opener_wrapper.get_X(fake_data, n_fake_samples)
+                y = self._opener_wrapper.get_y(fake_data, n_fake_samples)
 
-            inputs.update({"X": X})
-            inputs.update({"y": y})
+                if fake_data:
+                    logger.info("Using fake data with %i fake samples." % int(n_fake_samples))
+
+                inputs.update({"X": X})
+                inputs.update({"y": y})
 
         # load outputs
         outputs = deepcopy(self._workspace.task_outputs)

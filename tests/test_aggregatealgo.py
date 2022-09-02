@@ -1,5 +1,6 @@
 import json
 from os import PathLike
+from pathlib import Path
 from typing import Any
 from typing import List
 from typing import TypedDict
@@ -30,12 +31,14 @@ class DummyAggregateAlgo(algo.AggregateAlgo):
         ),
         outputs: TypedDict("outputs", {"model": PathLike}),
     ) -> None:
+        if inputs is not None:
+            models = utils.load_models(paths=inputs.get("models", []))
 
-        models = utils.load_models(paths=inputs.get("models", []))
-
-        new_model = {"value": 0}
-        for m in models:
-            new_model["value"] += m["value"]
+            new_model = {"value": 0}
+            for m in models:
+                new_model["value"] += m["value"]
+        else:
+            new_model = None
 
         utils.save_model(model=new_model, path=outputs.get("model"))
 
@@ -112,9 +115,9 @@ def test_create():
 
 def test_aggregate_no_model(valid_algo_workspace):
     a = DummyAggregateAlgo()
-    wp = algo.AggregateAlgoWrapper(a, valid_algo_workspace)
-    wp.aggregate()
-    model = utils.load_model(valid_algo_workspace.output_model_path)
+    wp = algo.GenericAlgoWrapper(a, valid_algo_workspace, opener_wrapper=None)
+    wp.task_launcher(method_name="aggregate")
+    model = utils.load_model(wp._workspace.task_outputs["model"])
     assert model["value"] == 0
 
 
@@ -194,7 +197,7 @@ def test_execute_aggregate_multiple_models(workdir, create_models, output_model_
 
 def test_execute_predict(workdir, create_models, output_model_path):
     _, model_filenames = create_models
-    assert not output_model_path.exists()
+    assert not Path(output_model_path).exists()
 
     inputs = [{"id": "models", "value": str(workdir / model_name), "multiple": True} for model_name in model_filenames]
     outputs = [{"id": "model", "value": str(output_model_path), "multiple": False}]
@@ -202,7 +205,7 @@ def test_execute_predict(workdir, create_models, output_model_path):
     command = ["--method-name", "aggregate"]
     command.extend(options)
     algo.execute(DummyAggregateAlgo(), sysargs=command)
-    assert output_model_path.exists()
+    assert Path(output_model_path).exists()
 
     # do predict on output model
     pred_path = workdir / "pred" / "pred"
