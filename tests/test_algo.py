@@ -1,16 +1,18 @@
 import json
 import shutil
-from typing import TypedDict
-from typing import List
-from typing import Any
-from typing import Optional
 from os import PathLike
+from pathlib import Path
+from typing import Any
+from typing import List
+from typing import Optional
+from typing import TypedDict
 
 import pytest
 
 from substratools import algo
 from substratools import exceptions
 from substratools.task_resources import TASK_IO_DATASAMPLES
+from substratools.task_resources import TaskResources
 from substratools.workspace import AlgoWorkspace
 from tests import utils
 
@@ -40,8 +42,10 @@ class DummyAlgo(algo.Algo):
     ) -> None:
         # TODO: checks on data
         # load models
-        models = utils.load_models(paths=inputs.get("models", []))
-
+        if inputs is not None:
+            models = utils.load_models(paths=inputs.get("models", []))
+        else:
+            models = []
         # init model
         new_model = {"value": 0}
 
@@ -76,8 +80,10 @@ class NoSavedModelAlgo(DummyAlgo):
     def train(self, inputs, outputs):
         # TODO: checks on data
         # load models
-        models = utils.load_models(paths=inputs.get("models", []))
-
+        if inputs is not None:
+            models = utils.load_models(paths=inputs.get("models", []))
+        else:
+            models = []
         # init model
         new_model = {"value": 0}
 
@@ -95,8 +101,10 @@ class WrongSavedModelAlgo(DummyAlgo):
     def train(self, inputs, outputs):
         # TODO: checks on data
         # load models
-        models = utils.load_models(paths=inputs.get("models", []))
-
+        if inputs is not None:
+            models = utils.load_models(paths=inputs.get("models", []))
+        else:
+            models = []
         # init model
         new_model = {"value": 0}
 
@@ -123,7 +131,7 @@ def create_models(workdir):
         filename = "{}.json".format(model_name)
         path = model_dir / filename
         path.write_text(json.dumps(model_data))
-        return path
+        return str(path)
 
     model_datas = [model_a, model_b]
     model_filenames = [_create_model(d) for d in model_datas]
@@ -138,31 +146,39 @@ def test_create():
 
 def test_train_no_model(valid_algo_workspace):
     a = DummyAlgo()
-    wp = algo.AlgoWrapper(a, valid_algo_workspace)
-    wp.train()
-    model = utils.load_model(valid_algo_workspace.output_model_path)
+    wp = algo.GenericAlgoWrapper(a, valid_algo_workspace, opener_wrapper=None)
+    wp.task_launcher(method_name="train")
+    model = utils.load_model(wp._workspace.task_outputs["model"])
     assert model["value"] == 0
 
 
 def test_train_multiple_models(output_model_path, create_models):
     _, model_filenames = create_models
 
-    workspace = AlgoWorkspace(input_model_paths=model_filenames, output_model_path=output_model_path)
-    a = DummyAlgo()
-    wp = algo.AlgoWrapper(a, workspace=workspace)
+    workspace_inputs = TaskResources(
+        json.dumps([{"id": "models", "value": f, "multiple": True} for f in model_filenames])
+    )
+    workspace_outputs = TaskResources(json.dumps([{"id": "model", "value": output_model_path, "multiple": False}]))
 
-    wp.train()
-    model = utils.load_model(workspace.output_model_path)
+    workspace = AlgoWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
+    a = DummyAlgo()
+    wp = algo.GenericAlgoWrapper(a, workspace=workspace, opener_wrapper=None)
+
+    wp.task_launcher(method_name="train")
+    model = utils.load_model(wp._workspace.task_outputs["model"])
 
     assert model["value"] == 3
 
 
 def test_train_fake_data(output_model_path):
     a = DummyAlgo()
-    workspace = AlgoWorkspace(input_model_paths=[], output_model_path=output_model_path)
-    wp = algo.AlgoWrapper(a, workspace=workspace)
-    wp.train(fake_data=True, n_fake_samples=2)
-    model = utils.load_model(workspace.output_model_path)
+
+    workspace_outputs = TaskResources(json.dumps([{"id": "model", "value": output_model_path, "multiple": False}]))
+
+    workspace = AlgoWorkspace(outputs=workspace_outputs)
+    wp = algo.GenericAlgoWrapper(a, workspace=workspace, opener_wrapper=None)
+    wp.task_launcher(method_name="train", fake_data=True, n_fake_samples=2)
+    model = utils.load_model(wp._workspace.task_outputs["model"])
     assert model["value"] == 0
 
 
@@ -178,11 +194,13 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models):
 
     a = DummyAlgo()
 
-    workspace = AlgoWorkspace(input_model_paths=[model_filenames[0]])
-    wp = algo.AlgoWrapper(a, workspace=workspace)
-    wp.predict(fake_data=fake_data, n_fake_samples=n_fake_samples)
+    workspace_inputs = TaskResources(json.dumps([{"id": "models", "value": model_filenames[0], "multiple": True}]))
 
-    pred = utils.load_predictions(workspace.output_predictions_path)
+    workspace = AlgoWorkspace(inputs=workspace_inputs)
+    wp = algo.GenericAlgoWrapper(a, workspace=workspace, opener_wrapper=None)
+    wp.task_launcher(method_name="predict", fake_data=fake_data, n_fake_samples=n_fake_samples)
+
+    pred = utils.load_predictions(wp._workspace.task_outputs["predictions"])
     assert pred == expected_pred
 
 
@@ -191,9 +209,11 @@ def test_execute_train(workdir, output_model_path):
         {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
     ]
     outputs = [
-        {"id": "model", "value": str(output_model_path)},
+        {"id": "model", "value": output_model_path},
     ]
     options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
+
+    output_model_path = Path(output_model_path)
 
     assert not output_model_path.exists()
 
@@ -212,6 +232,8 @@ def test_execute_train(workdir, output_model_path):
 
 def test_execute_train_multiple_models(workdir, output_model_path, create_models):
     _, model_filenames = create_models
+
+    output_model_path = Path(output_model_path)
 
     assert not output_model_path.exists()
     pred_path = workdir / "pred" / "pred"
@@ -296,7 +318,7 @@ def test_execute_predict(workdir, output_model_path, create_models):
 @pytest.mark.parametrize("algo_class", (NoSavedModelAlgo, WrongSavedModelAlgo))
 def test_model_check(valid_algo_workspace, algo_class):
     a = algo_class()
-    wp = algo.AlgoWrapper(a, workspace=valid_algo_workspace)
+    wp = algo.GenericAlgoWrapper(a, workspace=valid_algo_workspace, opener_wrapper=None)
 
     with pytest.raises(exceptions.MissingFileError):
-        wp.train()
+        wp.task_launcher(method_name="train")
