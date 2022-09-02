@@ -33,12 +33,12 @@ class DummyAggregateAlgo(algo.AggregateAlgo):
     ) -> None:
         if inputs is not None:
             models = utils.load_models(paths=inputs.get("models", []))
-
-            new_model = {"value": 0}
-            for m in models:
-                new_model["value"] += m["value"]
         else:
-            new_model = None
+            models = []
+
+        new_model = {"value": 0}
+        for m in models:
+            new_model["value"] += m["value"]
 
         utils.save_model(model=new_model, path=outputs.get("model"))
 
