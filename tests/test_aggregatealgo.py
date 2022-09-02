@@ -224,7 +224,6 @@ def test_execute_predict(workdir, create_models, output_model_path, valid_opener
 
     # do predict on output model
     pred_path = workdir / str(uuid4())
-    assert workdir == pred_path
     assert not pred_path.exists()
 
     pred_inputs = [
