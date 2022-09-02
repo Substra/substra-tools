@@ -37,7 +37,13 @@ setup(
     python_requires=">=3.6",
     setup_requires=["pytest-runner"],
     extras_require={
-        "test": ["flake8", "pytest", "pytest-cov", "pytest-mock", "numpy"],
+        "test": [
+            "flake8",
+            "pytest",
+            "pytest-cov",
+            "pytest-mock",
+            "numpy",
+        ],
     },
     zip_safe=False,
 )
