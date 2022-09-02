@@ -15,6 +15,28 @@ _RESOURCE_VALUE = "value"
 _RESOURCE_MULTIPLE = "multiple"
 
 
+def _check_resources(argument_list):
+
+    _required_keys = set((_RESOURCE_ID, _RESOURCE_VALUE, _RESOURCE_MULTIPLE))
+    _error_message = (
+        "`--inputs` and `--outputs` args should be json serialized list of dict. Each dict containing "
+        f"the following keys: {_required_keys}. {_RESOURCE_ID} and {_RESOURCE_VALUE} must be strings, "
+        f"{_RESOURCE_MULTIPLE} must be a bool."
+    )
+
+    if not isinstance(argument_list, list):
+        raise exceptions.InvalidCLIError(_error_message)
+
+    if not all([isinstance(d, dict) for d in argument_list]):
+        raise exceptions.InvalidCLIError(_error_message)
+
+    if not all([set(d.keys()) == _required_keys for d in argument_list]):
+        raise exceptions.InvalidCLIError(_error_message)
+
+    if not all([isinstance(d[_RESOURCE_MULTIPLE], bool) for d in argument_list]):
+        raise exceptions.InvalidCLIError(_error_message)
+
+
 class TaskResources:
     """TaskResources is created from stdin to provide a nice abstraction over inputs/outputs"""
 
@@ -30,8 +52,9 @@ class TaskResources:
         ]
         """
         self._values = {}
-
         argument_list = json.loads(argstr)
+
+        _check_resources(argument_list)
 
         for item in argument_list:
             self._values.setdefault(

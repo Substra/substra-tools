@@ -145,7 +145,7 @@ def test_aggregate_multiple_models(create_models, output_model_path):
     assert model["value"] == 3
 
 
-@pytest.mark.parametrize(
+@pytest.mark.rize(
     "fake_data,expected_pred,n_fake_samples",
     [
         (False, "X", None),
