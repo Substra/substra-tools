@@ -4,7 +4,6 @@ import os
 from typing import Any
 from typing import Optional
 from typing import TypedDict
-from uuid import uuid4
 import pytest
 
 from substratools import algo
@@ -12,12 +11,22 @@ from substratools import exceptions
 from substratools.task_resources import TASK_IO_DATASAMPLES
 from substratools.task_resources import TaskResources
 from substratools.workspace import CompositeAlgoWorkspace
+from substratools import opener
 from tests import utils
 
 
 @pytest.fixture(autouse=True)
 def setup(valid_opener):
     pass
+
+
+class FakeDataAlgo(algo.CompositeAlgo):
+    def train(self, inputs, outputs):
+        utils.save_model(model=inputs["X"], path=outputs["local"])
+        utils.save_model(model=inputs["y"], path=outputs["shared"])
+
+    def predict(self, inputs: dict, outputs: dict) -> None:
+        utils.save_model(model=inputs["X"], path=outputs["predictions"])
 
 
 class DummyCompositeAlgo(algo.CompositeAlgo):
@@ -183,7 +192,7 @@ class WrongSavedHeadModelAggregateAlgo(DummyCompositeAlgo):
 
 
 @pytest.fixture
-def train_workspace(output_model_path, output_model_path_2):
+def train_outputs(output_model_path, output_model_path_2):
     outputs = TaskResources(
         json.dumps(
             [
@@ -192,13 +201,12 @@ def train_workspace(output_model_path, output_model_path_2):
             ]
         )
     )
-    return CompositeAlgoWorkspace(outputs=outputs)
+    return outputs
 
 
 @pytest.fixture
-def test_workspace(create_models, output_model_path):
+def composite_inputs(create_models):
     _, local_path, shared_path = create_models
-
     inputs = TaskResources(
         json.dumps(
             [
@@ -208,15 +216,13 @@ def test_workspace(create_models, output_model_path):
         )
     )
 
-    outputs = TaskResources(json.dumps({"id": "predictions", "value": str(output_model_path), "multiple": False}))
-
-    return CompositeAlgoWorkspace(inputs=inputs, outputs=outputs)
+    return inputs
 
 
 @pytest.fixture
-def dummy_train_wrapper(train_workspace):
-    a = DummyCompositeAlgo()
-    return algo.GenericAlgoWrapper(a, train_workspace, None)
+def predict_outputs(output_model_path):
+    outputs = TaskResources(json.dumps([{"id": "predictions", "value": str(output_model_path), "multiple": False}]))
+    return outputs
 
 
 @pytest.fixture
@@ -245,166 +251,62 @@ def test_create():
     DummyCompositeAlgo()
 
 
-def test_train_no_model(dummy_wrapper):
-    dummy_wrapper.train()
-    head_model = utils.load_model(dummy_wrapper._workspace.output_head_model_path)
-    trunk_model = utils.load_model(dummy_wrapper._workspace.output_trunk_model_path)
-    assert head_model["value"] == 1
-    assert trunk_model["value"] == -1
+def test_train_no_model(train_outputs):
+
+    a = DummyCompositeAlgo()
+    dummy_train_workspace = CompositeAlgoWorkspace(outputs=train_outputs)
+    dummy_train_wrapper = algo.GenericAlgoWrapper(a, dummy_train_workspace, None)
+    dummy_train_wrapper.task_launcher(method_name="train")
+    local_model = utils.load_model(dummy_train_wrapper._workspace.task_outputs["local"])
+    shared_model = utils.load_model(dummy_train_wrapper._workspace.task_outputs["shared"])
+
+    assert local_model["value"] == 1
+    assert shared_model["value"] == -1
 
 
-def test_train_input_head_trunk_models(create_models, dummy_wrapper):
+def test_train_input_head_trunk_models(composite_inputs, train_outputs):
 
-    _, head_path, trunk_path = create_models
+    a = DummyCompositeAlgo()
+    dummy_train_workspace = CompositeAlgoWorkspace(inputs=composite_inputs, outputs=train_outputs)
+    dummy_train_wrapper = algo.GenericAlgoWrapper(a, dummy_train_workspace, None)
+    dummy_train_wrapper.task_launcher(method_name="train")
+    local_model = utils.load_model(dummy_train_wrapper._workspace.task_outputs["local"])
+    shared_model = utils.load_model(dummy_train_wrapper._workspace.task_outputs["shared"])
 
-    dummy_wrapper._workspace.input_head_model_path = head_path
-    dummy_wrapper._workspace.input_trunk_model_path = trunk_path
-
-    dummy_wrapper.train()
-
-    head_model = utils.load_model(dummy_wrapper._workspace.output_head_model_path)
-    trunk_model = utils.load_model(dummy_wrapper._workspace.output_trunk_model_path)
-
-    assert head_model["value"] == 2
-    assert trunk_model["value"] == -2
+    assert local_model["value"] == 2
+    assert shared_model["value"] == -2
 
 
-def test_train_fake_data(dummy_wrapper):
-    dummy_wrapper.train(fake_data=True, n_fake_samples=2)
-    head_model = utils.load_model(dummy_wrapper._workspace.output_head_model_path)
-    trunk_model = utils.load_model(dummy_wrapper._workspace.output_trunk_model_path)
-    assert head_model["value"] == 1
-    assert trunk_model["value"] == -1
-
-
-@pytest.mark.parametrize(
-    "fake_data,n_fake_samples,expected_pred",
-    [
-        (False, 0, []),
-        (True, 1, []),
-    ],
-)
-def test_predict(fake_data, n_fake_samples, expected_pred, create_models, dummy_wrapper):
-    _, head_path, trunk_path = create_models
-    dummy_wrapper._workspace.input_head_model_path = head_path
-    dummy_wrapper._workspace.input_trunk_model_path = trunk_path
-
-    dummy_wrapper.predict(
-        fake_data=fake_data,
-        n_fake_samples=n_fake_samples,
+@pytest.mark.parametrize("n_fake_samples", (0, 1, 2))
+def test_train_fake_data(train_outputs, n_fake_samples):
+    a = FakeDataAlgo()
+    _opener = opener.load_from_module()
+    dummy_train_workspace = CompositeAlgoWorkspace(outputs=train_outputs)
+    dummy_train_wrapper = algo.GenericAlgoWrapper(a, dummy_train_workspace, _opener)
+    dummy_train_wrapper.task_launcher(
+        method_name="train", fake_data=bool(n_fake_samples), n_fake_samples=n_fake_samples
     )
 
-    pred = utils.load_predictions(dummy_wrapper._workspace.output_predictions_path)
+    local_model = utils.load_model(dummy_train_wrapper._workspace.task_outputs["local"])
+    shared_model = utils.load_model(dummy_train_wrapper._workspace.task_outputs["shared"])
 
-    assert pred == expected_pred
-
-
-def test_execute_train(workdir):
-    output_models_path = workdir / "output_models"
-    output_models_path.mkdir()
-    output_head_model_filename = "local"
-    output_trunk_model_filename = "shared"
-
-    output_head_model_path = output_models_path / output_head_model_filename
-    assert not output_head_model_path.exists()
-    output_trunk_model_path = output_models_path / output_trunk_model_filename
-    assert not output_trunk_model_path.exists()
-
-    outputs = [
-        {"id": "local", "value": str(output_head_model_path)},
-        {"id": "shared", "value": str(output_trunk_model_path)},
-    ]
-    inputs = [
-        {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
-    ]
-
-    common_args = [
-        "--outputs",
-        json.dumps(outputs),
-        "--inputs",
-        json.dumps(inputs),
-    ]
-
-    algo.execute(DummyCompositeAlgo(), sysargs=["--method-name", "train"] + common_args)
-    assert output_head_model_path.exists()
-    assert output_trunk_model_path.exists()
+    assert local_model == _opener.get_X(fake_data=bool(n_fake_samples), n_fake_samples=n_fake_samples)
+    assert shared_model == _opener.get_y(fake_data=bool(n_fake_samples), n_fake_samples=n_fake_samples)
 
 
-def test_execute_train_multiple_models(workdir, create_models):
-    _, head_path, trunk_path = create_models
+@pytest.mark.parametrize("n_fake_samples", (0, 1, 2))
+def test_predict_fake_data(composite_inputs, predict_outputs, n_fake_samples):
+    a = FakeDataAlgo()
+    _opener = opener.load_from_module()
+    dummy_train_workspace = CompositeAlgoWorkspace(inputs=composite_inputs, outputs=predict_outputs)
+    dummy_train_wrapper = algo.GenericAlgoWrapper(a, dummy_train_workspace, _opener)
+    dummy_train_wrapper.task_launcher(
+        method_name="predict", fake_data=bool(n_fake_samples), n_fake_samples=n_fake_samples
+    )
 
-    output_models_folder_path = workdir / "output_models"
-    output_models_folder_path.mkdir()
+    predictions = utils.load_model(dummy_train_wrapper._workspace.task_outputs["predictions"])
 
-    output_head_model_filename = "output_head_model"
-    output_head_model_path = output_models_folder_path / output_head_model_filename
-    assert not output_head_model_path.exists()
-
-    output_trunk_model_filename = "output_trunk_model"
-    output_trunk_model_path = output_models_folder_path / output_trunk_model_filename
-    assert not output_trunk_model_path.exists()
-
-    pred_path = workdir / "pred" / "pred"
-    assert not pred_path.exists()
-
-    outputs = [
-        {"id": "local", "value": str(output_head_model_path)},
-        {"id": "shared", "value": str(output_trunk_model_path)},
-    ]
-    inputs = [
-        {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
-        {"id": "local", "value": str(head_path)},
-        {"id": "shared", "value": str(trunk_path)},
-    ]
-
-    command = [
-        "--method-name",
-        "train",
-        "--outputs",
-        json.dumps(outputs),
-        "--inputs",
-        json.dumps(inputs),
-    ]
-
-    algo.execute(DummyCompositeAlgo(), sysargs=command)
-    assert output_head_model_path.exists()
-    with open(output_head_model_path, "r") as f:
-        head_model = json.load(f)
-    assert head_model["value"] == 2
-
-    assert output_trunk_model_path.exists()
-    with open(output_trunk_model_path, "r") as f:
-        trunk_model = json.load(f)
-    assert trunk_model["value"] == -2
-
-    assert not pred_path.exists()
-
-
-def test_execute_predict(workdir, create_models):
-    _, head_path, trunk_path = create_models
-
-    pred_path = workdir / "pred" / "pred"
-    assert not pred_path.exists()
-
-    inputs = [
-        {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused")},
-        {"id": "local", "value": str(head_path)},
-        {"id": "shared", "value": str(trunk_path)},
-    ]
-
-    command = [
-        "--method-name",
-        "predict",
-        "--inputs",
-        json.dumps(inputs),
-    ]
-
-    algo.execute(DummyCompositeAlgo(), sysargs=command)
-    assert pred_path.exists()
-    with open(pred_path, "r") as f:
-        pred = json.load(f)
-    assert pred == []
-    pred_path.unlink()
+    assert predictions == _opener.get_X(fake_data=bool(n_fake_samples), n_fake_samples=n_fake_samples)
 
 
 @pytest.mark.parametrize(
