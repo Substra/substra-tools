@@ -169,19 +169,19 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models):
 
 def test_execute_aggregate(output_model_path):
 
-    assert not output_model_path.exists()
+    assert not Path(output_model_path).exists()
 
     outputs = [{"id": "model", "value": str(output_model_path), "multiple": False}]
 
     algo.execute(DummyAggregateAlgo(), sysargs=["--method-name", "aggregate", "--outputs", json.dumps(outputs)])
-    assert output_model_path.exists()
+    assert Path(output_model_path).exists()
 
-    output_model_path.unlink()
+    Path(output_model_path).unlink()
     algo.execute(
         DummyAggregateAlgo(),
         sysargs=["--method-name", "aggregate", "--outputs", json.dumps(outputs), "--log-level", "debug"],
     )
-    assert output_model_path.exists()
+    assert Path(output_model_path).exists()
 
 
 def test_execute_aggregate_multiple_models(workdir, create_models, output_model_path):
