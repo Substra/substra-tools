@@ -1,6 +1,6 @@
 import json
 import os
-import shutil
+
 import sys
 from pathlib import Path
 from uuid import uuid4
@@ -73,6 +73,14 @@ def output_model_path(workdir: Path) -> str:
         os.remove(path)
 
 
+@pytest.fixture(autouse=True)
+def output_model_path_2(workdir: Path) -> str:
+    path = workdir / str(uuid4())
+    yield path
+    if path.exists():
+        os.remove(path)
+
+
 @pytest.fixture()
 def valid_algo_workspace(output_model_path: str) -> AlgoWorkspace:
 
@@ -81,11 +89,3 @@ def valid_algo_workspace(output_model_path: str) -> AlgoWorkspace:
     workspace = AlgoWorkspace(outputs=workspace_outputs)
 
     return workspace
-
-
-@pytest.fixture()
-def valid_composite_algo_workspace(workdir) -> CompositeAlgoWorkspace:
-    return CompositeAlgoWorkspace(
-        output_head_model_path=str(workdir / "model" / "model_head"),
-        output_trunk_model_path=str(workdir / "model" / "model_trunk"),
-    )

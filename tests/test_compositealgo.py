@@ -1,14 +1,16 @@
 import json
 import os
+
 from typing import Any
 from typing import Optional
 from typing import TypedDict
-
+from uuid import uuid4
 import pytest
 
 from substratools import algo
 from substratools import exceptions
 from substratools.task_resources import TASK_IO_DATASAMPLES
+from substratools.task_resources import TaskResources
 from substratools.workspace import CompositeAlgoWorkspace
 from tests import utils
 
@@ -181,20 +183,40 @@ class WrongSavedHeadModelAggregateAlgo(DummyCompositeAlgo):
 
 
 @pytest.fixture
-def workspace(workdir):
-    output_dir = workdir / "outputs"
-    output_dir.mkdir()
-    return CompositeAlgoWorkspace(
-        output_head_model_path=str(output_dir / "head"),
-        output_trunk_model_path=str(output_dir / "trunk"),
-        output_predictions_path=str(output_dir / "predictions"),
+def train_workspace(output_model_path, output_model_path_2):
+    outputs = TaskResources(
+        json.dumps(
+            [
+                {"id": "local", "value": str(output_model_path), "multiple": False},
+                {"id": "shared", "value": str(output_model_path_2), "multiple": False},
+            ]
+        )
     )
+    return CompositeAlgoWorkspace(outputs=outputs)
 
 
 @pytest.fixture
-def dummy_wrapper(workspace):
+def test_workspace(create_models, output_model_path):
+    _, local_path, shared_path = create_models
+
+    inputs = TaskResources(
+        json.dumps(
+            [
+                {"id": "local", "value": str(local_path), "multiple": False},
+                {"id": "shared", "value": str(shared_path), "multiple": False},
+            ]
+        )
+    )
+
+    outputs = TaskResources(json.dumps({"id": "predictions", "value": str(output_model_path), "multiple": False}))
+
+    return CompositeAlgoWorkspace(inputs=inputs, outputs=outputs)
+
+
+@pytest.fixture
+def dummy_train_wrapper(train_workspace):
     a = DummyCompositeAlgo()
-    return algo.CompositeAlgoWrapper(a, workspace)
+    return algo.GenericAlgoWrapper(a, train_workspace, None)
 
 
 @pytest.fixture
@@ -208,10 +230,13 @@ def create_models(workdir):
         path.write_text(json.dumps(model_data))
         return path
 
+    head_path = _create_model(head_model, "head")
+    trunk_path = _create_model(trunk_model, "trunk")
+
     return (
         [head_model, trunk_model],
-        _create_model(head_model, "head"),
-        _create_model(trunk_model, "trunk"),
+        head_path,
+        trunk_path,
     )
 
 
@@ -391,9 +416,9 @@ def test_execute_predict(workdir, create_models):
         WrongSavedHeadModelAggregateAlgo,
     ),
 )
-def test_model_check(algo_class, workdir, valid_composite_algo_workspace):
+def test_model_check(algo_class, train_workspace):
     a = algo_class()
-    wp = algo.CompositeAlgoWrapper(a, valid_composite_algo_workspace)
+    wp = algo.GenericAlgoWrapper(interface=a, workspace=train_workspace, opener_wrapper=None)
 
     with pytest.raises(exceptions.MissingFileError):
-        wp.train()
+        wp.task_launcher("train")
