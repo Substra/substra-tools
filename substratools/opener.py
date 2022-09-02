@@ -175,19 +175,29 @@ class OpenerWrapper(object):
 
 
 def load_from_module(workspace=None):
-    """Load opener interface from path or from python environment.
-
-    Opener can be defined as an Opener subclass or directly has a module.
+    """Load opener interface.
+    If a workspace is given, the associated opener will be returned. This means that if no
+    opener_path is defined within the workspace, no opener will be returned
+    If no workspace is given, the opener interface will directly loaded as a module.
 
     Return an OpenerWrapper instance.
     """
-    if workspace.opener_path is None:
+    if workspace is None:
+        # import from module
+        path = None
+
+    elif workspace.opener_path is None:
+        # no opener within this workspace
         return None
+
+    else:
+        # import opener from workspace specified path
+        path = workspace.opener_path
 
     interface = utils.load_interface_from_module(
         "opener",
         interface_class=Opener,
         interface_signature=None,  # XXX does not support interface for debugging
-        path=workspace.opener_path,
+        path=path,
     )
     return OpenerWrapper(interface, workspace=workspace)

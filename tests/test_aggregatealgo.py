@@ -1,6 +1,5 @@
 import json
 from os import PathLike
-from pathlib import Path
 from typing import Any
 from typing import List
 from typing import TypedDict
@@ -9,6 +8,7 @@ import pytest
 
 from substratools import algo
 from substratools import exceptions
+from substratools import opener
 from substratools.task_resources import TaskResources
 from substratools.workspace import AggregateAlgoWorkspace
 from tests import utils
@@ -156,10 +156,14 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models):
     _, model_filenames = create_models
 
     workspace_inputs = TaskResources(json.dumps([{"id": "model", "value": model_filenames[0], "multiple": False}]))
+    workspace_outputs = TaskResources(
+        json.dumps([{"id": "predictions", "value": model_filenames[0], "multiple": False}])
+    )
 
-    workspace = AggregateAlgoWorkspace(inputs=workspace_inputs)
+    workspace = AggregateAlgoWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
     a = DummyAggregateAlgo()
-    wp = algo.GenericAlgoWrapper(a, workspace, opener_wrapper=None)
+
+    wp = algo.GenericAlgoWrapper(a, workspace, opener_wrapper=opener.load_from_module())
 
     wp.task_launcher(method_name="predict", fake_data=fake_data, n_fake_samples=n_fake_samples)
 
