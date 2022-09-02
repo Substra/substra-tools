@@ -145,7 +145,7 @@ def test_aggregate_multiple_models(create_models, output_model_path):
     assert model["value"] == 3
 
 
-@pytest.mark.rize(
+@pytest.mark.parametrize(
     "fake_data,expected_pred,n_fake_samples",
     [
         (False, "X", None),
@@ -155,7 +155,7 @@ def test_aggregate_multiple_models(create_models, output_model_path):
 def test_predict(fake_data, expected_pred, n_fake_samples, create_models):
     _, model_filenames = create_models
 
-    workspace_inputs = TaskResources(json.dumps([{"id": "models", "value": model_filenames[0], "multiple": True}]))
+    workspace_inputs = TaskResources(json.dumps([{"id": "model", "value": model_filenames[0], "multiple": False}]))
 
     workspace = AggregateAlgoWorkspace(inputs=workspace_inputs)
     a = DummyAggregateAlgo()
@@ -187,7 +187,7 @@ def test_execute_aggregate(output_model_path):
 def test_execute_aggregate_multiple_models(workdir, create_models, output_model_path):
     _, model_filenames = create_models
 
-    assert not output_model_path.exists()
+    assert not Path(output_model_path).exists()
 
     inputs = [{"id": "models", "value": str(workdir / model), "multiple": True} for model in model_filenames]
     outputs = [
@@ -199,7 +199,7 @@ def test_execute_aggregate_multiple_models(workdir, create_models, output_model_
     command.extend(options)
 
     algo.execute(DummyAggregateAlgo(), sysargs=command)
-    assert output_model_path.exists()
+    assert Path(output_model_path).exists()
     with open(output_model_path, "r") as f:
         model = json.load(f)
     assert model["value"] == 3
