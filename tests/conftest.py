@@ -3,6 +3,7 @@ import os
 import shutil
 import sys
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
 
@@ -64,9 +65,12 @@ def valid_opener_script(workdir, valid_opener_code):
     return str(opener_path)
 
 
-@pytest.fixture()
+@pytest.fixture(autouse=True)
 def output_model_path(workdir: Path) -> str:
-    return workdir / "model" / "model"
+    path = workdir / str(uuid4())
+    yield path
+    if path.exists():
+        os.remove(path)
 
 
 @pytest.fixture()

@@ -11,6 +11,7 @@ import pytest
 
 from substratools import algo
 from substratools import exceptions
+from substratools import opener
 from substratools.task_resources import TASK_IO_DATASAMPLES
 from substratools.task_resources import TaskResources
 from substratools.workspace import AlgoWorkspace
@@ -156,9 +157,9 @@ def test_train_multiple_models(output_model_path, create_models):
     _, model_filenames = create_models
 
     workspace_inputs = TaskResources(
-        json.dumps([{"id": "models", "value": f, "multiple": True} for f in model_filenames])
+        json.dumps([{"id": "models", "value": str(f), "multiple": True} for f in model_filenames])
     )
-    workspace_outputs = TaskResources(json.dumps([{"id": "model", "value": output_model_path, "multiple": False}]))
+    workspace_outputs = TaskResources(json.dumps([{"id": "model", "value": str(output_model_path), "multiple": False}]))
 
     workspace = AlgoWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
     a = DummyAlgo()
@@ -173,7 +174,7 @@ def test_train_multiple_models(output_model_path, create_models):
 def test_train_fake_data(output_model_path):
     a = DummyAlgo()
 
-    workspace_outputs = TaskResources(json.dumps([{"id": "model", "value": output_model_path, "multiple": False}]))
+    workspace_outputs = TaskResources(json.dumps([{"id": "model", "value": str(output_model_path), "multiple": False}]))
 
     workspace = AlgoWorkspace(outputs=workspace_outputs)
     wp = algo.GenericAlgoWrapper(a, workspace=workspace, opener_wrapper=None)
@@ -189,15 +190,18 @@ def test_train_fake_data(output_model_path):
         (True, ["Xfake"], 1),
     ],
 )
-def test_predict(fake_data, expected_pred, n_fake_samples, create_models):
+def test_predict(fake_data, expected_pred, n_fake_samples, create_models, output_model_path):
     _, model_filenames = create_models
 
     a = DummyAlgo()
 
-    workspace_inputs = TaskResources(json.dumps([{"id": "models", "value": model_filenames[0], "multiple": True}]))
+    workspace_inputs = TaskResources(json.dumps([{"id": "model", "value": model_filenames[0], "multiple": False}]))
+    workspace_outputs = TaskResources(
+        json.dumps([{"id": "predictions", "value": str(output_model_path), "multiple": False}])
+    )
 
-    workspace = AlgoWorkspace(inputs=workspace_inputs)
-    wp = algo.GenericAlgoWrapper(a, workspace=workspace, opener_wrapper=None)
+    workspace = AlgoWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
+    wp = algo.GenericAlgoWrapper(a, workspace=workspace, opener_wrapper=opener.load_from_module())
     wp.task_launcher(method_name="predict", fake_data=fake_data, n_fake_samples=n_fake_samples)
 
     pred = utils.load_predictions(wp._workspace.task_outputs["predictions"])
