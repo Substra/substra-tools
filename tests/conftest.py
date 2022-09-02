@@ -58,13 +58,13 @@ def valid_opener(valid_opener_code):
 
 @pytest.fixture()
 def output_model_path(workdir: Path) -> str:
-    return str(workdir / "model" / "model")
+    return workdir / "model" / "model"
 
 
 @pytest.fixture()
 def valid_algo_workspace(output_model_path: str) -> AlgoWorkspace:
 
-    workspace_outputs = TaskResources(json.dumps([{"id": "model", "value": output_model_path, "multiple": False}]))
+    workspace_outputs = TaskResources(json.dumps([{"id": "model", "value": str(output_model_path), "multiple": False}]))
 
     workspace = AlgoWorkspace(outputs=workspace_outputs)
 

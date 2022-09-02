@@ -133,7 +133,7 @@ def test_aggregate_multiple_models(create_models, output_model_path):
     workspace_inputs = TaskResources(
         json.dumps([{"id": "models", "value": f, "multiple": True} for f in model_filenames])
     )
-    workspace_outputs = TaskResources(json.dumps([{"id": "model", "value": output_model_path, "multiple": False}]))
+    workspace_outputs = TaskResources(json.dumps([{"id": "model", "value": str(output_model_path), "multiple": False}]))
 
     workspace = AggregateAlgoWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
     a = DummyAggregateAlgo()
@@ -169,25 +169,25 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models):
 
 def test_execute_aggregate(output_model_path):
 
-    assert not Path(output_model_path).exists()
+    assert not output_model_path.exists()
 
     outputs = [{"id": "model", "value": str(output_model_path), "multiple": False}]
 
     algo.execute(DummyAggregateAlgo(), sysargs=["--method-name", "aggregate", "--outputs", json.dumps(outputs)])
-    assert Path(output_model_path).exists()
+    assert output_model_path.exists()
 
-    Path(output_model_path).unlink()
+    output_model_path.unlink()
     algo.execute(
         DummyAggregateAlgo(),
         sysargs=["--method-name", "aggregate", "--outputs", json.dumps(outputs), "--log-level", "debug"],
     )
-    assert Path(output_model_path).exists()
+    assert output_model_path.exists()
 
 
 def test_execute_aggregate_multiple_models(workdir, create_models, output_model_path):
     _, model_filenames = create_models
 
-    assert not Path(output_model_path).exists()
+    assert not output_model_path.exists()
 
     inputs = [{"id": "models", "value": str(workdir / model), "multiple": True} for model in model_filenames]
     outputs = [
@@ -199,7 +199,7 @@ def test_execute_aggregate_multiple_models(workdir, create_models, output_model_
     command.extend(options)
 
     algo.execute(DummyAggregateAlgo(), sysargs=command)
-    assert Path(output_model_path).exists()
+    assert output_model_path.exists()
     with open(output_model_path, "r") as f:
         model = json.load(f)
     assert model["value"] == 3
@@ -207,21 +207,21 @@ def test_execute_aggregate_multiple_models(workdir, create_models, output_model_
 
 def test_execute_predict(workdir, create_models, output_model_path):
     _, model_filenames = create_models
-    assert not Path(output_model_path).exists()
+    assert not output_model_path.exists()
 
     inputs = [{"id": "models", "value": str(workdir / model_name), "multiple": True} for model_name in model_filenames]
-    outputs = [{"id": "model", "value": output_model_path, "multiple": False}]
+    outputs = [{"id": "model", "value": str(output_model_path), "multiple": False}]
     options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
     command = ["--method-name", "aggregate"]
     command.extend(options)
     algo.execute(DummyAggregateAlgo(), sysargs=command)
-    assert Path(output_model_path).exists()
+    assert output_model_path.exists()
 
     # do predict on output model
     pred_path = workdir / "pred" / "pred"
     assert not pred_path.exists()
 
-    pred_inputs = [{"id": "model", "value": output_model_path, "multiple": False}]
+    pred_inputs = [{"id": "model", "value": str(output_model_path), "multiple": False}]
     pred_outputs = [{"id": "predictions", "value": str(pred_path), "multiple": False}]
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
