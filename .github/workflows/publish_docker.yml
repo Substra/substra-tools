@@ -1,6 +1,7 @@
 name: Publish Docker images on GHCR
 env:
   REGISTRY: ghcr.io/Substra
+
 on:
   release:
     types: [published]
