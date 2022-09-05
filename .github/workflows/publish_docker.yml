@@ -74,7 +74,7 @@ jobs:
         id: default-metadata
         uses: docker/metadata-action@v3
         with:
-          images: '${{ env.REGISTRY }}/substra-tools"
+          images: "${{ env.REGISTRY }}/substra-tools"
           tags: |
             ${{ env.IMG_BASE_TAG }}
             ${{ env.LATEST_TAG }}
@@ -83,7 +83,7 @@ jobs:
         id: minimal-metadata
         uses: docker/metadata-action@v3
         with:
-          images: '${{ env.REGISTRY }}/substra-tools"
+          images: "${{ env.REGISTRY }}/substra-tools"
           flavor: suffix=-minimal
           tags: |
             ${{ env.IMG_BASE_TAG }}
@@ -93,7 +93,7 @@ jobs:
         id: workflows-metadata
         uses: docker/metadata-action@v3
         with:
-          images: '${{ env.REGISTRY }}/substra-tools"
+          images: "${{ env.REGISTRY }}/substra-tools"
           flavor: suffix=-workflows
           tags: |
             ${{ env.IMG_BASE_TAG }}
