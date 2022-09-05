@@ -6,9 +6,9 @@ on:
 jobs:
   publish-on-pypi-servers:
     env:
-      TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
-      TWINE_REPOSITORY_URL: ${{ secrets.TWINE_REPOSITORY_URL }}
-      TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
+      TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      TWINE_REPOSITORY_URL: https://upload.pypi.org/legacy/
+      TWINE_USERNAME: __token__
       TWINE_NON_INTERACTIVE: "1"
     runs-on: ubuntu-20.04
     steps:
