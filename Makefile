@@ -16,8 +16,3 @@ build: pyclean
 
 test:
 	pytest tests
-
-doc:
-	python -m pydoc substratools.Algo substratools.CompositeAlgo substratools.AggregateAlgo substratools.Metrics substratools.Opener > $(DOCS_FILEPATH)
-	# Replace '| ' by '' to make the doc readable. Portable solution that works on Linux and Mac OS
-	sed -i.bak 's/| //g' '$(DOCS_FILEPATH)' && rm $(DOCS_FILEPATH).bak

@@ -55,13 +55,3 @@ To run all tests, use the following command:
 ```sh
 python setup.py test
 ```
-
-### Documentation
-
-Use the following command to generate the python sdk documentation:
-
-```sh
-make doc
-```
-
-Documentation will be available in *docs/* directory.
