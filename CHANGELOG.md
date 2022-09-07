@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Remove documentation as it is not used. It will be replaced later on.
 - BREAKING CHANGES: the user must now pass the method name to execute within the dockerfile of both `algo` and
   `metric` under the `--method-name` argument. The method name still needs to be one of the `algo` or `metric`
   allowed method name: train, predict, aggregate, score.

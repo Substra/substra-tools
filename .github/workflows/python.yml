@@ -29,7 +29,3 @@ jobs:
       - name: Test
         run: |
           make test
-      - name: Generate and validate documentation
-        run: |
-          make doc DOCS_FILEPATH=docs/api.md.tmp
-          cmp --silent docs/api.md docs/api.md.tmp
