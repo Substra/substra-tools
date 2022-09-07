@@ -174,7 +174,7 @@ class OpenerWrapper(object):
             raise exceptions.MissingFileError(f"Output file {path} used to save argument `{key}` does not exists.")
 
 
-def load_from_module(workspace=None):
+def load_from_module(workspace=None) -> Optional[OpenerWrapper]:
     """Load opener interface.
     If a workspace is given, the associated opener will be returned. This means that if no
     opener_path is defined within the workspace, no opener will be returned
