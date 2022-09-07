@@ -68,7 +68,7 @@ class TaskResources:
 
     def get_value(self, key: str) -> Optional[Union[List[str], str]]:
         """Returns the value for a given key. Won't raise if there is no matching resource.
-        Will raise if there is a mismatch between the given multiplicity and teh number of returned
+        Will raise if there is a mismatch between the given multiplicity and the number of returned
         elements.
 
         If multiple is True, will return a list else will return a single value
