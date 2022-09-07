@@ -178,7 +178,7 @@ def load_from_module(workspace=None):
     """Load opener interface.
     If a workspace is given, the associated opener will be returned. This means that if no
     opener_path is defined within the workspace, no opener will be returned
-    If no workspace is given, the opener interface will directly loaded as a module.
+    If no workspace is given, the opener interface will be directly loaded as a module.
 
     Return an OpenerWrapper instance.
     """
