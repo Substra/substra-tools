@@ -9,7 +9,7 @@ import pytest
 
 from substratools.task_resources import TaskResources
 from substratools.utils import import_module
-from utils import OutputIdentifiers
+from tests.utils import OutputIdentifiers
 from substratools.workspace import AlgoWorkspace
 
 

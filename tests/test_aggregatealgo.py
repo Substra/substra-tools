@@ -12,8 +12,8 @@ from substratools import exceptions
 from substratools import opener
 from substratools.task_resources import TaskResources
 from substratools.workspace import AggregateAlgoWorkspace
-from utils import InputIdentifiers
-from utils import OutputIdentifiers
+from tests.utils import InputIdentifiers
+from tests.utils import OutputIdentifiers
 from tests import utils
 
 
