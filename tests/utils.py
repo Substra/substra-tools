@@ -2,6 +2,28 @@ import json
 from os import PathLike
 from typing import Any
 from typing import List
+from enum import Enum
+
+
+class InputIdentifiers(str, Enum):
+    local = "local"
+    shared = "shared"
+    model = "model"
+    models = "models"
+    predictions = "predictions"
+    performance = "performance"
+    opener = "opener"
+    datasamples = "datasamples"
+    X = "X"
+    y = "y"
+
+
+class OutputIdentifiers(str, Enum):
+    local = "local"
+    shared = "shared"
+    model = "model"
+    predictions = "predictions"
+    performance = "performance"
 
 
 def load_models(paths: List[PathLike]) -> dict:
