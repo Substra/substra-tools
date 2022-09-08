@@ -2,6 +2,7 @@ import abc
 import logging
 import os
 import types
+from typing import Optional
 
 from substratools import exceptions
 from substratools import utils
