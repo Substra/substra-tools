@@ -5,7 +5,7 @@ import logging
 import os
 import sys
 from copy import deepcopy
-from typing import Dict
+from typing import Dict, Optional
 
 from substratools import exceptions
 from substratools import opener
@@ -76,7 +76,9 @@ class GenericAlgoWrapper(object):
 
     _INTERFACE_CLASS = GenericAlgo
 
-    def __init__(self, interface, workspace, opener_wrapper):
+    def __init__(
+        self, interface: GenericAlgo, workspace: GenericAlgoWorkspace, opener_wrapper: Optional[opener.OpenerWrapper]
+    ):
         assert isinstance(interface, self._INTERFACE_CLASS)
         self._workspace = workspace
         self._opener_wrapper = opener_wrapper
@@ -97,19 +99,18 @@ class GenericAlgoWrapper(object):
         # load inputs
         inputs = deepcopy(self._workspace.task_inputs)
 
-        if inputs is not None:
-            inputs.update({"rank": rank})
+        inputs.update({"rank": rank})
 
-            # load data from opener
-            if self._opener_wrapper is not None:
-                X = self._opener_wrapper.get_X(fake_data, n_fake_samples)
-                y = self._opener_wrapper.get_y(fake_data, n_fake_samples)
+        # load data from opener
+        if self._opener_wrapper is not None:
+            X = self._opener_wrapper.get_X(fake_data, n_fake_samples)
+            y = self._opener_wrapper.get_y(fake_data, n_fake_samples)
 
-                if fake_data:
-                    logger.info("Using fake data with %i fake samples." % int(n_fake_samples))
+            if fake_data:
+                logger.info("Using fake data with %i fake samples." % int(n_fake_samples))
 
-                inputs.update({"X": X})
-                inputs.update({"y": y})
+            inputs.update({"X": X})
+            inputs.update({"y": y})
 
         # load outputs
         outputs = deepcopy(self._workspace.task_outputs)

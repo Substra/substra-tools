@@ -71,7 +71,9 @@ class GenericAlgoWorkspace(OpenerWorkspace):
         outputs=None,
     ):
 
-        super().__init__(dirpath=dirpath, input_data_folder_paths=None if inputs is None else inputs.input_data_folder_paths)
+        super().__init__(
+            dirpath=dirpath, input_data_folder_paths=None if inputs is None else inputs.input_data_folder_paths
+        )
 
         self.log_path = log_path or self._get_default_path(DEFAULT_LOG_PATH)
         self.chainkeys_path = chainkeys_path or self._get_default_path(DEFAULT_CHAINKEYS_PATH)
@@ -118,7 +120,9 @@ class MetricsWorkspace(OpenerWorkspace):
         self.input_predictions_path = input_predictions_path or self._get_default_path(DEFAULT_INPUT_PREDICTIONS_PATH)
         self.opener_path = opener_path
 
-        dirs = []
+        dirs = [
+            self.chainkeys_path,
+        ]
         paths = [
             self.output_perf_path,
             self.log_path,
