@@ -13,6 +13,8 @@ from substratools import save_performance
 from substratools.utils import import_module
 from substratools.workspace import MetricsWorkspace
 from tests import utils
+from tests.utils import InputIdentifiers
+from tests.utils import OutputIdentifiers
 
 
 @pytest.fixture()
@@ -30,14 +32,16 @@ def load_float_metrics_module():
 from substratools import Metrics
 from substratools import save_performance
 from tests import utils
+from tests.utils import InputIdentifiers
+from tests.utils import OutputIdentifiers
 
 class FloatMetrics(Metrics):
     def score(self, inputs, outputs):
-        y_true = inputs.get("y")
-        y_pred_path = inputs.get("predictions")
+        y_true = inputs.get(InputIdentifiers.y)
+        y_pred_path = inputs.get(InputIdentifiers.predictions)
         y_pred = utils.load_predictions(y_pred_path)
         s = sum(y_true) + sum(y_pred)
-        save_performance(s, outputs.get("performance"))
+        save_performance(s, outputs.get(OutputIdentifiers.performance))
 """
     import_module("metrics", code)
     yield
@@ -50,10 +54,11 @@ def load_np_metrics_module():
 from substratools import Metrics
 import numpy as np
 from substratools import save_performance
+from tests.utils import OutputIdentifiers
 
 class FloatNpMetrics(Metrics):
     def score(self, inputs, outputs):
-        save_performance(np.float64(0.99), outputs.get("performance"))
+        save_performance(np.float64(0.99), outputs.get(OutputIdentifiers.performance))
 """
     import_module("metrics", code)
     yield
@@ -65,10 +70,11 @@ def load_int_metrics_module():
     code = """
 from substratools import Metrics
 from substratools import save_performance
+from tests.utils import OutputIdentifiers
 
 class IntMetrics(Metrics):
     def score(self, inputs, outputs):
-        save_performance(int(1), outputs.get("performance"))
+        save_performance(int(1), outputs.get(OutputIdentifiers.performance))
 """
     import_module("metrics", code)
     yield
@@ -80,10 +86,11 @@ def load_dict_metrics_module():
     code = """
 from substratools import Metrics
 from substratools import save_performance
+from tests.utils import OutputIdentifiers
 
 class DictMetrics(Metrics):
     def score(self, inputs, outputs):
-        save_performance({"a": 1}, outputs.get("performance"))
+        save_performance({"a": 1}, outputs.get(OutputIdentifiers.performance))
 """
     import_module("metrics", code)
     yield
@@ -98,16 +105,16 @@ def setup(valid_opener, write_pred_file):
 class DummyMetrics(metrics.Metrics):
     def score(
         self,
-        inputs: TypedDict("inputs", {"y": Any, "predictions": Any}),
-        outputs: TypedDict("outputs", {"performance": PathLike}),
+        inputs: TypedDict("inputs", {InputIdentifiers.y: Any, InputIdentifiers.predictions: Any}),
+        outputs: TypedDict("outputs", {OutputIdentifiers.performance: PathLike}),
     ):
-        y_true = inputs.get("y")
-        y_pred_path = inputs.get("predictions")
+        y_true = inputs.get(InputIdentifiers.y)
+        y_pred_path = inputs.get(InputIdentifiers.predictions)
         y_pred = utils.load_predictions(y_pred_path)
 
         score = sum(y_true) + sum(y_pred)
 
-        save_performance(performance=score, path=outputs.get("performance"))
+        save_performance(performance=score, path=outputs.get(OutputIdentifiers.performance))
 
 
 def test_create():

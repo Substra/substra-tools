@@ -16,6 +16,7 @@ class InputIdentifiers(str, Enum):
     datasamples = "datasamples"
     X = "X"
     y = "y"
+    rank = "rank"
 
 
 class OutputIdentifiers(str, Enum):
