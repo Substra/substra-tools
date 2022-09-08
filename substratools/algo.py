@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 from copy import deepcopy
+from typing import Dict
 
 from substratools import exceptions
 from substratools import opener
@@ -82,7 +83,7 @@ class GenericAlgoWrapper(object):
         self._interface = interface
         self._interface.chainkeys_path = self._workspace.chainkeys_path
 
-    def _assert_outputs_exists(self, outputs: dict[str, str]):
+    def _assert_outputs_exists(self, outputs: Dict[str, str]):
         for key, path in outputs.items():
             if os.path.isdir(path):
                 raise exceptions.NotAFileError(f"Expected output file at {path}, found dir for output `{key}`")
