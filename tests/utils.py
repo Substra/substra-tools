@@ -4,18 +4,21 @@ from typing import Any
 from typing import List
 from enum import Enum
 
+from substratools.metrics import _PERFORMANCE_IDENTIFIER
+from substratools.metrics import _Y_IDENTIFIER
+from substratools.metrics import _PREDICTIONS_IDENTIFIER
+
 
 class InputIdentifiers(str, Enum):
     local = "local"
     shared = "shared"
     model = "model"
     models = "models"
-    predictions = "predictions"
-    performance = "performance"
+    predictions = _PREDICTIONS_IDENTIFIER
     opener = "opener"
     datasamples = "datasamples"
     X = "X"
-    y = "y"
+    y = _Y_IDENTIFIER
     rank = "rank"
 
 
@@ -23,8 +26,8 @@ class OutputIdentifiers(str, Enum):
     local = "local"
     shared = "shared"
     model = "model"
-    predictions = "predictions"
-    performance = "performance"
+    predictions = _PREDICTIONS_IDENTIFIER
+    performance = _PERFORMANCE_IDENTIFIER
 
 
 def load_models(paths: List[PathLike]) -> dict:

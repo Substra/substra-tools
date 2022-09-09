@@ -14,6 +14,10 @@ from substratools.workspace import MetricsWorkspace
 logger = logging.getLogger(__name__)
 REQUIRED_FUNCTIONS = set(["score"])
 
+_Y_IDENTIFIER = "y"
+_PREDICTIONS_IDENTIFIER = "predictions"
+_PERFORMANCE_IDENTIFIER = "performance"
+
 
 class Metrics(abc.ABC):
     """Abstract base class for defining the objective metrics.
@@ -124,12 +128,12 @@ class MetricsWrapper(object):
 
         logger.info("launching scoring task")
 
-        inputs = {"y": y, "predictions": y_pred_path}
-        outputs = {"performance": self._workspace.output_perf_path}
+        inputs = {_Y_IDENTIFIER: y, _PREDICTIONS_IDENTIFIER: y_pred_path}
+        outputs = {_PERFORMANCE_IDENTIFIER: self._workspace.output_perf_path}
 
         self._interface.score(inputs, outputs)
 
-        self._assert_output_exists(self._workspace.output_perf_path, "performance")
+        self._assert_output_exists(self._workspace.output_perf_path, _PERFORMANCE_IDENTIFIER)
 
 
 def _generate_cli():
