@@ -78,10 +78,10 @@ class GenericAlgoWorkspace(OpenerWorkspace):
         self.log_path = log_path or self._get_default_path(DEFAULT_LOG_PATH)
         self.chainkeys_path = chainkeys_path or self._get_default_path(DEFAULT_CHAINKEYS_PATH)
 
-        self.opener_path = inputs.opener_path if inputs is not None else None
+        self.opener_path = inputs.opener_path if inputs else None
 
-        self.task_inputs = inputs.formatted_dynamic_resources if inputs is not None else {}
-        self.task_outputs = outputs.formatted_dynamic_resources if outputs is not None else {}
+        self.task_inputs = inputs.formatted_dynamic_resources if inputs else {}
+        self.task_outputs = outputs.formatted_dynamic_resources if outputs else {}
 
         dirs = [
             self.chainkeys_path,

@@ -67,14 +67,13 @@ def test_get_value(key):
 
 def test_multiple_resource_error():
     "non multiple resource can't have multiple values"
-    resources = TaskResources(
-        json.dumps(
-            [
-                {"id": "foo", "value": "bar", "multiple": False},
-                {"id": "foo", "value": "babar", "multiple": False},
-            ]
-        )
-    )
 
     with pytest.raises(InvalidInputOutputsError):
-        resources.get_value("foo")
+        TaskResources(
+            json.dumps(
+                [
+                    {"id": "foo", "value": "bar", "multiple": False},
+                    {"id": "foo", "value": "babar", "multiple": False},
+                ]
+            )
+        )

@@ -45,7 +45,7 @@ class DummyAlgo(algo.Algo):
     ) -> None:
         # TODO: checks on data
         # load models
-        if inputs is not None:
+        if inputs:
             models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
         else:
             models = []
@@ -83,7 +83,7 @@ class NoSavedModelAlgo(DummyAlgo):
     def train(self, inputs, outputs):
         # TODO: checks on data
         # load models
-        if inputs is not None:
+        if inputs:
             models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
         else:
             models = []
@@ -104,7 +104,7 @@ class WrongSavedModelAlgo(DummyAlgo):
     def train(self, inputs, outputs):
         # TODO: checks on data
         # load models
-        if inputs is not None:
+        if inputs:
             models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
         else:
             models = []

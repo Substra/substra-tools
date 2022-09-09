@@ -102,7 +102,7 @@ class GenericAlgoWrapper(object):
         inputs.update({"rank": rank})
 
         # load data from opener
-        if self._opener_wrapper is not None:
+        if self._opener_wrapper:
             X = self._opener_wrapper.get_X(fake_data, n_fake_samples)
             y = self._opener_wrapper.get_y(fake_data, n_fake_samples)
 

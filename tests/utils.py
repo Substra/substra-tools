@@ -37,7 +37,7 @@ def load_models(paths: List[PathLike]) -> dict:
 
 
 def load_model(path: PathLike):
-    if path is not None:
+    if path:
         with open(path, "r") as f:
             return json.load(f)
 

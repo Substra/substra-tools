@@ -34,7 +34,7 @@ class DummyAggregateAlgo(algo.AggregateAlgo):
         ),
         outputs: TypedDict("outputs", {OutputIdentifiers.model: PathLike}),
     ) -> None:
-        if inputs is not None:
+        if inputs:
             models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
         else:
             models = []
@@ -69,7 +69,7 @@ class DummyAggregateAlgo(algo.AggregateAlgo):
 class NoSavedModelAggregateAlgo(DummyAggregateAlgo):
     def aggregate(self, inputs, outputs):
 
-        if inputs is not None:
+        if inputs:
             models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
         else:
             models = []
@@ -84,7 +84,7 @@ class NoSavedModelAggregateAlgo(DummyAggregateAlgo):
 class WrongSavedModelAggregateAlgo(DummyAggregateAlgo):
     def aggregate(self, inputs, outputs):
 
-        if inputs is not None:
+        if inputs:
             models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
         else:
             models = []

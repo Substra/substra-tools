@@ -207,7 +207,7 @@ def execute(interface=None, sysargs=None):
         )
 
     cli = _generate_cli()
-    sysargs = sysargs if sysargs is not None else sys.argv[1:]
+    sysargs = sysargs if sysargs else sys.argv[1:]
     args = cli.parse_args(sysargs)
 
     workspace = MetricsWorkspace(
