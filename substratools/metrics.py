@@ -137,7 +137,7 @@ class MetricsWrapper(object):
 
 
 def _generate_cli():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
     parser.add_argument(
         "--method-name",
         type=str,
