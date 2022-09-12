@@ -6,41 +6,46 @@ Python package defining base classes for assets submitted on the platform:
 - Algo: algo script
 - Dataset: data opener script
 
-This repository also contains a [Dockerfile](Dockerfile) to execute the user
-python scripts on the Substra platform. This is currently needed to easily
+This repository also contains a [Dockerfile](https://github.com/Substra/substra-tools/pkgs/container/substra-tools) to execute the user
+Python scripts on the Substra platform. This is currently needed to easily
 have substratools package available inside the Docker image without using a
 pypi server.
 
 ## Getting started
 
-To install the substratools python package, run the following command:
+To install the substratools Python package, run the following command:
 
 ```sh
-pip install .
+pip install substratools
 ```
 
-## Documentation
-
-- [API](docs/api.md)
-
-## Build substra-tools image
-
-This is required to launch the substra framework for development. The image is
-currently based on Python 3.6.
-
-### Pull from public docker registry
+## Pull the substra-tools Docker image
 
 ```sh
-docker pull ghcr.io/substra/substra-tools
+docker pull ghcr.io/substra/substra-tools:0.16.0-nvidiacuda11.6.0-base-ubuntu20.04-python3.9-workflows
 ```
 
-### Build from source
+## Developers
+
+Clone the repository: https://github.com/Substra/substra-tools
+
+### Build the Docker image from source
 
 ```sh
-docker build -t ghcr.io/substra/substra-tools .
+docker build -f Dockerfile .
 ```
 
-## Contributing
+or for the minimal image (based on alpine):
+
+```sh
+docker build -f Dockerfile.minimal .
+```
+
+or for the workflows image (contains additional data science dependencies):
+
+```sh
+docker build -f Dockerfile.workflows .
+```
 
 ### Setup
 
