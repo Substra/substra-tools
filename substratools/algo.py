@@ -11,7 +11,7 @@ from substratools import exceptions
 from substratools import opener
 from substratools import utils
 from substratools.task_resources import TaskResources
-from substratools.workspace import GenericAlgoWorkspace
+from substratools.workspace import AlgoWorkspace
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +77,7 @@ class GenericAlgoWrapper(object):
     _INTERFACE_CLASS = GenericAlgo
 
     def __init__(
-        self, interface: GenericAlgo, workspace: GenericAlgoWorkspace, opener_wrapper: Optional[opener.OpenerWrapper]
+        self, interface: GenericAlgo, workspace: AlgoWorkspace, opener_wrapper: Optional[opener.OpenerWrapper]
     ):
         assert isinstance(interface, self._INTERFACE_CLASS)
         self._workspace = workspace
@@ -138,7 +138,7 @@ def _generate_generic_algo_cli(interface):
         log_path = args.log_path
         chainkeys_path = inputs.chainkeys_path
 
-        workspace = GenericAlgoWorkspace(
+        workspace = AlgoWorkspace(
             log_path=log_path,
             chainkeys_path=chainkeys_path,
             inputs=inputs,

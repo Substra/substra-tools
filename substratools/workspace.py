@@ -59,7 +59,7 @@ class OpenerWorkspace(Workspace):
                 makedir_safe(d)
 
 
-class GenericAlgoWorkspace(OpenerWorkspace):
+class AlgoWorkspace(OpenerWorkspace):
     """Filesystem workspace for user defined method execution."""
 
     def __init__(
@@ -131,15 +131,3 @@ class MetricsWorkspace(OpenerWorkspace):
         for d in dirs:
             if d:
                 makedir_safe(d)
-
-
-class AlgoWorkspace(GenericAlgoWorkspace):
-    """Filesystem workspace for algo execution."""
-
-
-class CompositeAlgoWorkspace(GenericAlgoWorkspace):
-    """Filesystem workspace for composite algo execution."""
-
-
-class AggregateAlgoWorkspace(GenericAlgoWorkspace):
-    """Filesystem workspace for aggregate algo execution."""

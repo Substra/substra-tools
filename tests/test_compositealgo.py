@@ -10,7 +10,7 @@ from substratools import algo
 from substratools import exceptions
 from substratools.task_resources import TASK_IO_DATASAMPLES
 from substratools.task_resources import TaskResources
-from substratools.workspace import CompositeAlgoWorkspace
+from substratools.workspace import AlgoWorkspace
 from substratools import opener
 from tests import utils
 from tests.utils import InputIdentifiers
@@ -258,7 +258,7 @@ def test_create():
 def test_train_no_model(train_outputs):
 
     a = DummyCompositeAlgo()
-    dummy_train_workspace = CompositeAlgoWorkspace(outputs=train_outputs)
+    dummy_train_workspace = AlgoWorkspace(outputs=train_outputs)
     dummy_train_wrapper = algo.GenericAlgoWrapper(a, dummy_train_workspace, None)
     dummy_train_wrapper.task_launcher(method_name="train")
     local_model = utils.load_model(dummy_train_wrapper._workspace.task_outputs["local"])
@@ -271,7 +271,7 @@ def test_train_no_model(train_outputs):
 def test_train_input_head_trunk_models(composite_inputs, train_outputs):
 
     a = DummyCompositeAlgo()
-    dummy_train_workspace = CompositeAlgoWorkspace(inputs=composite_inputs, outputs=train_outputs)
+    dummy_train_workspace = AlgoWorkspace(inputs=composite_inputs, outputs=train_outputs)
     dummy_train_wrapper = algo.GenericAlgoWrapper(a, dummy_train_workspace, None)
     dummy_train_wrapper.task_launcher(method_name="train")
     local_model = utils.load_model(dummy_train_wrapper._workspace.task_outputs["local"])
@@ -285,7 +285,7 @@ def test_train_input_head_trunk_models(composite_inputs, train_outputs):
 def test_train_fake_data(train_outputs, n_fake_samples):
     a = FakeDataAlgo()
     _opener = opener.load_from_module()
-    dummy_train_workspace = CompositeAlgoWorkspace(outputs=train_outputs)
+    dummy_train_workspace = AlgoWorkspace(outputs=train_outputs)
     dummy_train_wrapper = algo.GenericAlgoWrapper(a, dummy_train_workspace, _opener)
     dummy_train_wrapper.task_launcher(
         method_name="train", fake_data=bool(n_fake_samples), n_fake_samples=n_fake_samples
@@ -302,7 +302,7 @@ def test_train_fake_data(train_outputs, n_fake_samples):
 def test_predict_fake_data(composite_inputs, predict_outputs, n_fake_samples):
     a = FakeDataAlgo()
     _opener = opener.load_from_module()
-    dummy_train_workspace = CompositeAlgoWorkspace(inputs=composite_inputs, outputs=predict_outputs)
+    dummy_train_workspace = AlgoWorkspace(inputs=composite_inputs, outputs=predict_outputs)
     dummy_train_wrapper = algo.GenericAlgoWrapper(a, dummy_train_workspace, _opener)
     dummy_train_wrapper.task_launcher(
         method_name="predict", fake_data=bool(n_fake_samples), n_fake_samples=n_fake_samples
@@ -324,7 +324,7 @@ def test_predict_fake_data(composite_inputs, predict_outputs, n_fake_samples):
 )
 def test_model_check(algo_class, train_outputs):
     a = algo_class()
-    dummy_train_workspace = CompositeAlgoWorkspace(outputs=train_outputs)
+    dummy_train_workspace = AlgoWorkspace(outputs=train_outputs)
     wp = algo.GenericAlgoWrapper(interface=a, workspace=dummy_train_workspace, opener_wrapper=None)
 
     with pytest.raises(exceptions.MissingFileError):

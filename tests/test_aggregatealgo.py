@@ -11,7 +11,7 @@ from substratools import algo
 from substratools import exceptions
 from substratools import opener
 from substratools.task_resources import TaskResources
-from substratools.workspace import AggregateAlgoWorkspace
+from substratools.workspace import AlgoWorkspace
 from tests.utils import InputIdentifiers
 from tests.utils import OutputIdentifiers
 from tests import utils
@@ -140,7 +140,7 @@ def test_aggregate_multiple_models(create_models, output_model_path):
         json.dumps([{"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False}])
     )
 
-    workspace = AggregateAlgoWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
+    workspace = AlgoWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
     a = DummyAggregateAlgo()
     wp = algo.GenericAlgoWrapper(a, workspace, opener_wrapper=None)
 
@@ -167,7 +167,7 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models):
         json.dumps([{"id": OutputIdentifiers.predictions, "value": model_filenames[0], "multiple": False}])
     )
 
-    workspace = AggregateAlgoWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
+    workspace = AlgoWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
     a = DummyAggregateAlgo()
 
     wp = algo.GenericAlgoWrapper(a, workspace, opener_wrapper=opener.load_from_module())
