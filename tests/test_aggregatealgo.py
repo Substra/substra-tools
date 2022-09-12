@@ -125,7 +125,7 @@ def test_create():
 def test_aggregate_no_model(valid_algo_workspace):
     a = DummyAggregateAlgo()
     wp = algo.GenericAlgoWrapper(a, valid_algo_workspace, opener_wrapper=None)
-    wp.task_launcher(method_name="aggregate")
+    wp.execute(method_name="aggregate")
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
     assert model["value"] == 0
 
@@ -144,7 +144,7 @@ def test_aggregate_multiple_models(create_models, output_model_path):
     a = DummyAggregateAlgo()
     wp = algo.GenericAlgoWrapper(a, workspace, opener_wrapper=None)
 
-    wp.task_launcher(method_name="aggregate")
+    wp.execute(method_name="aggregate")
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
 
     assert model["value"] == 3
@@ -172,7 +172,7 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models):
 
     wp = algo.GenericAlgoWrapper(a, workspace, opener_wrapper=opener.load_from_module())
 
-    wp.task_launcher(method_name="predict", fake_data=fake_data, n_fake_samples=n_fake_samples)
+    wp.execute(method_name="predict", fake_data=fake_data, n_fake_samples=n_fake_samples)
 
     pred = utils.load_predictions(wp._workspace.task_outputs[OutputIdentifiers.predictions])
     assert pred == expected_pred
@@ -258,4 +258,4 @@ def test_model_check(algo_class, valid_algo_workspace):
     wp = algo.GenericAlgoWrapper(a, valid_algo_workspace, opener_wrapper=None)
 
     with pytest.raises(exceptions.MissingFileError):
-        wp.task_launcher(method_name="aggregate")
+        wp.execute(method_name="aggregate")

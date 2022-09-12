@@ -260,7 +260,7 @@ def test_train_no_model(train_outputs):
     a = DummyCompositeAlgo()
     dummy_train_workspace = AlgoWorkspace(outputs=train_outputs)
     dummy_train_wrapper = algo.GenericAlgoWrapper(a, dummy_train_workspace, None)
-    dummy_train_wrapper.task_launcher(method_name="train")
+    dummy_train_wrapper.execute(method_name="train")
     local_model = utils.load_model(dummy_train_wrapper._workspace.task_outputs["local"])
     shared_model = utils.load_model(dummy_train_wrapper._workspace.task_outputs["shared"])
 
@@ -273,7 +273,7 @@ def test_train_input_head_trunk_models(composite_inputs, train_outputs):
     a = DummyCompositeAlgo()
     dummy_train_workspace = AlgoWorkspace(inputs=composite_inputs, outputs=train_outputs)
     dummy_train_wrapper = algo.GenericAlgoWrapper(a, dummy_train_workspace, None)
-    dummy_train_wrapper.task_launcher(method_name="train")
+    dummy_train_wrapper.execute(method_name="train")
     local_model = utils.load_model(dummy_train_wrapper._workspace.task_outputs["local"])
     shared_model = utils.load_model(dummy_train_wrapper._workspace.task_outputs["shared"])
 
@@ -287,9 +287,7 @@ def test_train_fake_data(train_outputs, n_fake_samples):
     _opener = opener.load_from_module()
     dummy_train_workspace = AlgoWorkspace(outputs=train_outputs)
     dummy_train_wrapper = algo.GenericAlgoWrapper(a, dummy_train_workspace, _opener)
-    dummy_train_wrapper.task_launcher(
-        method_name="train", fake_data=bool(n_fake_samples), n_fake_samples=n_fake_samples
-    )
+    dummy_train_wrapper.execute(method_name="train", fake_data=bool(n_fake_samples), n_fake_samples=n_fake_samples)
 
     local_model = utils.load_model(dummy_train_wrapper._workspace.task_outputs[OutputIdentifiers.local])
     shared_model = utils.load_model(dummy_train_wrapper._workspace.task_outputs[OutputIdentifiers.shared])
@@ -304,9 +302,7 @@ def test_predict_fake_data(composite_inputs, predict_outputs, n_fake_samples):
     _opener = opener.load_from_module()
     dummy_train_workspace = AlgoWorkspace(inputs=composite_inputs, outputs=predict_outputs)
     dummy_train_wrapper = algo.GenericAlgoWrapper(a, dummy_train_workspace, _opener)
-    dummy_train_wrapper.task_launcher(
-        method_name="predict", fake_data=bool(n_fake_samples), n_fake_samples=n_fake_samples
-    )
+    dummy_train_wrapper.execute(method_name="predict", fake_data=bool(n_fake_samples), n_fake_samples=n_fake_samples)
 
     predictions = utils.load_model(dummy_train_wrapper._workspace.task_outputs[OutputIdentifiers.predictions])
 
@@ -328,4 +324,4 @@ def test_model_check(algo_class, train_outputs):
     wp = algo.GenericAlgoWrapper(interface=a, workspace=dummy_train_workspace, opener_wrapper=None)
 
     with pytest.raises(exceptions.MissingFileError):
-        wp.task_launcher("train")
+        wp.execute("train")

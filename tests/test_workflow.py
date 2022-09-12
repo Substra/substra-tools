@@ -78,7 +78,7 @@ def test_workflow(workdir, dummy_opener):
     loop1_wp = GenericAlgoWrapper(a, workspace=loop1_workspace, opener_wrapper=None)
 
     # loop 1 (no input)
-    loop1_wp.task_launcher(method_name="train")
+    loop1_wp.execute(method_name="train")
     model = utils.load_model(path=loop1_wp._workspace.task_outputs[OutputIdentifiers.model])
 
     assert model == {"i": 1, "total": 0}
@@ -96,7 +96,7 @@ def test_workflow(workdir, dummy_opener):
     loop2_wp = GenericAlgoWrapper(a, workspace=loop2_workspace, opener_wrapper=None)
 
     # loop 2 (one model as input)
-    loop2_wp.task_launcher(method_name="train")
+    loop2_wp.execute(method_name="train")
     model = utils.load_model(path=loop2_wp._workspace.task_outputs[OutputIdentifiers.model])
     assert model == {"i": 2, "total": 1}
     assert os.path.exists(loop2_model_path)
@@ -117,7 +117,7 @@ def test_workflow(workdir, dummy_opener):
     loop3_wp = GenericAlgoWrapper(a, workspace=loop3_workspace, opener_wrapper=None)
 
     # loop 3 (two models as input)
-    loop3_wp.task_launcher("train")
+    loop3_wp.execute("train")
     model = utils.load_model(path=loop3_wp._workspace.task_outputs[OutputIdentifiers.model])
     assert model == {"i": 3, "total": 3}
     assert os.path.exists(loop3_model_path)
@@ -133,7 +133,7 @@ def test_workflow(workdir, dummy_opener):
     predict_wp = GenericAlgoWrapper(a, workspace=predict_workspace, opener_wrapper=None)
 
     # predict
-    predict_wp.task_launcher(method_name="predict")
+    predict_wp.execute(method_name="predict")
     pred = utils.load_predictions(path=predict_wp._workspace.task_outputs[OutputIdentifiers.predictions])
     assert pred == {"sum": 3}
 

@@ -93,8 +93,8 @@ class GenericAlgoWrapper(object):
                 raise exceptions.MissingFileError(f"Output file {path} used to save argument `{key}` does not exists.")
 
     @utils.Timer(logger)
-    def task_launcher(self, method_name: str, rank: int = 0, fake_data: bool = False, n_fake_samples: int = None):
-        """Launch Tasks"""
+    def execute(self, method_name: str, rank: int = 0, fake_data: bool = False, n_fake_samples: int = None):
+        """Execute a compute task"""
 
         # load inputs
         inputs = deepcopy(self._workspace.task_inputs)
@@ -155,7 +155,7 @@ def _generate_generic_algo_cli(interface):
 
     def _user_func(args):
         algo_wrapper = _algo_from_args(args)
-        algo_wrapper.task_launcher(
+        algo_wrapper.execute(
             method_name=args.method_name,
             rank=args.rank,
             fake_data=args.fake_data,

@@ -150,7 +150,7 @@ def test_create():
 def test_train_no_model(valid_algo_workspace):
     a = DummyAlgo()
     wp = algo.GenericAlgoWrapper(a, valid_algo_workspace, opener_wrapper=None)
-    wp.task_launcher(method_name="train")
+    wp.execute(method_name="train")
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
     assert model["value"] == 0
 
@@ -169,7 +169,7 @@ def test_train_multiple_models(output_model_path, create_models):
     a = DummyAlgo()
     wp = algo.GenericAlgoWrapper(a, workspace=workspace, opener_wrapper=None)
 
-    wp.task_launcher(method_name="train")
+    wp.execute(method_name="train")
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
 
     assert model["value"] == 3
@@ -184,7 +184,7 @@ def test_train_fake_data(output_model_path):
 
     workspace = AlgoWorkspace(outputs=workspace_outputs)
     wp = algo.GenericAlgoWrapper(a, workspace=workspace, opener_wrapper=None)
-    wp.task_launcher(method_name="train", fake_data=True, n_fake_samples=2)
+    wp.execute(method_name="train", fake_data=True, n_fake_samples=2)
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
     assert model["value"] == 0
 
@@ -210,7 +210,7 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models, output
 
     workspace = AlgoWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
     wp = algo.GenericAlgoWrapper(a, workspace=workspace, opener_wrapper=opener.load_from_module())
-    wp.task_launcher(method_name="predict", fake_data=fake_data, n_fake_samples=n_fake_samples)
+    wp.execute(method_name="predict", fake_data=fake_data, n_fake_samples=n_fake_samples)
 
     pred = utils.load_predictions(wp._workspace.task_outputs["predictions"])
     assert pred == expected_pred
@@ -334,4 +334,4 @@ def test_model_check(valid_algo_workspace, algo_class):
     wp = algo.GenericAlgoWrapper(a, workspace=valid_algo_workspace, opener_wrapper=None)
 
     with pytest.raises(exceptions.MissingFileError):
-        wp.task_launcher(method_name="train")
+        wp.execute(method_name="train")
