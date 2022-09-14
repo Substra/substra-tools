@@ -1,12 +1,16 @@
+import json
 import os
+
 import sys
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
 
+from substratools.task_resources import TaskResources
 from substratools.utils import import_module
+from tests.utils import OutputIdentifiers
 from substratools.workspace import AlgoWorkspace
-from substratools.workspace import CompositeAlgoWorkspace
 
 
 @pytest.fixture
@@ -54,18 +58,36 @@ def valid_opener(valid_opener_code):
 
 
 @pytest.fixture()
-def output_model_path(workdir: str) -> Path:
-    return workdir / "model" / "model"
+def valid_opener_script(workdir, valid_opener_code):
+    opener_path = workdir / "my_opener.py"
+    opener_path.write_text(valid_opener_code)
+
+    return str(opener_path)
+
+
+@pytest.fixture(autouse=True)
+def output_model_path(workdir: Path) -> str:
+    path = workdir / str(uuid4())
+    yield path
+    if path.exists():
+        os.remove(path)
+
+
+@pytest.fixture(autouse=True)
+def output_model_path_2(workdir: Path) -> str:
+    path = workdir / str(uuid4())
+    yield path
+    if path.exists():
+        os.remove(path)
 
 
 @pytest.fixture()
 def valid_algo_workspace(output_model_path: str) -> AlgoWorkspace:
-    return AlgoWorkspace(output_model_path=str(output_model_path))
 
-
-@pytest.fixture()
-def valid_composite_algo_workspace(workdir) -> CompositeAlgoWorkspace:
-    return CompositeAlgoWorkspace(
-        output_head_model_path=str(workdir / "model" / "model_head"),
-        output_trunk_model_path=str(workdir / "model" / "model_trunk"),
+    workspace_outputs = TaskResources(
+        json.dumps([{"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False}])
     )
+
+    workspace = AlgoWorkspace(outputs=workspace_outputs)
+
+    return workspace

@@ -3,10 +3,12 @@ import os
 import pytest
 
 from substratools import exceptions
-from substratools.algo import InputIdentifiers
 from substratools.opener import load_from_module
+from substratools.opener import Opener
 from substratools.utils import import_module
+from substratools.utils import load_interface_from_module
 from substratools.workspace import DEFAULT_INPUT_DATA_FOLDER_PATH
+from substratools.opener import OpenerWrapper
 
 
 @pytest.fixture
@@ -60,7 +62,7 @@ def fake_y(n_samples):
     import_module("opener", script)
 
     o = load_from_module()
-    assert o.get_X() == InputIdentifiers.X
+    assert o.get_X() == "X"
 
 
 def test_load_opener_as_class(tmp_cwd):
@@ -88,8 +90,15 @@ def test_load_opener_from_path(tmp_cwd, valid_opener_code):
     dirpath.mkdir()
     path = dirpath / "my_opener.py"
     path.write_text(valid_opener_code)
-    o = load_from_module(path=path)
-    assert o.get_X() == InputIdentifiers.X
+
+    interface = load_interface_from_module(
+        "opener",
+        interface_class=Opener,
+        interface_signature=None,  # XXX does not support interface for debugging
+        path=path,
+    )
+    o = OpenerWrapper(interface, workspace=None)
+    assert o.get_X() == "X"
 
 
 def test_opener_check_folders(tmp_cwd):

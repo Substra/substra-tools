@@ -5,17 +5,18 @@ import logging
 import os
 import sys
 from typing import Any
-from typing import TypedDict
 
 from substratools import exceptions
 from substratools import opener
 from substratools import utils
-from substratools.algo import InputIdentifiers
-from substratools.algo import OutputIdentifiers
 from substratools.workspace import MetricsWorkspace
 
 logger = logging.getLogger(__name__)
 REQUIRED_FUNCTIONS = set(["score"])
+
+_Y_IDENTIFIER = "y"
+_PREDICTIONS_IDENTIFIER = "predictions"
+_PERFORMANCE_IDENTIFIER = "performance"
 
 
 class Metrics(abc.ABC):
@@ -95,37 +96,11 @@ class Metrics(abc.ABC):
     ```
     """
 
-    @abc.abstractmethod
-    def score(
-        self,
-        inputs: TypedDict("inputs", {InputIdentifiers.y: Any, InputIdentifiers.predictions: os.PathLike}),
-        outputs: TypedDict("outputs", {OutputIdentifiers.performance: os.PathLike}),
-    ):
-        """Compute model perf from actual and predicted values.
-
-        # Arguments
-
-        inputs: TypedDict(
-            "inputs",
-            {
-                InputIdentifiers.y: Any: actual values.
-                InputIdentifiers.predictions: Any: path to predicted values.
-            }
-        ),
-        outputs: TypedDict(
-            "outputs",
-            {
-                OutputIdentifiers.performance: os.PathLike: path to save the performance of the model.
-            }
-        )
-        """
-        raise NotImplementedError
-
 
 class MetricsWrapper(object):
-    def __init__(self, interface, workspace=None, opener_wrapper=None):
-        self._workspace = workspace or MetricsWorkspace()
-        self._opener_wrapper = opener_wrapper or opener.load_from_module(workspace=self._workspace)
+    def __init__(self, interface, workspace, opener_wrapper):
+        self._workspace = workspace
+        self._opener_wrapper = opener_wrapper
         self._interface = interface
 
     def _save_score(self, score):
@@ -153,12 +128,12 @@ class MetricsWrapper(object):
 
         logger.info("launching scoring task")
 
-        inputs = {InputIdentifiers.y: y, InputIdentifiers.predictions: y_pred_path}
-        outputs = {OutputIdentifiers.performance: self._workspace.output_perf_path}
+        inputs = {_Y_IDENTIFIER: y, _PREDICTIONS_IDENTIFIER: y_pred_path}
+        outputs = {_PERFORMANCE_IDENTIFIER: self._workspace.output_perf_path}
 
         self._interface.score(inputs, outputs)
 
-        self._assert_output_exists(self._workspace.output_perf_path, OutputIdentifiers.performance)
+        self._assert_output_exists(self._workspace.output_perf_path, _PERFORMANCE_IDENTIFIER)
 
 
 def _generate_cli():
@@ -236,7 +211,7 @@ def execute(interface=None, sysargs=None):
         )
 
     cli = _generate_cli()
-    sysargs = sysargs if sysargs is not None else sys.argv[1:]
+    sysargs = sysargs if sysargs else sys.argv[1:]
     args = cli.parse_args(sysargs)
 
     workspace = MetricsWorkspace(
@@ -244,14 +219,16 @@ def execute(interface=None, sysargs=None):
         input_predictions_path=args.input_predictions_path,
         log_path=args.log_path,
         output_perf_path=args.output_perf_path,
+        opener_path=args.opener_path,
     )
+
     opener_wrapper = opener.load_from_module(
-        path=args.opener_path,
         workspace=workspace,
     )
     utils.configure_logging(path=workspace.log_path, log_level=args.log_level)
+
     metrics_wrapper = MetricsWrapper(
-        interface,
+        interface=interface,
         workspace=workspace,
         opener_wrapper=opener_wrapper,
     )

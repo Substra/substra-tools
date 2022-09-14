@@ -2,6 +2,7 @@ import abc
 import logging
 import os
 import types
+from typing import Optional
 
 from substratools import exceptions
 from substratools import utils
@@ -174,13 +175,27 @@ class OpenerWrapper(object):
             raise exceptions.MissingFileError(f"Output file {path} used to save argument `{key}` does not exists.")
 
 
-def load_from_module(path=None, workspace=None):
-    """Load opener interface from path or from python environment.
+def load_from_module(workspace=None) -> Optional[OpenerWrapper]:
+    """Load opener interface.
 
-    Opener can be defined as an Opener subclass or directly has a module.
+    If a workspace is given, the associated opener will be returned. This means that if no
+    opener_path is defined within the workspace, no opener will be returned
+    If no workspace is given, the opener interface will be directly loaded as a module.
 
     Return an OpenerWrapper instance.
     """
+    if workspace is None:
+        # import from module
+        path = None
+
+    elif workspace.opener_path is None:
+        # no opener within this workspace
+        return None
+
+    else:
+        # import opener from workspace specified path
+        path = workspace.opener_path
+
     interface = utils.load_interface_from_module(
         "opener",
         interface_class=Opener,

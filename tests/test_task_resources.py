@@ -1,20 +1,79 @@
+from substratools.task_resources import TaskResources
+from substratools.task_resources import TASK_IO_CHAINKEYS
+from substratools.task_resources import TASK_IO_DATASAMPLES
+from substratools.task_resources import TASK_IO_OPENER
+import pytest
+from substratools.exceptions import InvalidCLIError
+from substratools.exceptions import InvalidInputOutputsError
 import json
 
-from substratools.task_resources import TaskResources
+_VALID_RESOURCES = [
+    {"id": "foo", "value": "bar", "multiple": True},
+    {"id": "foo", "value": "babar", "multiple": True},
+    {"id": "fofo", "value": "bar", "multiple": False},
+]
+_VALID_VALUES = {"foo": {"value": ["bar", "babar"], "multiple": True}, "fofo": {"value": ["bar"], "multiple": False}}
 
 
-def test_multiple_resources():
-    resources = [
-        {"id": "test", "value": "1"},
-        {"id": "test", "value": "2"},
-        {"id": "single", "value": "42"},
-    ]
+@pytest.mark.parametrize(
+    "invalid_arg",
+    (
+        {"foo": "barr"},
+        "foo and bar",
+        ["foo", "barr"],
+        [{"foo": "bar"}],
+        [{"foo": "bar"}, {"id": "foo", "value": "bar", "multiple": True}],
+        # [{_RESOURCE_ID: "foo", _RESOURCE_VALUE: "some path", _RESOURCE_MULTIPLE: "str"}],
+    ),
+)
+def test_task_resources_invalid_argsrt(invalid_arg):
+    with pytest.raises(InvalidCLIError):
+        TaskResources(json.dumps(invalid_arg))
 
-    resources = TaskResources(json.dumps(resources))
 
-    assert resources.get_values("test") == ["1", "2"]
-    assert resources.get_value("single") == "42"
-    assert resources.get_optional_values("test") == ["1", "2"]
-    assert resources.get_optional_value("single") == "42"
-    assert resources.get_optional_values("non-existant") is None
-    assert resources.get_optional_value("non-existant") is None
+@pytest.mark.parametrize(
+    "valid_arg,expected",
+    [
+        ([], {}),
+        ([{"id": "foo", "value": "bar", "multiple": True}], {"foo": {"value": ["bar"], "multiple": True}}),
+        (
+            [{"id": "foo", "value": "bar", "multiple": True}, {"id": "foo", "value": "babar", "multiple": True}],
+            {"foo": {"value": ["bar", "babar"], "multiple": True}},
+        ),
+        (_VALID_RESOURCES, _VALID_VALUES),
+    ],
+)
+def test_task_resources_values(valid_arg, expected):
+    TaskResources(json.dumps(valid_arg))._values == expected
+
+
+@pytest.mark.parametrize("static_resource_id", (TASK_IO_CHAINKEYS, TASK_IO_DATASAMPLES, TASK_IO_OPENER))
+def test_task_static_resources(static_resource_id):
+    "checks that static keys opener, datasamples and chainkeys are excluded"
+
+    TaskResources(
+        json.dumps(_VALID_RESOURCES + [{"id": static_resource_id, "value": "foo", "multiple": False}])
+    )._values == _VALID_VALUES
+
+
+@pytest.mark.parametrize("key", tuple(_VALID_VALUES.keys()))
+def test_get_value(key):
+    "get_value method returns a list of path of multiple resource and a path for non multiple ones"
+    expected = _VALID_VALUES[key]["value"]
+
+    if _VALID_VALUES[key]["multiple"]:
+        expected = expected[0]
+
+
+def test_multiple_resource_error():
+    "non multiple resource can't have multiple values"
+
+    with pytest.raises(InvalidInputOutputsError):
+        TaskResources(
+            json.dumps(
+                [
+                    {"id": "foo", "value": "bar", "multiple": False},
+                    {"id": "foo", "value": "babar", "multiple": False},
+                ]
+            )
+        )

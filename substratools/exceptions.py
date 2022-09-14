@@ -16,3 +16,7 @@ class MissingFileError(Exception):
 
 class InvalidInputOutputsError(Exception):
     pass
+
+
+class InvalidCLIError(Exception):
+    pass
