@@ -11,6 +11,7 @@ from substratools import exceptions
 from substratools import opener
 from substratools import utils
 from substratools.task_resources import TaskResources
+from substratools.task_resources import TASK_IO_DATASAMPLES
 from substratools.workspace import AlgoWorkspace
 
 logger = logging.getLogger(__name__)
@@ -99,18 +100,16 @@ class GenericAlgoWrapper(object):
         # load inputs
         inputs = deepcopy(self._workspace.task_inputs)
 
-        inputs.update({"rank": rank})
+        task_properties = {"rank": rank}
 
         # load data from opener
         if self._opener_wrapper:
-            X = self._opener_wrapper.get_X(fake_data, n_fake_samples)
-            y = self._opener_wrapper.get_y(fake_data, n_fake_samples)
+            loaded_datasamples = self._opener_wrapper.get_data(fake_data, n_fake_samples)
 
             if fake_data:
                 logger.info("Using fake data with %i fake samples." % int(n_fake_samples))
 
-            inputs.update({"X": X})
-            inputs.update({"y": y})
+            inputs.update({TASK_IO_DATASAMPLES: loaded_datasamples})
 
         # load outputs
         outputs = deepcopy(self._workspace.task_outputs)
@@ -122,6 +121,7 @@ class GenericAlgoWrapper(object):
         method(
             inputs=inputs,
             outputs=outputs,
+            task_properties=task_properties,
         )
 
         self._assert_outputs_exists(
@@ -175,6 +175,7 @@ class Algo(GenericAlgo):
         self,
         inputs: dict,
         outputs: dict,
+        task_properties: dict,
     ) -> None:
 
         raise NotImplementedError
@@ -184,6 +185,7 @@ class Algo(GenericAlgo):
         self,
         inputs: dict,
         outputs: dict,
+        task_properties: dict,
     ) -> None:
 
         raise NotImplementedError
@@ -195,6 +197,7 @@ class CompositeAlgo(GenericAlgo):
         self,
         inputs: dict,
         outputs: dict,
+        task_properties: dict,
     ) -> None:
 
         raise NotImplementedError
@@ -204,6 +207,7 @@ class CompositeAlgo(GenericAlgo):
         self,
         inputs: dict,
         outputs: dict,
+        task_properties: dict,
     ) -> None:
 
         raise NotImplementedError
@@ -215,6 +219,7 @@ class AggregateAlgo(GenericAlgo):
         self,
         inputs: dict,
         outputs: dict,
+        task_properties: dict,
     ) -> None:
 
         raise NotImplementedError
@@ -224,6 +229,7 @@ class AggregateAlgo(GenericAlgo):
         self,
         inputs: dict,
         outputs: dict,
+        task_properties: dict,
     ) -> None:
 
         raise NotImplementedError

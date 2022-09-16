@@ -5,7 +5,6 @@ from typing import List
 from enum import Enum
 
 from substratools.metrics import _PERFORMANCE_IDENTIFIER
-from substratools.metrics import _Y_IDENTIFIER
 from substratools.metrics import _PREDICTIONS_IDENTIFIER
 
 
@@ -17,8 +16,6 @@ class InputIdentifiers(str, Enum):
     predictions = _PREDICTIONS_IDENTIFIER
     opener = "opener"
     datasamples = "datasamples"
-    X = "X"
-    y = _Y_IDENTIFIER
     rank = "rank"
 
 

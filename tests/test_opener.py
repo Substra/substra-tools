@@ -32,9 +32,7 @@ def test_load_opener_not_found(tmp_cwd):
 
 def test_load_invalid_opener(tmp_cwd):
     invalid_script = """
-def get_X():
-    raise NotImplementedError
-def get_y():
+def get_data():
     raise NotImplementedError
 """
 
@@ -44,45 +42,20 @@ def get_y():
         load_from_module()
 
 
-@pytest.mark.skip(reason="not supported")
-def test_load_opener_as_module(tmp_cwd):
-    script = """
-def _helper():
-    pass
-def get_X(folders):
-    return 'X'
-def get_y(folders):
-    return 'y'
-def fake_X(n_samples):
-    return 'fakeX'
-def fake_y(n_samples):
-    return 'fakey'
-"""
-
-    import_module("opener", script)
-
-    o = load_from_module()
-    assert o.get_X() == "X"
-
-
 def test_load_opener_as_class(tmp_cwd):
     script = """
 from substratools import Opener
 class MyOpener(Opener):
-    def get_X(self, folders):
-        return 'Xclass'
-    def get_y(self, folders):
-        return 'yclass'
-    def fake_X(self, n_samples):
-        return 'fakeX'
-    def fake_y(self, n_samples):
-        return 'fakey'
+    def get_data(self, folders):
+        return 'data_class'
+    def fake_data(self, n_samples):
+        return 'fake_data'
 """
 
     import_module("opener", script)
 
     o = load_from_module()
-    assert o.get_X() == "Xclass"
+    assert o.get_data() == "data_class"
 
 
 def test_load_opener_from_path(tmp_cwd, valid_opener_code):
@@ -98,22 +71,18 @@ def test_load_opener_from_path(tmp_cwd, valid_opener_code):
         path=path,
     )
     o = OpenerWrapper(interface, workspace=None)
-    assert o.get_X() == "X"
+    assert o.get_data()[0] == "X"
 
 
 def test_opener_check_folders(tmp_cwd):
     script = """
 from substratools import Opener
 class MyOpener(Opener):
-    def get_X(self, folders):
+    def get_data(self, folders):
         assert len(folders) == 5
-        return 'Xclass'
-    def get_y(self, folders):
-        return 'yclass'
-    def fake_X(self, n_samples):
-        return 'fakeX'
-    def fake_y(self, n_samples):
-        return 'fakey'
+        return 'data_class'
+    def fake_data(self, n_samples):
+        return 'fake_data_class'
 """
 
     import_module("opener", script)
@@ -126,4 +95,4 @@ class MyOpener(Opener):
     [os.makedirs(p) for p in data_paths]
 
     o._workspace.input_data_folder_paths = data_paths
-    assert o.get_X() == "Xclass"
+    assert o.get_data() == "data_class"

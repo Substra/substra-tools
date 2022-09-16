@@ -27,12 +27,10 @@ class DummyAggregateAlgo(algo.AggregateAlgo):
         self,
         inputs: TypedDict(
             "inputs",
-            {
-                InputIdentifiers.models: List[PathLike],
-                InputIdentifiers.rank: int,
-            },
+            {InputIdentifiers.models: List[PathLike]},
         ),
         outputs: TypedDict("outputs", {OutputIdentifiers.model: PathLike}),
+        task_properties: TypedDict("task_properties", {InputIdentifiers.rank: int}),
     ) -> None:
         if inputs:
             models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
@@ -50,16 +48,17 @@ class DummyAggregateAlgo(algo.AggregateAlgo):
         inputs: TypedDict(
             "inputs",
             {
-                InputIdentifiers.X: Any,
+                InputIdentifiers.datasamples: Any,
                 InputIdentifiers.model: PathLike,
             },
         ),
         outputs: TypedDict("outputs", {OutputIdentifiers.model: PathLike}),
+        task_properties: TypedDict("task_properties", {InputIdentifiers.rank: int}),
     ):
         model = utils.load_model(path=inputs.get(OutputIdentifiers.model))
 
         # Predict
-        X = inputs.get(InputIdentifiers.X)
+        X = inputs.get(InputIdentifiers.datasamples)[0]
         pred = X * model["value"]
 
         # save predictions
@@ -67,7 +66,7 @@ class DummyAggregateAlgo(algo.AggregateAlgo):
 
 
 class NoSavedModelAggregateAlgo(DummyAggregateAlgo):
-    def aggregate(self, inputs, outputs):
+    def aggregate(self, inputs, outputs, task_properties):
 
         if inputs:
             models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
@@ -82,7 +81,7 @@ class NoSavedModelAggregateAlgo(DummyAggregateAlgo):
 
 
 class WrongSavedModelAggregateAlgo(DummyAggregateAlgo):
-    def aggregate(self, inputs, outputs):
+    def aggregate(self, inputs, outputs, task_properties):
 
         if inputs:
             models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))

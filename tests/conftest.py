@@ -36,17 +36,11 @@ import json
 from substratools import Opener
 
 class FakeOpener(Opener):
-    def get_X(self, folder):
-        return 'X'
+    def get_data(self, folder):
+        return 'X', list(range(0, 3))
 
-    def get_y(self, folder):
-        return list(range(0, 3))
-
-    def fake_X(self, n_samples):
-        return ['Xfake'] * n_samples
-
-    def fake_y(self, n_samples):
-        return [0] * n_samples
+    def fake_data(self, n_samples):
+        return ['Xfake'] * n_samples, [0] * n_samples
 """
 
 

@@ -36,8 +36,8 @@ from tests.utils import InputIdentifiers
 from tests.utils import OutputIdentifiers
 
 class FloatMetrics(Metrics):
-    def score(self, inputs, outputs):
-        y_true = inputs.get(InputIdentifiers.y)
+    def score(self, inputs, outputs, task_properties):
+        y_true = inputs.get(InputIdentifiers.datasamples)[1]
         y_pred_path = inputs.get(InputIdentifiers.predictions)
         y_pred = utils.load_predictions(y_pred_path)
         s = sum(y_true) + sum(y_pred)
@@ -57,7 +57,7 @@ from substratools import save_performance
 from tests.utils import OutputIdentifiers
 
 class FloatNpMetrics(Metrics):
-    def score(self, inputs, outputs):
+    def score(self, inputs, outputs, task_properties):
         save_performance(np.float64(0.99), outputs.get(OutputIdentifiers.performance))
 """
     import_module("metrics", code)
@@ -73,7 +73,7 @@ from substratools import save_performance
 from tests.utils import OutputIdentifiers
 
 class IntMetrics(Metrics):
-    def score(self, inputs, outputs):
+    def score(self, inputs, outputs, task_properties):
         save_performance(int(1), outputs.get(OutputIdentifiers.performance))
 """
     import_module("metrics", code)
@@ -89,7 +89,7 @@ from substratools import save_performance
 from tests.utils import OutputIdentifiers
 
 class DictMetrics(Metrics):
-    def score(self, inputs, outputs):
+    def score(self, inputs, outputs, task_properties):
         save_performance({"a": 1}, outputs.get(OutputIdentifiers.performance))
 """
     import_module("metrics", code)
@@ -105,10 +105,11 @@ def setup(valid_opener, write_pred_file):
 class DummyMetrics(metrics.Metrics):
     def score(
         self,
-        inputs: TypedDict("inputs", {InputIdentifiers.y: Any, InputIdentifiers.predictions: Any}),
+        inputs: TypedDict("inputs", {InputIdentifiers.datasamples: Any, InputIdentifiers.predictions: Any}),
         outputs: TypedDict("outputs", {OutputIdentifiers.performance: PathLike}),
+        task_properties: TypedDict("task_properties", {InputIdentifiers.rank: int}),
     ):
-        y_true = inputs.get(InputIdentifiers.y)
+        y_true = inputs.get(InputIdentifiers.datasamples)[1]
         y_pred_path = inputs.get(InputIdentifiers.predictions)
         y_pred = utils.load_predictions(y_pred_path)
 
