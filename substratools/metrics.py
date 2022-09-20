@@ -131,7 +131,7 @@ class MetricsWrapper(object):
         inputs = {TASK_IO_DATASAMPLES: loaded_datasamples, _PREDICTIONS_IDENTIFIER: y_pred_path}
         outputs = {_PERFORMANCE_IDENTIFIER: self._workspace.output_perf_path}
 
-        self._interface.score(inputs, outputs, {})
+        self._interface.score(inputs=inputs, outputs=outputs, task_properties={})
 
         self._assert_output_exists(self._workspace.output_perf_path, _PERFORMANCE_IDENTIFIER)
 
