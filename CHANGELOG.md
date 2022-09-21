@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- feat: allow CLI parameters to be read from a file
+
 ## [0.17.0](https://github.com/Substra/substra-tools/releases/tag/0.17.0) - 2022-09-19
 
 ### Changed
