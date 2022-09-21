@@ -3,6 +3,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
+
 from substratools import exceptions
 from enum import Enum
 

@@ -1,100 +1,42 @@
 import json
-import sys
-from os import PathLike
-from typing import Any
+import uuid
 from typing import TypedDict
 
+import numpy as np
 import pytest
 
+from substratools import MetricAlgo
+from substratools import algo
 from substratools import load_performance
-from substratools import metrics
 from substratools import opener
 from substratools import save_performance
-from substratools.utils import import_module
-from substratools.workspace import MetricsWorkspace
+from substratools.task_resources import TaskResources
+from substratools.workspace import AlgoWorkspace
 from tests import utils
 from tests.utils import InputIdentifiers
 from tests.utils import OutputIdentifiers
 
 
 @pytest.fixture()
-def write_pred_file():
-    workspace = MetricsWorkspace(opener_path=None)
+def write_pred_file(workdir):
+    pred_file = str(workdir / str(uuid.uuid4()))
     data = list(range(3, 6))
-    with open(workspace.input_predictions_path, "w") as f:
+    with open(pred_file, "w") as f:
         json.dump(data, f)
-    return workspace.input_predictions_path, data
+    return pred_file, data
+
+
+def inputs(workdir, valid_opener_script, write_pred_file):
+    return [
+        {"id": InputIdentifiers.predictions, "value": str(write_pred_file[0]), "multiple": False},
+        {"id": InputIdentifiers.datasamples, "value": str(workdir / "datasamples_unused"), "multiple": True},
+        {"id": InputIdentifiers.opener, "value": str(valid_opener_script), "multiple": False},
+    ]
 
 
 @pytest.fixture
-def load_float_metrics_module():
-    code = """
-from substratools import Metrics
-from substratools import save_performance
-from tests import utils
-from tests.utils import InputIdentifiers
-from tests.utils import OutputIdentifiers
-
-class FloatMetrics(Metrics):
-    def score(self, inputs, outputs, task_properties):
-        y_true = inputs.get(InputIdentifiers.datasamples)[1]
-        y_pred_path = inputs.get(InputIdentifiers.predictions)
-        y_pred = utils.load_predictions(y_pred_path)
-        s = sum(y_true) + sum(y_pred)
-        save_performance(s, outputs.get(OutputIdentifiers.performance))
-"""
-    import_module("metrics", code)
-    yield
-    del sys.modules["metrics"]
-
-
-@pytest.fixture
-def load_np_metrics_module():
-    code = """
-from substratools import Metrics
-import numpy as np
-from substratools import save_performance
-from tests.utils import OutputIdentifiers
-
-class FloatNpMetrics(Metrics):
-    def score(self, inputs, outputs, task_properties):
-        save_performance(np.float64(0.99), outputs.get(OutputIdentifiers.performance))
-"""
-    import_module("metrics", code)
-    yield
-    del sys.modules["metrics"]
-
-
-@pytest.fixture
-def load_int_metrics_module():
-    code = """
-from substratools import Metrics
-from substratools import save_performance
-from tests.utils import OutputIdentifiers
-
-class IntMetrics(Metrics):
-    def score(self, inputs, outputs, task_properties):
-        save_performance(int(1), outputs.get(OutputIdentifiers.performance))
-"""
-    import_module("metrics", code)
-    yield
-    del sys.modules["metrics"]
-
-
-@pytest.fixture
-def load_dict_metrics_module():
-    code = """
-from substratools import Metrics
-from substratools import save_performance
-from tests.utils import OutputIdentifiers
-
-class DictMetrics(Metrics):
-    def score(self, inputs, outputs, task_properties):
-        save_performance({"a": 1}, outputs.get(OutputIdentifiers.performance))
-"""
-    import_module("metrics", code)
-    yield
-    del sys.modules["metrics"]
+def outputs(workdir):
+    return [{"id": OutputIdentifiers.performance, "value": str(workdir / str(uuid.uuid4())), "multiple": False}]
 
 
 @pytest.fixture(autouse=True)
@@ -102,7 +44,7 @@ def setup(valid_opener, write_pred_file):
     pass
 
 
-class DummyMetrics(metrics.Metrics):
+class FloatMetrics(MetricAlgo):
     def score(
         self,
         inputs: TypedDict("inputs", {InputIdentifiers.datasamples: Any, InputIdentifiers.predictions: Any}),
@@ -119,20 +61,36 @@ class DummyMetrics(metrics.Metrics):
 
 
 def test_create():
-    DummyMetrics()
+    FloatMetrics()
 
 
-def test_score():
-    m = DummyMetrics()
-    workspace = MetricsWorkspace(opener_path=None)
-    wp = metrics.MetricsWrapper(m, workspace=workspace, opener_wrapper=opener.load_from_module())
-    wp.score()
-    s = load_performance(wp._workspace.output_perf_path)
+def test_score(workdir, write_pred_file):
+    inputs = TaskResources(
+        json.dumps(
+            [
+                {"id": InputIdentifiers.predictions, "value": str(write_pred_file[0]), "multiple": False},
+            ]
+        )
+    )
+    outputs = TaskResources(
+        json.dumps(
+            [{"id": OutputIdentifiers.performance, "value": str(workdir / str(uuid.uuid4())), "multiple": False}]
+        )
+    )
+    m = FloatMetrics()
+    workspace = AlgoWorkspace(inputs=inputs, outputs=outputs)
+    wp = algo.GenericAlgoWrapper(m, workspace=workspace, opener_wrapper=opener.load_from_module())
+    wp.execute(method_name="score")
+    s = load_performance(wp._workspace.task_outputs[OutputIdentifiers.performance])
     assert s == 15
 
 
-def test_execute(load_float_metrics_module, valid_opener_script):
-    perf_path = metrics.execute(sysargs=["--opener-path", valid_opener_script])
+def test_execute(inputs, outputs):
+    perf_path = outputs[0]["value"]
+    algo.execute(
+        FloatMetrics(),
+        sysargs=["--method-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
+    )
     s = load_performance(perf_path)
     assert s == 15
 
@@ -144,25 +102,54 @@ def test_execute(load_float_metrics_module, valid_opener_script):
         (["--fake-data", "--n-fake-samples", "3"], 12),
     ],
 )
-def test_execute_fake_data_modes(fake_data_mode, expected_score, load_float_metrics_module, valid_opener_script):
-    perf_path = metrics.execute(sysargs=fake_data_mode + ["--opener-path", valid_opener_script])
+def test_execute_fake_data_modes(fake_data_mode, expected_score, inputs, outputs):
+    perf_path = outputs[0]["value"]
+    algo.execute(
+        FloatMetrics(),
+        sysargs=fake_data_mode
+        + ["--method-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
+    )
     s = load_performance(perf_path)
     assert s == expected_score
 
 
-def test_execute_np(load_np_metrics_module, valid_opener_script):
-    perf_path = metrics.execute(sysargs=["--opener-path", valid_opener_script])
+def test_execute_np(inputs, outputs):
+    class FloatNpMetrics(MetricAlgo):
+        def score(self, inputs, outputs):
+            save_performance(np.float64(0.99), outputs.get(OutputIdentifiers.performance))
+
+    perf_path = outputs[0]["value"]
+    algo.execute(
+        FloatNpMetrics(),
+        sysargs=["--method-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
+    )
     s = load_performance(perf_path)
     assert s == pytest.approx(0.99)
 
 
-def test_execute_int(load_int_metrics_module, valid_opener_script):
-    perf_path = metrics.execute(sysargs=["--opener-path", valid_opener_script])
+def test_execute_int(inputs, outputs):
+    class IntMetrics(MetricAlgo):
+        def score(self, inputs, outputs):
+            save_performance(int(1), outputs.get(OutputIdentifiers.performance))
+
+    perf_path = outputs[0]["value"]
+    algo.execute(
+        IntMetrics(),
+        sysargs=["--method-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
+    )
     s = load_performance(perf_path)
     assert s == 1
 
 
-def test_execute_dict(load_dict_metrics_module, valid_opener_script):
-    perf_path = metrics.execute(sysargs=["--opener-path", valid_opener_script])
+def test_execute_dict(inputs, outputs):
+    class DictMetrics(MetricAlgo):
+        def score(self, inputs, outputs):
+            save_performance({"a": 1}, outputs.get(OutputIdentifiers.performance))
+
+    perf_path = outputs[0]["value"]
+    algo.execute(
+        DictMetrics(),
+        sysargs=["--method-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
+    )
     s = load_performance(perf_path)
     assert s["a"] == 1

@@ -1,11 +1,14 @@
 # coding: utf8
 import abc
 import argparse
+import json
 import logging
 import os
 import sys
 from copy import deepcopy
-from typing import Dict, Optional
+from typing import Any
+from typing import Dict
+from typing import Optional
 
 from substratools import exceptions
 from substratools import opener
@@ -236,6 +239,28 @@ class AggregateAlgo(GenericAlgo):
     ) -> None:
 
         raise NotImplementedError
+
+
+class MetricAlgo(GenericAlgo):
+    @abc.abstractmethod
+    def score(
+        self,
+        inputs: dict,
+        outputs: dict,
+    ) -> None:
+
+        raise NotImplementedError
+
+
+def save_performance(performance: Any, path: os.PathLike):
+    with open(path, "w") as f:
+        json.dump({"all": performance}, f)
+
+
+def load_performance(path: os.PathLike) -> Any:
+    with open(path, "r") as f:
+        performance = json.load(f)["all"]
+    return performance
 
 
 def execute(interface, sysargs=None):

@@ -1,14 +1,13 @@
 from substratools.__version__ import __version__
 
 from . import algo
-from . import metrics
 from . import opener
 from .algo import AggregateAlgo
 from .algo import Algo
 from .algo import CompositeAlgo
-from .metrics import Metrics
-from .metrics import load_performance
-from .metrics import save_performance
+from .algo import MetricAlgo
+from .algo import load_performance
+from .algo import save_performance
 from .opener import Opener
 
 __all__ = [
@@ -17,8 +16,7 @@ __all__ = [
     Algo,
     CompositeAlgo,
     AggregateAlgo,
-    metrics,
-    Metrics,
+    MetricAlgo,
     opener,
     Opener,
     load_performance,
