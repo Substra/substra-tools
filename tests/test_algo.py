@@ -218,7 +218,11 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models, output
 
 def test_execute_train(workdir, output_model_path):
     inputs = [
-        {"id": StaticInputIdentifiers.datasamples, "value": str(workdir / "datasamples_unused"), "multiple": True},
+        {
+            "id": StaticInputIdentifiers.datasamples.value,
+            "value": str(workdir / "datasamples_unused"),
+            "multiple": True,
+        },
     ]
     outputs = [
         {"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False},

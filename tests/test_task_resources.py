@@ -47,7 +47,11 @@ def test_task_resources_values(valid_arg, expected):
 
 @pytest.mark.parametrize(
     "static_resource_id",
-    (StaticInputIdentifiers.chainkeys, StaticInputIdentifiers.datasamples, StaticInputIdentifiers.opener),
+    (
+        StaticInputIdentifiers.chainkeys.value,
+        StaticInputIdentifiers.datasamples.value,
+        StaticInputIdentifiers.opener.value,
+    ),
 )
 def test_task_static_resources(static_resource_id):
     "checks that static keys opener, datasamples and chainkeys are excluded"

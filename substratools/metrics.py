@@ -129,7 +129,7 @@ class MetricsWrapper(object):
 
         logger.info("launching scoring task")
 
-        inputs = {StaticInputIdentifiers.datasamples: loaded_datasamples, _PREDICTIONS_IDENTIFIER: y_pred_path}
+        inputs = {StaticInputIdentifiers.datasamples.value: loaded_datasamples, _PREDICTIONS_IDENTIFIER: y_pred_path}
         outputs = {_PERFORMANCE_IDENTIFIER: self._workspace.output_perf_path}
 
         self._interface.score(inputs=inputs, outputs=outputs, task_properties={})

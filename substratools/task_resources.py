@@ -7,7 +7,7 @@ from substratools import exceptions
 from enum import Enum
 
 
-class StaticInputIdentifiers(Enum(str)):
+class StaticInputIdentifiers(str, Enum):
     opener = "opener"
     datasamples = "datasamples"
     chainkeys = "chainkeys"
@@ -78,9 +78,9 @@ class TaskResources:
 
         _check_resources_multiplicity(self._values)
 
-        self.opener_path = self.get_value(StaticInputIdentifiers.opener)
-        self.input_data_folder_paths = self.get_value(StaticInputIdentifiers.datasamples)
-        self.chainkeys_path = self.get_value(StaticInputIdentifiers.chainkeys)
+        self.opener_path = self.get_value(StaticInputIdentifiers.opener.value)
+        self.input_data_folder_paths = self.get_value(StaticInputIdentifiers.datasamples.value)
+        self.chainkeys_path = self.get_value(StaticInputIdentifiers.chainkeys.value)
 
     def get_value(self, key: str) -> Optional[Union[List[str], str]]:
         """Returns the value for a given key. Return None if there is no matching resource.
@@ -112,5 +112,9 @@ class TaskResources:
             k: self.get_value(k)
             for k in self._values.keys()
             if k
-            not in (StaticInputIdentifiers.opener, StaticInputIdentifiers.datasamples, StaticInputIdentifiers.chainkeys)
+            not in (
+                StaticInputIdentifiers.opener.value,
+                StaticInputIdentifiers.datasamples.value,
+                StaticInputIdentifiers.chainkeys.value,
+            )
         }

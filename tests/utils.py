@@ -15,9 +15,9 @@ class InputIdentifiers(str, Enum):
     model = "model"
     models = "models"
     predictions = _PREDICTIONS_IDENTIFIER
-    opener = StaticInputIdentifiers.opener
-    datasamples = StaticInputIdentifiers.datasamples
-    rank = StaticInputIdentifiers.rank
+    opener = StaticInputIdentifiers.opener.value
+    datasamples = StaticInputIdentifiers.datasamples.value
+    rank = StaticInputIdentifiers.rank.value
 
 
 class OutputIdentifiers(str, Enum):

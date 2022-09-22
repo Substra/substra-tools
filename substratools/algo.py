@@ -100,7 +100,7 @@ class GenericAlgoWrapper(object):
         # load inputs
         inputs = deepcopy(self._workspace.task_inputs)
 
-        task_properties = {StaticInputIdentifiers.rank: rank}
+        task_properties = {StaticInputIdentifiers.rank.value: rank}
 
         # load data from opener
         if self._opener_wrapper:
@@ -110,9 +110,9 @@ class GenericAlgoWrapper(object):
                 logger.info("Using fake data with %i fake samples." % int(n_fake_samples))
 
             assert (
-                StaticInputIdentifiers.datasamples not in inputs.keys()
-            ), f"{StaticInputIdentifiers.datasamples} must be an input of kind `datasamples`"
-            inputs.update({StaticInputIdentifiers.datasamples: loaded_datasamples})
+                StaticInputIdentifiers.datasamples.value not in inputs.keys()
+            ), f"{StaticInputIdentifiers.datasamples.value} must be an input of kind `datasamples`"
+            inputs.update({StaticInputIdentifiers.datasamples.value: loaded_datasamples})
 
         # load outputs
         outputs = deepcopy(self._workspace.task_outputs)
