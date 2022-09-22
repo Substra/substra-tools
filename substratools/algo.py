@@ -162,7 +162,7 @@ def _generate_generic_algo_cli(interface):
             n_fake_samples=args.n_fake_samples,
         )
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
     _parser_add_default_arguments(parser)
     parser.set_defaults(func=_user_func)
 
