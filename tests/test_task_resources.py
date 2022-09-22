@@ -1,7 +1,5 @@
 from substratools.task_resources import TaskResources
-from substratools.task_resources import TASK_IO_CHAINKEYS
-from substratools.task_resources import TASK_IO_DATASAMPLES
-from substratools.task_resources import TASK_IO_OPENER
+from substratools.task_resources import StaticInputIdentifiers
 import pytest
 from substratools.exceptions import InvalidCLIError
 from substratools.exceptions import InvalidInputOutputsError
@@ -47,7 +45,10 @@ def test_task_resources_values(valid_arg, expected):
     TaskResources(json.dumps(valid_arg))._values == expected
 
 
-@pytest.mark.parametrize("static_resource_id", (TASK_IO_CHAINKEYS, TASK_IO_DATASAMPLES, TASK_IO_OPENER))
+@pytest.mark.parametrize(
+    "static_resource_id",
+    (StaticInputIdentifiers.chainkeys, StaticInputIdentifiers.datasamples, StaticInputIdentifiers.opener),
+)
 def test_task_static_resources(static_resource_id):
     "checks that static keys opener, datasamples and chainkeys are excluded"
 

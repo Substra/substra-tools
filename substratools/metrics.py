@@ -10,7 +10,7 @@ from substratools import exceptions
 from substratools import opener
 from substratools import utils
 from substratools.workspace import MetricsWorkspace
-from substratools.task_resources import TASK_IO_DATASAMPLES
+from substratools.task_resources import StaticInputIdentifiers
 
 logger = logging.getLogger(__name__)
 REQUIRED_FUNCTIONS = set(["score"])
@@ -39,6 +39,7 @@ class Metrics(abc.ABC):
 
     class AccuracyMetrics(tools.Metrics):
         def score(self, inputs, outputs, task_properties):
+            # Here we are assuming that the opener `get_data` method returns a tuple (x, y)
             y_true = inputs["datasamples"][1]
             y_pred = self.load_predictions(inputs["predictions"])
             perf = accuracy_score(y_true, y_pred)
@@ -128,7 +129,7 @@ class MetricsWrapper(object):
 
         logger.info("launching scoring task")
 
-        inputs = {TASK_IO_DATASAMPLES: loaded_datasamples, _PREDICTIONS_IDENTIFIER: y_pred_path}
+        inputs = {StaticInputIdentifiers.datasamples: loaded_datasamples, _PREDICTIONS_IDENTIFIER: y_pred_path}
         outputs = {_PERFORMANCE_IDENTIFIER: self._workspace.output_perf_path}
 
         self._interface.score(inputs=inputs, outputs=outputs, task_properties={})

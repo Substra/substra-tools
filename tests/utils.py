@@ -6,6 +6,7 @@ from enum import Enum
 
 from substratools.metrics import _PERFORMANCE_IDENTIFIER
 from substratools.metrics import _PREDICTIONS_IDENTIFIER
+from substratools.task_resources import StaticInputIdentifiers
 
 
 class InputIdentifiers(str, Enum):
@@ -14,9 +15,9 @@ class InputIdentifiers(str, Enum):
     model = "model"
     models = "models"
     predictions = _PREDICTIONS_IDENTIFIER
-    opener = "opener"
-    datasamples = "datasamples"
-    rank = "rank"
+    opener = StaticInputIdentifiers.opener
+    datasamples = StaticInputIdentifiers.datasamples
+    rank = StaticInputIdentifiers.rank
 
 
 class OutputIdentifiers(str, Enum):

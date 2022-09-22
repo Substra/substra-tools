@@ -11,7 +11,7 @@ from substratools import exceptions
 from substratools import opener
 from substratools import utils
 from substratools.task_resources import TaskResources
-from substratools.task_resources import TASK_IO_DATASAMPLES
+from substratools.task_resources import StaticInputIdentifiers
 from substratools.workspace import AlgoWorkspace
 
 logger = logging.getLogger(__name__)
@@ -100,7 +100,7 @@ class GenericAlgoWrapper(object):
         # load inputs
         inputs = deepcopy(self._workspace.task_inputs)
 
-        task_properties = {"rank": rank}
+        task_properties = {StaticInputIdentifiers.rank: rank}
 
         # load data from opener
         if self._opener_wrapper:
@@ -109,7 +109,10 @@ class GenericAlgoWrapper(object):
             if fake_data:
                 logger.info("Using fake data with %i fake samples." % int(n_fake_samples))
 
-            inputs.update({TASK_IO_DATASAMPLES: loaded_datasamples})
+            assert (
+                StaticInputIdentifiers.datasamples not in inputs.keys()
+            ), f"{StaticInputIdentifiers.datasamples} must be an input of kind `datasamples`"
+            inputs.update({StaticInputIdentifiers.datasamples: loaded_datasamples})
 
         # load outputs
         outputs = deepcopy(self._workspace.task_outputs)

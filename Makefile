@@ -12,13 +12,7 @@ pyclean:
 	find . -type d -name "__pycache__" -delete
 
 build: pyclean
-	docker build -f Dockerfile.minimal -t $(IMAGE):test_gt_arm64-minimal .
-	docker push $(IMAGE):test_gt_arm64-minimal
-	docker build -f Dockerfile -t $(IMAGE):test_gt_arm64 .
-	docker push $(IMAGE):test_gt_arm64
-	docker build -f Dockerfile.workflows -t $(IMAGE):test_gt_arm64-workflows .
-	docker push $(IMAGE):test_gt_arm64-workflows
-
+	docker build -t $(IMAGE):$(TAG) .
 
 test:
 	pytest tests

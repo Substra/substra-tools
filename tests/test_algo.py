@@ -12,7 +12,7 @@ import pytest
 from substratools import algo
 from substratools import exceptions
 from substratools import opener
-from substratools.task_resources import TASK_IO_DATASAMPLES
+from substratools.task_resources import StaticInputIdentifiers
 from substratools.task_resources import TaskResources
 from substratools.workspace import AlgoWorkspace
 from tests import utils
@@ -218,7 +218,7 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models, output
 
 def test_execute_train(workdir, output_model_path):
     inputs = [
-        {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused"), "multiple": True},
+        {"id": StaticInputIdentifiers.datasamples, "value": str(workdir / "datasamples_unused"), "multiple": True},
     ]
     outputs = [
         {"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False},
