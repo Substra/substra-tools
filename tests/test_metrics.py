@@ -1,5 +1,7 @@
 import json
 import uuid
+from os import PathLike
+from typing import Any
 from typing import TypedDict
 
 import numpy as np
@@ -26,6 +28,7 @@ def write_pred_file(workdir):
     return pred_file, data
 
 
+@pytest.fixture
 def inputs(workdir, valid_opener_script, write_pred_file):
     return [
         {"id": InputIdentifiers.predictions, "value": str(write_pred_file[0]), "multiple": False},
@@ -115,7 +118,12 @@ def test_execute_fake_data_modes(fake_data_mode, expected_score, inputs, outputs
 
 def test_execute_np(inputs, outputs):
     class FloatNpMetrics(MetricAlgo):
-        def score(self, inputs, outputs):
+        def score(
+            self,
+            inputs,
+            outputs,
+            task_properties: dict,
+        ):
             save_performance(np.float64(0.99), outputs.get(OutputIdentifiers.performance))
 
     perf_path = outputs[0]["value"]
@@ -129,7 +137,12 @@ def test_execute_np(inputs, outputs):
 
 def test_execute_int(inputs, outputs):
     class IntMetrics(MetricAlgo):
-        def score(self, inputs, outputs):
+        def score(
+            self,
+            inputs,
+            outputs,
+            task_properties: dict,
+        ):
             save_performance(int(1), outputs.get(OutputIdentifiers.performance))
 
     perf_path = outputs[0]["value"]
@@ -143,7 +156,12 @@ def test_execute_int(inputs, outputs):
 
 def test_execute_dict(inputs, outputs):
     class DictMetrics(MetricAlgo):
-        def score(self, inputs, outputs):
+        def score(
+            self,
+            inputs,
+            outputs,
+            task_properties: dict,
+        ):
             save_performance({"a": 1}, outputs.get(OutputIdentifiers.performance))
 
     perf_path = outputs[0]["value"]

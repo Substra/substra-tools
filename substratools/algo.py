@@ -13,8 +13,8 @@ from typing import Optional
 from substratools import exceptions
 from substratools import opener
 from substratools import utils
-from substratools.task_resources import TaskResources
 from substratools.task_resources import StaticInputIdentifiers
+from substratools.task_resources import TaskResources
 from substratools.workspace import AlgoWorkspace
 
 logger = logging.getLogger(__name__)
@@ -168,7 +168,7 @@ def _generate_generic_algo_cli(interface):
             n_fake_samples=args.n_fake_samples,
         )
 
-    parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
+    parser = argparse.ArgumentParser(fromfile_prefix_chars="@")
     _parser_add_default_arguments(parser)
     parser.set_defaults(func=_user_func)
 
@@ -247,6 +247,7 @@ class MetricAlgo(GenericAlgo):
         self,
         inputs: dict,
         outputs: dict,
+        task_properties: dict,
     ) -> None:
 
         raise NotImplementedError
