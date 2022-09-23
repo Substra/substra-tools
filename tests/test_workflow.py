@@ -26,16 +26,10 @@ import json
 from substratools import Opener
 
 class DummyOpener(Opener):
-    def get_X(self, folder):
+    def get_data(self, folder):
         return None
 
-    def get_y(self, folder):
-        return None
-
-    def fake_X(self, n_samples):
-        raise NotImplementedError
-
-    def fake_y(self, n_samples):
+    def fake_data(self, n_samples):
         raise NotImplementedError
 """
     import_module("opener", script)
@@ -43,7 +37,7 @@ class DummyOpener(Opener):
 
 # TODO change algo
 class DummyAlgo(Algo):
-    def train(self, inputs, outputs):
+    def train(self, inputs, outputs, task_properties):
 
         models = utils.load_models(inputs.get(InputIdentifiers.models, []))
         total = sum([m["i"] for m in models])
@@ -51,14 +45,14 @@ class DummyAlgo(Algo):
 
         utils.save_model(new_model, outputs.get(OutputIdentifiers.model))
 
-    def predict(self, inputs, outputs):
+    def predict(self, inputs, outputs, task_properties):
         model = utils.load_model(inputs.get(InputIdentifiers.model))
         pred = {"sum": model["i"]}
         utils.save_predictions(pred, outputs.get(OutputIdentifiers.predictions))
 
 
 class DummyMetrics(Metrics):
-    def score(self, inputs, outputs):
+    def score(self, inputs, outputs, task_properties):
         y_pred_path = inputs.get(InputIdentifiers.predictions)
         y_pred = utils.load_predictions(y_pred_path)
 

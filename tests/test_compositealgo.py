@@ -8,7 +8,7 @@ import pytest
 
 from substratools import algo
 from substratools import exceptions
-from substratools.task_resources import TASK_IO_DATASAMPLES
+from substratools.task_resources import StaticInputIdentifiers
 from substratools.task_resources import TaskResources
 from substratools.workspace import AlgoWorkspace
 from substratools import opener
@@ -23,12 +23,12 @@ def setup(valid_opener):
 
 
 class FakeDataAlgo(algo.CompositeAlgo):
-    def train(self, inputs, outputs):
-        utils.save_model(model=inputs[InputIdentifiers.X], path=outputs["local"])
-        utils.save_model(model=inputs[InputIdentifiers.y], path=outputs["shared"])
+    def train(self, inputs: dict, outputs: dict, task_properties: dict):
+        utils.save_model(model=inputs[InputIdentifiers.datasamples][0], path=outputs["local"])
+        utils.save_model(model=inputs[InputIdentifiers.datasamples][1], path=outputs["shared"])
 
-    def predict(self, inputs: dict, outputs: dict) -> None:
-        utils.save_model(model=inputs[InputIdentifiers.X], path=outputs["predictions"])
+    def predict(self, inputs: dict, outputs: dict, task_properties: dict) -> None:
+        utils.save_model(model=inputs[InputIdentifiers.datasamples][0], path=outputs["predictions"])
 
 
 class DummyCompositeAlgo(algo.CompositeAlgo):
@@ -37,11 +37,9 @@ class DummyCompositeAlgo(algo.CompositeAlgo):
         inputs: TypedDict(
             "inputs",
             {
-                InputIdentifiers.X: Any,
-                InputIdentifiers.y: Any,
+                InputIdentifiers.datasamples: Any,
                 InputIdentifiers.local: Optional[os.PathLike],
                 InputIdentifiers.shared: Optional[os.PathLike],
-                InputIdentifiers.rank: int,
             },
         ),
         outputs: TypedDict(
@@ -51,6 +49,7 @@ class DummyCompositeAlgo(algo.CompositeAlgo):
                 OutputIdentifiers.shared: os.PathLike,
             },
         ),
+        task_properties: TypedDict("task_properties", {InputIdentifiers.rank: int}),
     ):
         # init phase
         # load models
@@ -77,7 +76,7 @@ class DummyCompositeAlgo(algo.CompositeAlgo):
         inputs: TypedDict(
             "inputs",
             {
-                InputIdentifiers.X: Any,
+                InputIdentifiers.datasamples: Any,
                 InputIdentifiers.local: os.PathLike,
                 InputIdentifiers.shared: os.PathLike,
             },
@@ -102,7 +101,7 @@ class DummyCompositeAlgo(algo.CompositeAlgo):
 
 
 class NoSavedTrunkModelAggregateAlgo(DummyCompositeAlgo):
-    def train(self, inputs, outputs):
+    def train(self, inputs, outputs, task_properties):
         # init phase
         # load models
         head_model = utils.load_model(path=inputs.get(InputIdentifiers.local))
@@ -125,7 +124,7 @@ class NoSavedTrunkModelAggregateAlgo(DummyCompositeAlgo):
 
 
 class NoSavedHeadModelAggregateAlgo(DummyCompositeAlgo):
-    def train(self, inputs, outputs):
+    def train(self, inputs, outputs, task_properties):
         # init phase
         # load models
         head_model = utils.load_model(path=inputs.get(InputIdentifiers.local))
@@ -148,7 +147,7 @@ class NoSavedHeadModelAggregateAlgo(DummyCompositeAlgo):
 
 
 class WrongSavedTrunkModelAggregateAlgo(DummyCompositeAlgo):
-    def train(self, inputs, outputs):
+    def train(self, inputs, outputs, task_properties):
         # init phase
         # load models
         head_model = utils.load_model(path=inputs.get(InputIdentifiers.local))
@@ -171,7 +170,7 @@ class WrongSavedTrunkModelAggregateAlgo(DummyCompositeAlgo):
 
 
 class WrongSavedHeadModelAggregateAlgo(DummyCompositeAlgo):
-    def train(self, inputs, outputs):
+    def train(self, inputs, outputs, task_properties):
         # init phase
         # load models
         head_model = utils.load_model(path=inputs.get(InputIdentifiers.local))
@@ -292,8 +291,8 @@ def test_train_fake_data(train_outputs, n_fake_samples):
     local_model = utils.load_model(dummy_train_wrapper._workspace.task_outputs[OutputIdentifiers.local])
     shared_model = utils.load_model(dummy_train_wrapper._workspace.task_outputs[OutputIdentifiers.shared])
 
-    assert local_model == _opener.get_X(fake_data=bool(n_fake_samples), n_fake_samples=n_fake_samples)
-    assert shared_model == _opener.get_y(fake_data=bool(n_fake_samples), n_fake_samples=n_fake_samples)
+    assert local_model == _opener.get_data(fake_data=bool(n_fake_samples), n_fake_samples=n_fake_samples)[0]
+    assert shared_model == _opener.get_data(fake_data=bool(n_fake_samples), n_fake_samples=n_fake_samples)[1]
 
 
 @pytest.mark.parametrize("n_fake_samples", (0, 1, 2))
@@ -306,7 +305,7 @@ def test_predict_fake_data(composite_inputs, predict_outputs, n_fake_samples):
 
     predictions = utils.load_model(dummy_train_wrapper._workspace.task_outputs[OutputIdentifiers.predictions])
 
-    assert predictions == _opener.get_X(fake_data=bool(n_fake_samples), n_fake_samples=n_fake_samples)
+    assert predictions == _opener.get_data(fake_data=bool(n_fake_samples), n_fake_samples=n_fake_samples)[0]
 
 
 @pytest.mark.parametrize(

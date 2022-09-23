@@ -10,11 +10,11 @@ from substratools import exceptions
 from substratools import opener
 from substratools import utils
 from substratools.workspace import MetricsWorkspace
+from substratools.task_resources import StaticInputIdentifiers
 
 logger = logging.getLogger(__name__)
 REQUIRED_FUNCTIONS = set(["score"])
 
-_Y_IDENTIFIER = "y"
 _PREDICTIONS_IDENTIFIER = "predictions"
 _PERFORMANCE_IDENTIFIER = "performance"
 
@@ -38,8 +38,9 @@ class Metrics(abc.ABC):
 
 
     class AccuracyMetrics(tools.Metrics):
-        def score(self, inputs, outputs):
-            y_true = inputs["y"]
+        def score(self, inputs, outputs, task_properties):
+            # Here we are assuming that the opener `get_data` method returns a tuple (x, y)
+            y_true = inputs["datasamples"][1]
             y_pred = self.load_predictions(inputs["predictions"])
             perf = accuracy_score(y_true, y_pred)
             tools.save_performance(perf, outputs["performance"])
@@ -88,11 +89,11 @@ class Metrics(abc.ABC):
     data_sample_folders = os.listdir('./sandbox/data_samples/')
     predictions_path = './sandbox/predictions'
 
-    y_true = o.get_y(data_sample_folders)
+    y_true = o.get_data(data_sample_folders)[1]
 
     inputs = {"y": y_true, "predictions":predictions_path}
     outputs = {"performance": performance_path}
-    m.score(inputs, outputs)
+    m.score(inputs, outputs, task_properties)
     ```
     """
 
@@ -121,17 +122,17 @@ class MetricsWrapper(object):
         y_pred_path = self._workspace.input_predictions_path
 
         if not fake_data:
-            y = self._opener_wrapper.get_y()
+            loaded_datasamples = self._opener_wrapper.get_data()
 
         elif fake_data:
-            y = self._opener_wrapper.get_y(fake_data=True, n_fake_samples=n_fake_samples)
+            loaded_datasamples = self._opener_wrapper.get_data(fake_data=True, n_fake_samples=n_fake_samples)
 
         logger.info("launching scoring task")
 
-        inputs = {_Y_IDENTIFIER: y, _PREDICTIONS_IDENTIFIER: y_pred_path}
+        inputs = {StaticInputIdentifiers.datasamples.value: loaded_datasamples, _PREDICTIONS_IDENTIFIER: y_pred_path}
         outputs = {_PERFORMANCE_IDENTIFIER: self._workspace.output_perf_path}
 
-        self._interface.score(inputs, outputs)
+        self._interface.score(inputs=inputs, outputs=outputs, task_properties={})
 
         self._assert_output_exists(self._workspace.output_perf_path, _PERFORMANCE_IDENTIFIER)
 

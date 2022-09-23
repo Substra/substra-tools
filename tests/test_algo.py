@@ -2,7 +2,7 @@ import json
 import shutil
 from os import PathLike
 from pathlib import Path
-from typing import Any
+from typing import Any, Tuple
 from typing import List
 from typing import Optional
 from typing import TypedDict
@@ -12,7 +12,7 @@ import pytest
 from substratools import algo
 from substratools import exceptions
 from substratools import opener
-from substratools.task_resources import TASK_IO_DATASAMPLES
+from substratools.task_resources import StaticInputIdentifiers
 from substratools.task_resources import TaskResources
 from substratools.workspace import AlgoWorkspace
 from tests import utils
@@ -31,17 +31,16 @@ class DummyAlgo(algo.Algo):
         inputs: TypedDict(
             "inputs",
             {
-                InputIdentifiers.X: List["str"],  # cf valid_opener_code # TODO: rename "data" , del Y
-                InputIdentifiers.y: List[int],  # datasamples contains loaded datasamples, if any, or None
+                InputIdentifiers.datasamples: Tuple[List["str"], List[int]],  # cf valid_opener_code
                 InputIdentifiers.models: Optional[
                     PathLike
                 ],  # inputs contains a dict where keys are identifiers and values are paths on the disk
-                InputIdentifiers.rank: int,
             },
         ),
         outputs: TypedDict(
             "outputs", {OutputIdentifiers.model: PathLike}
         ),  # outputs contains a dict where keys are identifiers and values are paths on disk
+        task_properties: TypedDict("task_properties", {InputIdentifiers.rank: int}),
     ) -> None:
         # TODO: checks on data
         # load models
@@ -63,8 +62,9 @@ class DummyAlgo(algo.Algo):
 
     def predict(
         self,
-        inputs: TypedDict("inputs", {InputIdentifiers.X: Any, InputIdentifiers.model: List[PathLike]}),
+        inputs: TypedDict("inputs", {InputIdentifiers.datasamples: Any, InputIdentifiers.model: List[PathLike]}),
         outputs: TypedDict("outputs", {OutputIdentifiers.predictions: PathLike}),
+        task_properties: TypedDict("task_properties", {InputIdentifiers.rank: int}),
     ) -> None:
         # TODO: checks on data
 
@@ -72,7 +72,7 @@ class DummyAlgo(algo.Algo):
         model = utils.load_model(path=inputs.get(InputIdentifiers.model))
 
         # predict
-        X = inputs.get(InputIdentifiers.X)
+        X = inputs.get(InputIdentifiers.datasamples)[0]
         pred = X * model["value"]
 
         # save predictions
@@ -80,7 +80,7 @@ class DummyAlgo(algo.Algo):
 
 
 class NoSavedModelAlgo(DummyAlgo):
-    def train(self, inputs, outputs):
+    def train(self, inputs, outputs, task_properties):
         # TODO: checks on data
         # load models
         if inputs:
@@ -101,7 +101,7 @@ class NoSavedModelAlgo(DummyAlgo):
 
 
 class WrongSavedModelAlgo(DummyAlgo):
-    def train(self, inputs, outputs):
+    def train(self, inputs, outputs, task_properties):
         # TODO: checks on data
         # load models
         if inputs:
@@ -218,7 +218,11 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models, output
 
 def test_execute_train(workdir, output_model_path):
     inputs = [
-        {"id": TASK_IO_DATASAMPLES, "value": str(workdir / "datasamples_unused"), "multiple": True},
+        {
+            "id": StaticInputIdentifiers.datasamples.value,
+            "value": str(workdir / "datasamples_unused"),
+            "multiple": True,
+        },
     ]
     outputs = [
         {"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False},

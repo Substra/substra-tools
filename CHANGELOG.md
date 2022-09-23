@@ -11,6 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - feat: allow CLI parameters to be read from a file
 
+### CHANGED
+
+- BREAKING CHANGES:
+  - the opener only exposes `get_data` and `fake_data` methods.
+  - the results of the above method is passed under the `datasamples` keys within the `inputs` dict arg of all
+    tools methods (train, predict, aggregate, score).
+  - all method (train, predict, aggregate, score) now takes a `task_properties` argument (dict) in addition to
+    `inputs` and `outputs`.
+  - The `rank` of a task previously passed under the `rank` key within the inputs is now given in the `task_properties`
+    dict under the `rank` key.
+
 ## [0.17.0](https://github.com/Substra/substra-tools/releases/tag/0.17.0) - 2022-09-19
 
 ### Changed

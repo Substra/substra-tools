@@ -4,10 +4,14 @@ from typing import List
 from typing import Optional
 from typing import Union
 from substratools import exceptions
+from enum import Enum
 
-TASK_IO_OPENER = "opener"
-TASK_IO_DATASAMPLES = "datasamples"
-TASK_IO_CHAINKEYS = "chainkeys"
+
+class StaticInputIdentifiers(str, Enum):
+    opener = "opener"
+    datasamples = "datasamples"
+    chainkeys = "chainkeys"
+    rank = "rank"
 
 
 _RESOURCE_ID = "id"
@@ -74,9 +78,9 @@ class TaskResources:
 
         _check_resources_multiplicity(self._values)
 
-        self.opener_path = self.get_value(TASK_IO_OPENER)
-        self.input_data_folder_paths = self.get_value(TASK_IO_DATASAMPLES)
-        self.chainkeys_path = self.get_value(TASK_IO_CHAINKEYS)
+        self.opener_path = self.get_value(StaticInputIdentifiers.opener.value)
+        self.input_data_folder_paths = self.get_value(StaticInputIdentifiers.datasamples.value)
+        self.chainkeys_path = self.get_value(StaticInputIdentifiers.chainkeys.value)
 
     def get_value(self, key: str) -> Optional[Union[List[str], str]]:
         """Returns the value for a given key. Return None if there is no matching resource.
@@ -107,5 +111,10 @@ class TaskResources:
         return {
             k: self.get_value(k)
             for k in self._values.keys()
-            if k not in (TASK_IO_OPENER, TASK_IO_DATASAMPLES, TASK_IO_CHAINKEYS)
+            if k
+            not in (
+                StaticInputIdentifiers.opener.value,
+                StaticInputIdentifiers.datasamples.value,
+                StaticInputIdentifiers.chainkeys.value,
+            )
         }
