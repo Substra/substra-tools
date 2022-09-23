@@ -1,11 +1,10 @@
 import json
+from enum import Enum
 from os import PathLike
 from typing import Any
 from typing import List
 from enum import Enum
 
-from substratools.metrics import _PERFORMANCE_IDENTIFIER
-from substratools.metrics import _PREDICTIONS_IDENTIFIER
 from substratools.task_resources import StaticInputIdentifiers
 
 
@@ -14,7 +13,7 @@ class InputIdentifiers(str, Enum):
     shared = "shared"
     model = "model"
     models = "models"
-    predictions = _PREDICTIONS_IDENTIFIER
+    predictions = "predictions"
     opener = StaticInputIdentifiers.opener.value
     datasamples = StaticInputIdentifiers.datasamples.value
     rank = StaticInputIdentifiers.rank.value
@@ -24,8 +23,8 @@ class OutputIdentifiers(str, Enum):
     local = "local"
     shared = "shared"
     model = "model"
-    predictions = _PREDICTIONS_IDENTIFIER
-    performance = _PERFORMANCE_IDENTIFIER
+    predictions = "predictions"
+    performance = "performance"
 
 
 def load_models(paths: List[PathLike]) -> dict:

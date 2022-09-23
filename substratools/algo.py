@@ -1,17 +1,20 @@
 # coding: utf8
 import abc
 import argparse
+import json
 import logging
 import os
 import sys
 from copy import deepcopy
-from typing import Dict, Optional
+from typing import Any
+from typing import Dict
+from typing import Optional
 
 from substratools import exceptions
 from substratools import opener
 from substratools import utils
-from substratools.task_resources import TaskResources
 from substratools.task_resources import StaticInputIdentifiers
+from substratools.task_resources import TaskResources
 from substratools.workspace import AlgoWorkspace
 
 logger = logging.getLogger(__name__)
@@ -165,7 +168,7 @@ def _generate_generic_algo_cli(interface):
             n_fake_samples=args.n_fake_samples,
         )
 
-    parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
+    parser = argparse.ArgumentParser(fromfile_prefix_chars="@")
     _parser_add_default_arguments(parser)
     parser.set_defaults(func=_user_func)
 
@@ -236,6 +239,29 @@ class AggregateAlgo(GenericAlgo):
     ) -> None:
 
         raise NotImplementedError
+
+
+class MetricAlgo(GenericAlgo):
+    @abc.abstractmethod
+    def score(
+        self,
+        inputs: dict,
+        outputs: dict,
+        task_properties: dict,
+    ) -> None:
+
+        raise NotImplementedError
+
+
+def save_performance(performance: Any, path: os.PathLike):
+    with open(path, "w") as f:
+        json.dump({"all": performance}, f)
+
+
+def load_performance(path: os.PathLike) -> Any:
+    with open(path, "r") as f:
+        performance = json.load(f)["all"]
+    return performance
 
 
 def execute(interface, sysargs=None):

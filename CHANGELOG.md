@@ -22,6 +22,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - The `rank` of a task previously passed under the `rank` key within the inputs is now given in the `task_properties`
     dict under the `rank` key.
 
+- BREAKING CHANGE: The metric is now a generic algo, replace
+
+```python
+import substratools as tools
+
+class MyMetric(tools.Metrics):
+    # ...
+
+if __name__ == '__main__':
+    tools.metrics.execute(MyMetric())
+```
+
+by
+
+```python
+import substratools as tools
+
+class MyMetric(tools.MetricAlgo):
+    # ...
+if __name__ == '__main__':
+    tools.algo.execute(MyMetric())
+```
+
 ## [0.17.0](https://github.com/Substra/substra-tools/releases/tag/0.17.0) - 2022-09-19
 
 ### Changed

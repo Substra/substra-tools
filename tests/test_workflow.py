@@ -4,16 +4,14 @@ import os
 import pytest
 
 from substratools import Algo
-from substratools import Metrics
+from substratools import MetricAlgo
 from substratools import load_performance
 from substratools import opener
 from substratools import save_performance
 from substratools.algo import GenericAlgoWrapper
-from substratools.metrics import MetricsWrapper
 from substratools.task_resources import TaskResources
 from substratools.utils import import_module
 from substratools.workspace import AlgoWorkspace
-from substratools.workspace import MetricsWorkspace
 from tests import utils
 from tests.utils import InputIdentifiers
 from tests.utils import OutputIdentifiers
@@ -51,7 +49,7 @@ class DummyAlgo(Algo):
         utils.save_predictions(pred, outputs.get(OutputIdentifiers.predictions))
 
 
-class DummyMetrics(Metrics):
+class DummyMetrics(MetricAlgo):
     def score(self, inputs, outputs, task_properties):
         y_pred_path = inputs.get(InputIdentifiers.predictions)
         y_pred = utils.load_predictions(y_pred_path)
@@ -133,10 +131,19 @@ def test_workflow(workdir, dummy_opener):
 
     # metrics
     performance_path = workdir / "performance"
-    metric_workspace = MetricsWorkspace(
-        opener_path=None, output_perf_path=performance_path, input_predictions_path=predictions_path
+    metric_workspace_inputs = TaskResources(
+        json.dumps([{"id": InputIdentifiers.predictions, "value": str(predictions_path), "multiple": False}])
     )
-    metrics_wp = MetricsWrapper(DummyMetrics(), workspace=metric_workspace, opener_wrapper=opener.load_from_module())
-    metrics_wp.score()
-    score = load_performance(path=metrics_wp._workspace.output_perf_path)
+    metric_workspace_outputs = TaskResources(
+        json.dumps([{"id": OutputIdentifiers.performance, "value": str(performance_path), "multiple": False}])
+    )
+    metric_workspace = AlgoWorkspace(
+        inputs=metric_workspace_inputs,
+        outputs=metric_workspace_outputs,
+    )
+    metrics_wp = GenericAlgoWrapper(
+        DummyMetrics(), workspace=metric_workspace, opener_wrapper=opener.load_from_module()
+    )
+    metrics_wp.execute(method_name="score")
+    score = load_performance(path=metrics_wp._workspace.task_outputs[OutputIdentifiers.performance])
     assert score == 3.0
