@@ -78,7 +78,6 @@ class GenericAlgoWrapper(object):
 
         self._workspace = workspace
         self._opener_wrapper = opener_wrapper
-        self._interface.chainkeys_path = self._workspace.chainkeys_path
 
     def _assert_outputs_exists(self, outputs: Dict[str, str]):
         for key, path in outputs.items():
