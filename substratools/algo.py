@@ -71,22 +71,13 @@ def _parser_add_default_arguments(parser):
     )
 
 
-class GenericAlgo(abc.ABC):
-    chainkeys_path = None
-
-
 class GenericAlgoWrapper(object):
     """Generic wrapper to execute an algo instance on the platform."""
 
-    _INTERFACE_CLASS = GenericAlgo
+    def __init__(self, workspace: AlgoWorkspace, opener_wrapper: Optional[opener.OpenerWrapper]):
 
-    def __init__(
-        self, interface: GenericAlgo, workspace: AlgoWorkspace, opener_wrapper: Optional[opener.OpenerWrapper]
-    ):
-        assert isinstance(interface, self._INTERFACE_CLASS)
         self._workspace = workspace
         self._opener_wrapper = opener_wrapper
-        self._interface = interface
         self._interface.chainkeys_path = self._workspace.chainkeys_path
 
     def _assert_outputs_exists(self, outputs: Dict[str, str]):
@@ -121,9 +112,10 @@ class GenericAlgoWrapper(object):
         outputs = deepcopy(self._workspace.task_outputs)
 
         # Retrieve method from user
-        method = getattr(self._interface, method_name)
+        method = locals()[method_name]
 
         logger.info("Launching task: executing `%s` function." % method_name)
+
         method(
             inputs=inputs,
             outputs=outputs,
@@ -173,84 +165,6 @@ def _generate_generic_algo_cli(interface):
     parser.set_defaults(func=_user_func)
 
     return parser
-
-
-class Algo(GenericAlgo):
-    @abc.abstractmethod
-    def train(
-        self,
-        inputs: dict,
-        outputs: dict,
-        task_properties: dict,
-    ) -> None:
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def predict(
-        self,
-        inputs: dict,
-        outputs: dict,
-        task_properties: dict,
-    ) -> None:
-
-        raise NotImplementedError
-
-
-class CompositeAlgo(GenericAlgo):
-    @abc.abstractmethod
-    def train(
-        self,
-        inputs: dict,
-        outputs: dict,
-        task_properties: dict,
-    ) -> None:
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def predict(
-        self,
-        inputs: dict,
-        outputs: dict,
-        task_properties: dict,
-    ) -> None:
-
-        raise NotImplementedError
-
-
-class AggregateAlgo(GenericAlgo):
-    @abc.abstractmethod
-    def aggregate(
-        self,
-        inputs: dict,
-        outputs: dict,
-        task_properties: dict,
-    ) -> None:
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def predict(
-        self,
-        inputs: dict,
-        outputs: dict,
-        task_properties: dict,
-    ) -> None:
-
-        raise NotImplementedError
-
-
-class MetricAlgo(GenericAlgo):
-    @abc.abstractmethod
-    def score(
-        self,
-        inputs: dict,
-        outputs: dict,
-        task_properties: dict,
-    ) -> None:
-
-        raise NotImplementedError
 
 
 def save_performance(performance: Any, path: os.PathLike):
