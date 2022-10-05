@@ -252,9 +252,9 @@ def test_execute_predict(workdir, create_models, output_model_path, valid_opener
     pred_path.unlink()
 
 
-@pytest.mark.parametrize("function", (no_saved_aggregate(_skip=True), wrong_saved_aggregate(_skip=True)))
+@pytest.mark.parametrize("function", (no_saved_aggregate, wrong_saved_aggregate))
 def test_model_check(function, valid_algo_workspace):
-    wp = algo.GenericAlgoWrapper(function, valid_algo_workspace, opener_wrapper=None)
+    wp = algo.GenericAlgoWrapper(function(_skip=True), valid_algo_workspace, opener_wrapper=None)
 
     with pytest.raises(exceptions.MissingFileError):
         wp.execute(method_name="aggregate")

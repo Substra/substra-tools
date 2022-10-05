@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 import time
+from typing import TypedDict
 
 from substratools import exceptions
 
@@ -68,7 +69,7 @@ def import_module(module_name, code):
         logging.warning("Module {} will be overwritten".format(module_name))
     module = imp.new_module(module_name)
     sys.modules[module_name] = module
-    exec(code, module.__dict__)
+    exec(code[code.find("\n") + 1 :], module.__dict__)
 
 
 def import_module_from_path(path, module_name):

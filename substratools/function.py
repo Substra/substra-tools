@@ -2,11 +2,12 @@ import inspect
 from functools import wraps
 
 from substratools import algo
+from substratools import utils
 
 
 def tools_function(method):
     @wraps(method)
-    def wrap_and_call(_skip: bool = False, sysargs=None):
+    def wrap_and_call(_skip: bool = False, sysargs=None, **method_parameters):
         if "inputs" not in inspect.signature(method).parameters:
             raise
 

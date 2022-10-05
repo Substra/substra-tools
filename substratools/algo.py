@@ -1,6 +1,7 @@
 # coding: utf8
 import abc
 import argparse
+import inspect
 import json
 import logging
 import os
@@ -79,6 +80,7 @@ class GenericAlgoWrapper(object):
         self._workspace = workspace
         self._opener_wrapper = opener_wrapper
         self._function = function
+        # utils.import_module(function.__name__, inspect.getsource(function))
 
     def _assert_outputs_exists(self, outputs: Dict[str, str]):
         for key, path in outputs.items():
