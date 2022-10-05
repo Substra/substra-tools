@@ -7,7 +7,11 @@ from typing import TypedDict
 import numpy as np
 import pytest
 
+<<<<<<< HEAD
 from substratools import function
+=======
+from substratools import algo
+>>>>>>> 6e4f311 (from class to function)
 from substratools import load_performance
 from substratools import opener
 from substratools import save_performance
@@ -73,18 +77,30 @@ def test_score(workdir, write_pred_file):
             [{"id": OutputIdentifiers.performance, "value": str(workdir / str(uuid.uuid4())), "multiple": False}]
         )
     )
+<<<<<<< HEAD
     workspace = FunctionWorkspace(inputs=inputs, outputs=outputs)
     wp = function.FunctionWrapper(workspace=workspace, opener_wrapper=opener.load_from_module())
     wp.execute(function=score)
+=======
+    workspace = AlgoWorkspace(inputs=inputs, outputs=outputs)
+    wp = algo.GenericAlgoWrapper(workspace=workspace, opener_wrapper=opener.load_from_module())
+    wp.execute(method=score)
+>>>>>>> 6e4f311 (from class to function)
     s = load_performance(wp._workspace.task_outputs[OutputIdentifiers.performance])
     assert s == 15
 
 
 def test_execute(inputs, outputs):
     perf_path = outputs[0]["value"]
+<<<<<<< HEAD
     function.execute(
         score,
         sysargs=["--function-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
+=======
+    algo.execute(
+        [score],
+        sysargs=["--method-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
+>>>>>>> 6e4f311 (from class to function)
     )
     s = load_performance(perf_path)
     assert s == 15
@@ -99,8 +115,13 @@ def test_execute(inputs, outputs):
 )
 def test_execute_fake_data_modes(fake_data_mode, expected_score, inputs, outputs):
     perf_path = outputs[0]["value"]
+<<<<<<< HEAD
     function.execute(
         score,
+=======
+    algo.execute(
+        [score],
+>>>>>>> 6e4f311 (from class to function)
         sysargs=fake_data_mode
         + ["--function-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
     )
@@ -117,9 +138,15 @@ def test_execute_np(inputs, outputs):
         save_performance(np.float64(0.99), outputs.get(OutputIdentifiers.performance))
 
     perf_path = outputs[0]["value"]
+<<<<<<< HEAD
     function.execute(
         float_np_score,
         sysargs=["--function-name", "float_np_score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
+=======
+    algo.execute(
+        [float_np_score],
+        sysargs=["--method-name", "float_np_score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
+>>>>>>> 6e4f311 (from class to function)
     )
     s = load_performance(perf_path)
     assert s == pytest.approx(0.99)
@@ -134,9 +161,15 @@ def test_execute_int(inputs, outputs):
         save_performance(int(1), outputs.get(OutputIdentifiers.performance))
 
     perf_path = outputs[0]["value"]
+<<<<<<< HEAD
     function.execute(
         int_score,
         sysargs=["--function-name", "int_score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
+=======
+    algo.execute(
+        [int_score],
+        sysargs=["--method-name", "int_score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
+>>>>>>> 6e4f311 (from class to function)
     )
     s = load_performance(perf_path)
     assert s == 1
@@ -151,9 +184,15 @@ def test_execute_dict(inputs, outputs):
         save_performance({"a": 1}, outputs.get(OutputIdentifiers.performance))
 
     perf_path = outputs[0]["value"]
+<<<<<<< HEAD
     function.execute(
         dict_score,
         sysargs=["--function-name", "dict_score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
+=======
+    algo.execute(
+        [dict_score],
+        sysargs=["--method-name", "dict_score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
+>>>>>>> 6e4f311 (from class to function)
     )
     s = load_performance(perf_path)
     assert s["a"] == 1

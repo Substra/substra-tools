@@ -31,6 +31,10 @@ class DummyOpener(Opener):
     import_module("opener", script)
 
 
+<<<<<<< HEAD
+=======
+# TODO change algo
+>>>>>>> 6e4f311 (from class to function)
 def train(inputs, outputs, task_properties):
 
     models = utils.load_models(inputs.get(InputIdentifiers.models, []))
@@ -61,11 +65,19 @@ def test_workflow(workdir, dummy_opener):
     loop1_workspace_outputs = TaskResources(
         json.dumps([{"id": OutputIdentifiers.model, "value": str(loop1_model_path), "multiple": False}])
     )
+<<<<<<< HEAD
     loop1_workspace = FunctionWorkspace(outputs=loop1_workspace_outputs)
     loop1_wp = FunctionWrapper(workspace=loop1_workspace, opener_wrapper=None)
 
     # loop 1 (no input)
     loop1_wp.execute(function=train)
+=======
+    loop1_workspace = AlgoWorkspace(outputs=loop1_workspace_outputs)
+    loop1_wp = GenericAlgoWrapper(workspace=loop1_workspace, opener_wrapper=None)
+
+    # loop 1 (no input)
+    loop1_wp.execute(method=train)
+>>>>>>> 6e4f311 (from class to function)
     model = utils.load_model(path=loop1_wp._workspace.task_outputs[OutputIdentifiers.model])
 
     assert model == {"i": 1, "total": 0}
@@ -79,11 +91,19 @@ def test_workflow(workdir, dummy_opener):
     loop2_workspace_outputs = TaskResources(
         json.dumps([{"id": OutputIdentifiers.model, "value": str(loop2_model_path), "multiple": False}])
     )
+<<<<<<< HEAD
     loop2_workspace = FunctionWorkspace(inputs=loop2_workspace_inputs, outputs=loop2_workspace_outputs)
     loop2_wp = FunctionWrapper(workspace=loop2_workspace, opener_wrapper=None)
 
     # loop 2 (one model as input)
     loop2_wp.execute(function=train)
+=======
+    loop2_workspace = AlgoWorkspace(inputs=loop2_workspace_inputs, outputs=loop2_workspace_outputs)
+    loop2_wp = GenericAlgoWrapper(workspace=loop2_workspace, opener_wrapper=None)
+
+    # loop 2 (one model as input)
+    loop2_wp.execute(method=train)
+>>>>>>> 6e4f311 (from class to function)
     model = utils.load_model(path=loop2_wp._workspace.task_outputs[OutputIdentifiers.model])
     assert model == {"i": 2, "total": 1}
     assert os.path.exists(loop2_model_path)
@@ -100,11 +120,19 @@ def test_workflow(workdir, dummy_opener):
     loop3_workspace_outputs = TaskResources(
         json.dumps([{"id": OutputIdentifiers.model, "value": str(loop3_model_path), "multiple": False}])
     )
+<<<<<<< HEAD
     loop3_workspace = FunctionWorkspace(inputs=loop3_workspace_inputs, outputs=loop3_workspace_outputs)
     loop3_wp = FunctionWrapper(workspace=loop3_workspace, opener_wrapper=None)
 
     # loop 3 (two models as input)
     loop3_wp.execute(function=train)
+=======
+    loop3_workspace = AlgoWorkspace(inputs=loop3_workspace_inputs, outputs=loop3_workspace_outputs)
+    loop3_wp = GenericAlgoWrapper(workspace=loop3_workspace, opener_wrapper=None)
+
+    # loop 3 (two models as input)
+    loop3_wp.execute(method=train)
+>>>>>>> 6e4f311 (from class to function)
     model = utils.load_model(path=loop3_wp._workspace.task_outputs[OutputIdentifiers.model])
     assert model == {"i": 3, "total": 3}
     assert os.path.exists(loop3_model_path)
@@ -116,11 +144,19 @@ def test_workflow(workdir, dummy_opener):
     predict_workspace_outputs = TaskResources(
         json.dumps([{"id": OutputIdentifiers.predictions, "value": str(predictions_path), "multiple": False}])
     )
+<<<<<<< HEAD
     predict_workspace = FunctionWorkspace(inputs=predict_workspace_inputs, outputs=predict_workspace_outputs)
     predict_wp = FunctionWrapper(workspace=predict_workspace, opener_wrapper=None)
 
     # predict
     predict_wp.execute(function=predict)
+=======
+    predict_workspace = AlgoWorkspace(inputs=predict_workspace_inputs, outputs=predict_workspace_outputs)
+    predict_wp = GenericAlgoWrapper(workspace=predict_workspace, opener_wrapper=None)
+
+    # predict
+    predict_wp.execute(method=predict)
+>>>>>>> 6e4f311 (from class to function)
     pred = utils.load_predictions(path=predict_wp._workspace.task_outputs[OutputIdentifiers.predictions])
     assert pred == {"sum": 3}
 
@@ -136,7 +172,12 @@ def test_workflow(workdir, dummy_opener):
         inputs=metric_workspace_inputs,
         outputs=metric_workspace_outputs,
     )
+<<<<<<< HEAD
     metrics_wp = FunctionWrapper(workspace=metric_workspace, opener_wrapper=opener.load_from_module())
     metrics_wp.execute(function=score)
+=======
+    metrics_wp = GenericAlgoWrapper(workspace=metric_workspace, opener_wrapper=opener.load_from_module())
+    metrics_wp.execute(method=score)
+>>>>>>> 6e4f311 (from class to function)
     res = load_performance(path=metrics_wp._workspace.task_outputs[OutputIdentifiers.performance])
     assert res == 3.0
