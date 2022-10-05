@@ -67,7 +67,7 @@ def predict(
 
 
 @function
-def dummy_aggregate(inputs, outputs, task_properties):
+def no_saved_aggregate(inputs, outputs, task_properties):
 
     if inputs:
         models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
@@ -82,7 +82,7 @@ def dummy_aggregate(inputs, outputs, task_properties):
 
 
 @function
-def wrong_saved(inputs, outputs, task_properties):
+def wrong_saved_aggregate(inputs, outputs, task_properties):
 
     if inputs:
         models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
@@ -118,7 +118,7 @@ def create_models(workdir):
 
 
 def test_aggregate_no_model(valid_algo_workspace):
-    wp = algo.GenericAlgoWrapper(valid_algo_workspace, opener_wrapper=None)
+    wp = algo.GenericAlgoWrapper(function=aggregate, workspace=valid_algo_workspace, opener_wrapper=None)
     wp.execute(method_name="aggregate")
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
     assert model["value"] == 0
@@ -135,8 +135,7 @@ def test_aggregate_multiple_models(create_models, output_model_path):
     )
 
     workspace = AlgoWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
-    a = DummyAggregateAlgo()
-    wp = algo.GenericAlgoWrapper(a, workspace, opener_wrapper=None)
+    wp = algo.GenericAlgoWrapper(function=aggregate, workspace=workspace, opener_wrapper=None)
 
     wp.execute(method_name="aggregate")
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
@@ -162,9 +161,8 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models):
     )
 
     workspace = AlgoWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
-    a = DummyAggregateAlgo()
 
-    wp = algo.GenericAlgoWrapper(a, workspace, opener_wrapper=opener.load_from_module())
+    wp = algo.GenericAlgoWrapper(function=predict, workspace=workspace, opener_wrapper=opener.load_from_module())
 
     wp.execute(method_name="predict", fake_data=fake_data, n_fake_samples=n_fake_samples)
 
@@ -178,12 +176,12 @@ def test_execute_aggregate(output_model_path):
 
     outputs = [{"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False}]
 
-    algo.execute(DummyAggregateAlgo(), sysargs=["--method-name", "aggregate", "--outputs", json.dumps(outputs)])
+    algo.execute(aggregate, sysargs=["--method-name", "aggregate", "--outputs", json.dumps(outputs)])
     assert output_model_path.exists()
 
     output_model_path.unlink()
     algo.execute(
-        DummyAggregateAlgo(),
+        aggregate,
         sysargs=["--method-name", "aggregate", "--outputs", json.dumps(outputs), "--log-level", "debug"],
     )
     assert output_model_path.exists()
@@ -200,12 +198,12 @@ def test_execute_aggregate_multiple_models(workdir, create_models, output_model_
     outputs = [
         {"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False},
     ]
-    options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
+    # options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
 
-    command = ["--method-name", "aggregate"]
-    command.extend(options)
-
-    algo.execute(DummyAggregateAlgo(), sysargs=command)
+    # command = ["--method-name", "aggregate"]
+    # command.extend(options)
+    aggregate(inputs=inputs, outputs=outputs)
+    # algo.execute(aggregate, sysargs=command)
     assert output_model_path.exists()
     with open(output_model_path, "r") as f:
         model = json.load(f)
@@ -224,7 +222,10 @@ def test_execute_predict(workdir, create_models, output_model_path, valid_opener
     options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
     command = ["--method-name", "aggregate"]
     command.extend(options)
-    algo.execute(DummyAggregateAlgo(), sysargs=command)
+
+    aggregate(inputs=inputs, outputs=outputs)
+
+    # algo.execute(aggregate, sysargs=command)
     assert output_model_path.exists()
 
     # do predict on output model
@@ -236,9 +237,10 @@ def test_execute_predict(workdir, create_models, output_model_path, valid_opener
         {"id": InputIdentifiers.opener, "value": valid_opener_script, "multiple": False},
     ]
     pred_outputs = [{"id": OutputIdentifiers.predictions, "value": str(pred_path), "multiple": False}]
-    pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
+    # pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
-    algo.execute(DummyAggregateAlgo(), sysargs=["--method-name", "predict"] + pred_options)
+    predict(inputs=pred_inputs, outputs=pred_outputs)
+    # algo.execute(predict, sysargs=["--method-name", "predict"] + pred_options)
     assert pred_path.exists()
     with open(pred_path, "r") as f:
         pred = json.load(f)
@@ -246,10 +248,9 @@ def test_execute_predict(workdir, create_models, output_model_path, valid_opener
     pred_path.unlink()
 
 
-# @pytest.mark.parametrize("algo_class", (NoSavedModelAggregateAlgo, WrongSavedModelAggregateAlgo))
-# def test_model_check(algo_class, valid_algo_workspace):
-#     a = algo_class()
-#     wp = algo.GenericAlgoWrapper(a, valid_algo_workspace, opener_wrapper=None)
+@pytest.mark.parametrize("function", (no_saved_aggregate, wrong_saved_aggregate))
+def test_model_check(function, valid_algo_workspace):
+    wp = algo.GenericAlgoWrapper(function, valid_algo_workspace, opener_wrapper=None)
 
-#     with pytest.raises(exceptions.MissingFileError):
-#         wp.execute(method_name="aggregate")
+    with pytest.raises(exceptions.MissingFileError):
+        wp.execute(method_name="aggregate")

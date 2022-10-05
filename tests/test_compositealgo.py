@@ -23,7 +23,7 @@ def setup(valid_opener):
 
 
 class FakeDataAlgo(algo.CompositeAlgo):
-    def train(self, inputs: dict, outputs: dict, task_properties: dict):
+    def fake_data_train(self, inputs: dict, outputs: dict, task_properties: dict):
         utils.save_model(model=inputs[InputIdentifiers.datasamples][0], path=outputs["local"])
         utils.save_model(model=inputs[InputIdentifiers.datasamples][1], path=outputs["shared"])
 

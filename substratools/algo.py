@@ -74,10 +74,11 @@ def _parser_add_default_arguments(parser):
 class GenericAlgoWrapper(object):
     """Generic wrapper to execute an algo instance on the platform."""
 
-    def __init__(self, workspace: AlgoWorkspace, opener_wrapper: Optional[opener.OpenerWrapper]):
+    def __init__(self, function, workspace: AlgoWorkspace, opener_wrapper: Optional[opener.OpenerWrapper]):
 
         self._workspace = workspace
         self._opener_wrapper = opener_wrapper
+        self._function = function
 
     def _assert_outputs_exists(self, outputs: Dict[str, str]):
         for key, path in outputs.items():
@@ -111,11 +112,11 @@ class GenericAlgoWrapper(object):
         outputs = deepcopy(self._workspace.task_outputs)
 
         # Retrieve method from user
-        method = locals()[method_name]
+        # method = locals()[method_name]
 
         logger.info("Launching task: executing `%s` function." % method_name)
 
-        method(
+        self._function(
             inputs=inputs,
             outputs=outputs,
             task_properties=task_properties,
