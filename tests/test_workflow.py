@@ -3,8 +3,7 @@ import os
 
 import pytest
 
-from substratools import Algo
-from substratools import MetricAlgo
+from substratools import tools_function
 from substratools import load_performance
 from substratools import opener
 from substratools import save_performance
@@ -34,40 +33,41 @@ class DummyOpener(Opener):
 
 
 # TODO change algo
-class DummyAlgo(Algo):
-    def train(self, inputs, outputs, task_properties):
+@tools_function
+def train(inputs, outputs, task_properties):
 
-        models = utils.load_models(inputs.get(InputIdentifiers.models, []))
-        total = sum([m["i"] for m in models])
-        new_model = {"i": len(models) + 1, "total": total}
+    models = utils.load_models(inputs.get(InputIdentifiers.models, []))
+    total = sum([m["i"] for m in models])
+    new_model = {"i": len(models) + 1, "total": total}
 
-        utils.save_model(new_model, outputs.get(OutputIdentifiers.model))
-
-    def predict(self, inputs, outputs, task_properties):
-        model = utils.load_model(inputs.get(InputIdentifiers.model))
-        pred = {"sum": model["i"]}
-        utils.save_predictions(pred, outputs.get(OutputIdentifiers.predictions))
+    utils.save_model(new_model, outputs.get(OutputIdentifiers.model))
 
 
-class DummyMetrics(MetricAlgo):
-    def score(self, inputs, outputs, task_properties):
-        y_pred_path = inputs.get(InputIdentifiers.predictions)
-        y_pred = utils.load_predictions(y_pred_path)
+@tools_function
+def predict(inputs, outputs, task_properties):
+    model = utils.load_model(inputs.get(InputIdentifiers.model))
+    pred = {"sum": model["i"]}
+    utils.save_predictions(pred, outputs.get(OutputIdentifiers.predictions))
 
-        score = y_pred["sum"]
 
-        save_performance(performance=score, path=outputs.get(OutputIdentifiers.performance))
+@tools_function
+def compute_score(inputs, outputs, task_properties):
+    y_pred_path = inputs.get(InputIdentifiers.predictions)
+    y_pred = utils.load_predictions(y_pred_path)
+
+    score = y_pred["sum"]
+
+    save_performance(performance=score, path=outputs.get(OutputIdentifiers.performance))
 
 
 def test_workflow(workdir, dummy_opener):
 
-    a = DummyAlgo()
     loop1_model_path = workdir / "loop1model"
     loop1_workspace_outputs = TaskResources(
         json.dumps([{"id": OutputIdentifiers.model, "value": str(loop1_model_path), "multiple": False}])
     )
     loop1_workspace = AlgoWorkspace(outputs=loop1_workspace_outputs)
-    loop1_wp = GenericAlgoWrapper(a, workspace=loop1_workspace, opener_wrapper=None)
+    loop1_wp = GenericAlgoWrapper(train(_skip=True), workspace=loop1_workspace, opener_wrapper=None)
 
     # loop 1 (no input)
     loop1_wp.execute(method_name="train")
@@ -85,7 +85,7 @@ def test_workflow(workdir, dummy_opener):
         json.dumps([{"id": OutputIdentifiers.model, "value": str(loop2_model_path), "multiple": False}])
     )
     loop2_workspace = AlgoWorkspace(inputs=loop2_workspace_inputs, outputs=loop2_workspace_outputs)
-    loop2_wp = GenericAlgoWrapper(a, workspace=loop2_workspace, opener_wrapper=None)
+    loop2_wp = GenericAlgoWrapper(train(_skip=True), workspace=loop2_workspace, opener_wrapper=None)
 
     # loop 2 (one model as input)
     loop2_wp.execute(method_name="train")
@@ -106,7 +106,7 @@ def test_workflow(workdir, dummy_opener):
         json.dumps([{"id": OutputIdentifiers.model, "value": str(loop3_model_path), "multiple": False}])
     )
     loop3_workspace = AlgoWorkspace(inputs=loop3_workspace_inputs, outputs=loop3_workspace_outputs)
-    loop3_wp = GenericAlgoWrapper(a, workspace=loop3_workspace, opener_wrapper=None)
+    loop3_wp = GenericAlgoWrapper(train(_skip=True), workspace=loop3_workspace, opener_wrapper=None)
 
     # loop 3 (two models as input)
     loop3_wp.execute("train")
@@ -122,7 +122,7 @@ def test_workflow(workdir, dummy_opener):
         json.dumps([{"id": OutputIdentifiers.predictions, "value": str(predictions_path), "multiple": False}])
     )
     predict_workspace = AlgoWorkspace(inputs=predict_workspace_inputs, outputs=predict_workspace_outputs)
-    predict_wp = GenericAlgoWrapper(a, workspace=predict_workspace, opener_wrapper=None)
+    predict_wp = GenericAlgoWrapper(predict(_skip=True), workspace=predict_workspace, opener_wrapper=None)
 
     # predict
     predict_wp.execute(method_name="predict")
@@ -142,7 +142,7 @@ def test_workflow(workdir, dummy_opener):
         outputs=metric_workspace_outputs,
     )
     metrics_wp = GenericAlgoWrapper(
-        DummyMetrics(), workspace=metric_workspace, opener_wrapper=opener.load_from_module()
+        compute_score(_skip=True), workspace=metric_workspace, opener_wrapper=opener.load_from_module()
     )
     metrics_wp.execute(method_name="score")
     score = load_performance(path=metrics_wp._workspace.task_outputs[OutputIdentifiers.performance])

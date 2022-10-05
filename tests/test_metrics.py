@@ -7,8 +7,8 @@ from typing import TypedDict
 import numpy as np
 import pytest
 
-from substratools import MetricAlgo
 from substratools import algo
+from substratools import tools_function
 from substratools import load_performance
 from substratools import opener
 from substratools import save_performance
@@ -47,24 +47,19 @@ def setup(valid_opener, write_pred_file):
     pass
 
 
-class FloatMetrics(MetricAlgo):
-    def score(
-        self,
-        inputs: TypedDict("inputs", {InputIdentifiers.datasamples: Any, InputIdentifiers.predictions: Any}),
-        outputs: TypedDict("outputs", {OutputIdentifiers.performance: PathLike}),
-        task_properties: TypedDict("task_properties", {InputIdentifiers.rank: int}),
-    ):
-        y_true = inputs.get(InputIdentifiers.datasamples)[1]
-        y_pred_path = inputs.get(InputIdentifiers.predictions)
-        y_pred = utils.load_predictions(y_pred_path)
+@tools_function
+def score(
+    inputs: TypedDict("inputs", {InputIdentifiers.datasamples: Any, InputIdentifiers.predictions: Any}),
+    outputs: TypedDict("outputs", {OutputIdentifiers.performance: PathLike}),
+    task_properties: TypedDict("task_properties", {InputIdentifiers.rank: int}),
+):
+    y_true = inputs.get(InputIdentifiers.datasamples)[1]
+    y_pred_path = inputs.get(InputIdentifiers.predictions)
+    y_pred = utils.load_predictions(y_pred_path)
 
-        score = sum(y_true) + sum(y_pred)
+    score = sum(y_true) + sum(y_pred)
 
-        save_performance(performance=score, path=outputs.get(OutputIdentifiers.performance))
-
-
-def test_create():
-    FloatMetrics()
+    save_performance(performance=score, path=outputs.get(OutputIdentifiers.performance))
 
 
 def test_score(workdir, write_pred_file):
@@ -80,9 +75,8 @@ def test_score(workdir, write_pred_file):
             [{"id": OutputIdentifiers.performance, "value": str(workdir / str(uuid.uuid4())), "multiple": False}]
         )
     )
-    m = FloatMetrics()
     workspace = AlgoWorkspace(inputs=inputs, outputs=outputs)
-    wp = algo.GenericAlgoWrapper(m, workspace=workspace, opener_wrapper=opener.load_from_module())
+    wp = algo.GenericAlgoWrapper(score(_skip=True), workspace=workspace, opener_wrapper=opener.load_from_module())
     wp.execute(method_name="score")
     s = load_performance(wp._workspace.task_outputs[OutputIdentifiers.performance])
     assert s == 15
@@ -90,10 +84,7 @@ def test_score(workdir, write_pred_file):
 
 def test_execute(inputs, outputs):
     perf_path = outputs[0]["value"]
-    algo.execute(
-        FloatMetrics(),
-        sysargs=["--method-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
-    )
+    score(sysargs=["--method-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)])
     s = load_performance(perf_path)
     assert s == 15
 
@@ -107,67 +98,54 @@ def test_execute(inputs, outputs):
 )
 def test_execute_fake_data_modes(fake_data_mode, expected_score, inputs, outputs):
     perf_path = outputs[0]["value"]
-    algo.execute(
-        FloatMetrics(),
+    score(
         sysargs=fake_data_mode
-        + ["--method-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
+        + ["--method-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
     )
     s = load_performance(perf_path)
     assert s == expected_score
 
 
 def test_execute_np(inputs, outputs):
-    class FloatNpMetrics(MetricAlgo):
-        def score(
-            self,
-            inputs,
-            outputs,
-            task_properties: dict,
-        ):
-            save_performance(np.float64(0.99), outputs.get(OutputIdentifiers.performance))
+    @tools_function
+    def float_np_score(
+        inputs,
+        outputs,
+        task_properties: dict,
+    ):
+        save_performance(np.float64(0.99), outputs.get(OutputIdentifiers.performance))
 
     perf_path = outputs[0]["value"]
-    algo.execute(
-        FloatNpMetrics(),
-        sysargs=["--method-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
-    )
+    float_np_score(sysargs=["--method-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)])
     s = load_performance(perf_path)
     assert s == pytest.approx(0.99)
 
 
 def test_execute_int(inputs, outputs):
-    class IntMetrics(MetricAlgo):
-        def score(
-            self,
-            inputs,
-            outputs,
-            task_properties: dict,
-        ):
-            save_performance(int(1), outputs.get(OutputIdentifiers.performance))
+    @tools_function
+    def int_score(
+        inputs,
+        outputs,
+        task_properties: dict,
+    ):
+        save_performance(int(1), outputs.get(OutputIdentifiers.performance))
 
     perf_path = outputs[0]["value"]
-    algo.execute(
-        IntMetrics(),
-        sysargs=["--method-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
-    )
+    int_score(sysargs=["--method-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)])
     s = load_performance(perf_path)
     assert s == 1
 
 
 def test_execute_dict(inputs, outputs):
-    class DictMetrics(MetricAlgo):
-        def score(
-            self,
-            inputs,
-            outputs,
-            task_properties: dict,
-        ):
-            save_performance({"a": 1}, outputs.get(OutputIdentifiers.performance))
+    @tools_function
+    def dict_score(
+        inputs,
+        outputs,
+        task_properties: dict,
+    ):
+        save_performance({"a": 1}, outputs.get(OutputIdentifiers.performance))
 
     perf_path = outputs[0]["value"]
-    algo.execute(
-        DictMetrics(),
-        sysargs=["--method-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
-    )
+    dict_score(sysargs=["--method-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)])
     s = load_performance(perf_path)
     assert s["a"] == 1

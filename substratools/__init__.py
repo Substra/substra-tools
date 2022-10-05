@@ -5,7 +5,7 @@ from . import opener
 from .algo import load_performance
 from .algo import save_performance
 from .opener import Opener
-from .function import function
+from .function import tools_function
 
 __all__ = [
     "__version__",

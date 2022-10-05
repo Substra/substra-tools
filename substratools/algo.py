@@ -187,3 +187,7 @@ def execute(interface, sysargs=None):
     args = cli.parse_args(sysargs)
     args.func(args)
     return args
+
+
+def load_from_module(path, module_name):
+    utils.import_module_from_path(path, module_name)

@@ -11,7 +11,7 @@ import pytest
 
 from substratools import algo
 from substratools import exceptions
-from substratools import function
+from substratools import tools_function
 from substratools import opener
 from substratools.task_resources import StaticInputIdentifiers
 from substratools.task_resources import TaskResources
@@ -26,7 +26,7 @@ def setup(valid_opener):
     pass
 
 
-@function
+@tools_function
 def train(
     inputs: TypedDict(
         "inputs",
@@ -61,7 +61,7 @@ def train(
     utils.save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
 
 
-@function
+@tools_function
 def predict(
     inputs: TypedDict("inputs", {InputIdentifiers.datasamples: Any, InputIdentifiers.model: List[PathLike]}),
     outputs: TypedDict("outputs", {OutputIdentifiers.predictions: PathLike}),
@@ -80,7 +80,7 @@ def predict(
     utils.save_predictions(predictions=pred, path=outputs.get(OutputIdentifiers.predictions))
 
 
-@function
+@tools_function
 def no_save_train(inputs, outputs, task_properties):
     # TODO: checks on data
     # load models
@@ -101,7 +101,7 @@ def no_save_train(inputs, outputs, task_properties):
     utils.no_save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
 
 
-@function
+@tools_function
 def wrong_saved_train(inputs, outputs, task_properties):
     # TODO: checks on data
     # load models
@@ -144,7 +144,7 @@ def create_models(workdir):
 
 
 def test_train_no_model(valid_algo_workspace):
-    wp = algo.GenericAlgoWrapper(function=train, workspace=valid_algo_workspace, opener_wrapper=None)
+    wp = algo.GenericAlgoWrapper(function=train(_skip=True), workspace=valid_algo_workspace, opener_wrapper=None)
     wp.execute(method_name="train")
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
     assert model["value"] == 0
@@ -162,7 +162,7 @@ def test_train_multiple_models(output_model_path, create_models):
 
     workspace = AlgoWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
 
-    wp = algo.GenericAlgoWrapper(function=train, workspace=workspace, opener_wrapper=None)
+    wp = algo.GenericAlgoWrapper(function=train(_skip=True), workspace=workspace, opener_wrapper=None)
 
     wp.execute(method_name="train")
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
@@ -177,7 +177,7 @@ def test_train_fake_data(output_model_path):
     )
 
     workspace = AlgoWorkspace(outputs=workspace_outputs)
-    wp = algo.GenericAlgoWrapper(function=train, workspace=workspace, opener_wrapper=None)
+    wp = algo.GenericAlgoWrapper(function=train(_skip=True), workspace=workspace, opener_wrapper=None)
     wp.execute(method_name="train", fake_data=True, n_fake_samples=2)
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
     assert model["value"] == 0
@@ -201,7 +201,9 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models, output
     )
 
     workspace = AlgoWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
-    wp = algo.GenericAlgoWrapper(function=predict, workspace=workspace, opener_wrapper=opener.load_from_module())
+    wp = algo.GenericAlgoWrapper(
+        function=predict(_skip=True), workspace=workspace, opener_wrapper=opener.load_from_module()
+    )
     wp.execute(method_name="predict", fake_data=fake_data, n_fake_samples=n_fake_samples)
 
     pred = utils.load_predictions(wp._workspace.task_outputs["predictions"])
@@ -223,16 +225,13 @@ def test_execute_train(workdir, output_model_path):
 
     assert not output_model_path.exists()
 
-    algo.execute(train, sysargs=["--method-name", "train"] + options)
+    train(sysargs=["--method-name", "train"] + options)
     assert output_model_path.exists()
 
-    algo.execute(
-        train,
-        sysargs=["--method-name", "train", "--fake-data", "--n-fake-samples", "1", "--outputs", json.dumps(outputs)],
-    )
+    train(sysargs=["--method-name", "train", "--fake-data", "--n-fake-samples", "1", "--outputs", json.dumps(outputs)])
     assert output_model_path.exists()
 
-    algo.execute(train, sysargs=["--method-name", "train", "--log-level", "debug"] + options)
+    train(sysargs=["--method-name", "train", "--log-level", "debug"] + options)
     assert output_model_path.exists()
 
 
@@ -257,7 +256,7 @@ def test_execute_train_multiple_models(workdir, output_model_path, create_models
     command = ["--method-name", "train"]
     command.extend(options)
 
-    algo.execute(train, sysargs=command)
+    train(sysargs=command)
     assert output_model_path.exists()
     with open(output_model_path, "r") as f:
         model = json.load(f)
@@ -281,7 +280,7 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     assert not pred_path.exists()
     command = ["--method-name", "train"]
     command.extend(train_options)
-    algo.execute(train, sysargs=command)
+    train(sysargs=command)
     assert output_model_path.exists()
 
     # do predict on output model
@@ -293,7 +292,7 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
     assert not pred_path.exists()
-    algo.execute(predict, sysargs=["--method-name", "predict"] + pred_options)
+    predict(sysargs=["--method-name", "predict"] + pred_options)
     assert pred_path.exists()
     with open(pred_path, "r") as f:
         pred = json.load(f)
@@ -314,10 +313,7 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
     assert not pred_path.exists()
-    algo.execute(
-        predict,
-        sysargs=["--method-name", "predict"] + pred_options,
-    )
+    predict(sysargs=["--method-name", "predict"] + pred_options)
     assert pred_path.exists()
     with open(pred_path, "r") as f:
         pred = json.load(f)
@@ -326,7 +322,7 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
 
 @pytest.mark.parametrize("function", (no_save_train, wrong_saved_train))
 def test_model_check(function, valid_algo_workspace):
-    wp = algo.GenericAlgoWrapper(function=function, workspace=valid_algo_workspace, opener_wrapper=None)
+    wp = algo.GenericAlgoWrapper(function=function(_skip=True), workspace=valid_algo_workspace, opener_wrapper=None)
 
     with pytest.raises(exceptions.MissingFileError):
         wp.execute(method_name="train")

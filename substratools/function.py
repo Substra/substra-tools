@@ -1,13 +1,12 @@
 import inspect
-import json
 from functools import wraps
 
 from substratools import algo
 
 
-def function(method):
+def tools_function(method):
     @wraps(method)
-    def wrap_and_call(_skip: bool = False, inputs=None, outputs=None, task_properties=None):
+    def wrap_and_call(_skip: bool = False, sysargs=None):
         if "inputs" not in inspect.signature(method).parameters:
             raise
 
@@ -18,21 +17,9 @@ def function(method):
             raise
 
         if _skip:
-            method(inputs=inputs, outputs=outputs)
+            return method
         else:
-            command = None
 
-            if inputs is not None and outputs is not None:
-                options = [
-                    "--inputs",
-                    json.dumps(inputs),
-                    "--outputs",
-                    json.dumps(outputs),
-                ]
-
-                command = ["--method-name", method.__name__]
-                command.extend(options)
-
-            return algo.execute(method, sysargs=command)
+            return algo.execute(method, sysargs=sysargs)
 
     return wrap_and_call
