@@ -25,100 +25,96 @@ def setup(valid_opener):
     pass
 
 
-class DummyAlgo(algo.Algo):
-    def train(
-        self,
-        inputs: TypedDict(
-            "inputs",
-            {
-                InputIdentifiers.datasamples: Tuple[List["str"], List[int]],  # cf valid_opener_code
-                InputIdentifiers.models: Optional[
-                    PathLike
-                ],  # inputs contains a dict where keys are identifiers and values are paths on the disk
-            },
-        ),
-        outputs: TypedDict(
-            "outputs", {OutputIdentifiers.model: PathLike}
-        ),  # outputs contains a dict where keys are identifiers and values are paths on disk
-        task_properties: TypedDict("task_properties", {InputIdentifiers.rank: int}),
-    ) -> None:
-        # TODO: checks on data
-        # load models
-        if inputs:
-            models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
-        else:
-            models = []
-        # init model
-        new_model = {"value": 0}
+def train(
+    inputs: TypedDict(
+        "inputs",
+        {
+            InputIdentifiers.datasamples: Tuple[List["str"], List[int]],  # cf valid_opener_code
+            InputIdentifiers.models: Optional[
+                PathLike
+            ],  # inputs contains a dict where keys are identifiers and values are paths on the disk
+        },
+    ),
+    outputs: TypedDict(
+        "outputs", {OutputIdentifiers.model: PathLike}
+    ),  # outputs contains a dict where keys are identifiers and values are paths on disk
+    task_properties: TypedDict("task_properties", {InputIdentifiers.rank: int}),
+) -> None:
+    # TODO: checks on data
+    # load models
+    if inputs:
+        models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
+    else:
+        models = []
+    # init model
+    new_model = {"value": 0}
 
-        # train (just add the models values)
-        for m in models:
-            assert isinstance(m, dict)
-            assert "value" in m
-            new_model["value"] += m["value"]
+    # train (just add the models values)
+    for m in models:
+        assert isinstance(m, dict)
+        assert "value" in m
+        new_model["value"] += m["value"]
 
-        # save model
-        utils.save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
-
-    def predict(
-        self,
-        inputs: TypedDict("inputs", {InputIdentifiers.datasamples: Any, InputIdentifiers.model: List[PathLike]}),
-        outputs: TypedDict("outputs", {OutputIdentifiers.predictions: PathLike}),
-        task_properties: TypedDict("task_properties", {InputIdentifiers.rank: int}),
-    ) -> None:
-        # TODO: checks on data
-
-        # load_model
-        model = utils.load_model(path=inputs.get(InputIdentifiers.model))
-
-        # predict
-        X = inputs.get(InputIdentifiers.datasamples)[0]
-        pred = X * model["value"]
-
-        # save predictions
-        utils.save_predictions(predictions=pred, path=outputs.get(OutputIdentifiers.predictions))
+    # save model
+    utils.save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
 
 
-class NoSavedModelAlgo(DummyAlgo):
-    def train(self, inputs, outputs, task_properties):
-        # TODO: checks on data
-        # load models
-        if inputs:
-            models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
-        else:
-            models = []
-        # init model
-        new_model = {"value": 0}
+def predict(
+    inputs: TypedDict("inputs", {InputIdentifiers.datasamples: Any, InputIdentifiers.model: List[PathLike]}),
+    outputs: TypedDict("outputs", {OutputIdentifiers.predictions: PathLike}),
+    task_properties: TypedDict("task_properties", {InputIdentifiers.rank: int}),
+) -> None:
+    # TODO: checks on data
 
-        # train (just add the models values)
-        for m in models:
-            assert isinstance(m, dict)
-            assert "value" in m
-            new_model["value"] += m["value"]
+    # load_model
+    model = utils.load_model(path=inputs.get(InputIdentifiers.model))
 
-        # save model
-        utils.no_save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
+    # predict
+    X = inputs.get(InputIdentifiers.datasamples)[0]
+    pred = X * model["value"]
+
+    # save predictions
+    utils.save_predictions(predictions=pred, path=outputs.get(OutputIdentifiers.predictions))
 
 
-class WrongSavedModelAlgo(DummyAlgo):
-    def train(self, inputs, outputs, task_properties):
-        # TODO: checks on data
-        # load models
-        if inputs:
-            models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
-        else:
-            models = []
-        # init model
-        new_model = {"value": 0}
+def no_saved_train(inputs, outputs, task_properties):
+    # TODO: checks on data
+    # load models
+    if inputs:
+        models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
+    else:
+        models = []
+    # init model
+    new_model = {"value": 0}
 
-        # train (just add the models values)
-        for m in models:
-            assert isinstance(m, dict)
-            assert "value" in m
-            new_model["value"] += m["value"]
+    # train (just add the models values)
+    for m in models:
+        assert isinstance(m, dict)
+        assert "value" in m
+        new_model["value"] += m["value"]
 
-        # save model
-        utils.wrong_save_model(model=new_model, path=outputs.get("model"))
+    # save model
+    utils.no_save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
+
+
+def wrong_saved_train(inputs, outputs, task_properties):
+    # TODO: checks on data
+    # load models
+    if inputs:
+        models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
+    else:
+        models = []
+    # init model
+    new_model = {"value": 0}
+
+    # train (just add the models values)
+    for m in models:
+        assert isinstance(m, dict)
+        assert "value" in m
+        new_model["value"] += m["value"]
+
+    # save model
+    utils.wrong_save_model(model=new_model, path=outputs.get("model"))
 
 
 @pytest.fixture
@@ -142,15 +138,9 @@ def create_models(workdir):
     return model_datas, model_filenames
 
 
-def test_create():
-    # check we can instantiate a dummy algo class
-    DummyAlgo()
-
-
 def test_train_no_model(valid_algo_workspace):
-    a = DummyAlgo()
-    wp = algo.GenericAlgoWrapper(a, valid_algo_workspace, opener_wrapper=None)
-    wp.execute(method_name="train")
+    wp = algo.GenericAlgoWrapper(valid_algo_workspace, opener_wrapper=None)
+    wp.execute(method=train)
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
     assert model["value"] == 0
 
@@ -166,25 +156,23 @@ def test_train_multiple_models(output_model_path, create_models):
     )
 
     workspace = AlgoWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
-    a = DummyAlgo()
-    wp = algo.GenericAlgoWrapper(a, workspace=workspace, opener_wrapper=None)
+    wp = algo.GenericAlgoWrapper(workspace=workspace, opener_wrapper=None)
 
-    wp.execute(method_name="train")
+    wp.execute(method=train)
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
 
     assert model["value"] == 3
 
 
 def test_train_fake_data(output_model_path):
-    a = DummyAlgo()
 
     workspace_outputs = TaskResources(
         json.dumps([{"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False}])
     )
 
     workspace = AlgoWorkspace(outputs=workspace_outputs)
-    wp = algo.GenericAlgoWrapper(a, workspace=workspace, opener_wrapper=None)
-    wp.execute(method_name="train", fake_data=True, n_fake_samples=2)
+    wp = algo.GenericAlgoWrapper(workspace=workspace, opener_wrapper=None)
+    wp.execute(method=train, fake_data=True, n_fake_samples=2)
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
     assert model["value"] == 0
 
@@ -199,8 +187,6 @@ def test_train_fake_data(output_model_path):
 def test_predict(fake_data, expected_pred, n_fake_samples, create_models, output_model_path):
     _, model_filenames = create_models
 
-    a = DummyAlgo()
-
     workspace_inputs = TaskResources(
         json.dumps([{"id": InputIdentifiers.model, "value": model_filenames[0], "multiple": False}])
     )
@@ -209,8 +195,8 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models, output
     )
 
     workspace = AlgoWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
-    wp = algo.GenericAlgoWrapper(a, workspace=workspace, opener_wrapper=opener.load_from_module())
-    wp.execute(method_name="predict", fake_data=fake_data, n_fake_samples=n_fake_samples)
+    wp = algo.GenericAlgoWrapper(workspace=workspace, opener_wrapper=opener.load_from_module())
+    wp.execute(method=predict, fake_data=fake_data, n_fake_samples=n_fake_samples)
 
     pred = utils.load_predictions(wp._workspace.task_outputs["predictions"])
     assert pred == expected_pred
@@ -231,16 +217,16 @@ def test_execute_train(workdir, output_model_path):
 
     assert not output_model_path.exists()
 
-    algo.execute(DummyAlgo(), sysargs=["--method-name", "train"] + options)
+    algo.execute([train], sysargs=["--method-name", "train"] + options)
     assert output_model_path.exists()
 
     algo.execute(
-        DummyAlgo(),
+        [train],
         sysargs=["--method-name", "train", "--fake-data", "--n-fake-samples", "1", "--outputs", json.dumps(outputs)],
     )
     assert output_model_path.exists()
 
-    algo.execute(DummyAlgo(), sysargs=["--method-name", "train", "--log-level", "debug"] + options)
+    algo.execute([train], sysargs=["--method-name", "train", "--log-level", "debug"] + options)
     assert output_model_path.exists()
 
 
@@ -265,7 +251,7 @@ def test_execute_train_multiple_models(workdir, output_model_path, create_models
     command = ["--method-name", "train"]
     command.extend(options)
 
-    algo.execute(DummyAlgo(), sysargs=command)
+    algo.execute([train], sysargs=command)
     assert output_model_path.exists()
     with open(output_model_path, "r") as f:
         model = json.load(f)
@@ -289,7 +275,7 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     assert not pred_path.exists()
     command = ["--method-name", "train"]
     command.extend(train_options)
-    algo.execute(DummyAlgo(), sysargs=command)
+    algo.execute([train, predict], sysargs=command)
     assert output_model_path.exists()
 
     # do predict on output model
@@ -301,7 +287,7 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
     assert not pred_path.exists()
-    algo.execute(DummyAlgo(), sysargs=["--method-name", "predict"] + pred_options)
+    algo.execute([train, predict], sysargs=["--method-name", "predict"] + pred_options)
     assert pred_path.exists()
     with open(pred_path, "r") as f:
         pred = json.load(f)
@@ -323,7 +309,7 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
 
     assert not pred_path.exists()
     algo.execute(
-        DummyAlgo(),
+        [train, predict],
         sysargs=["--method-name", "predict"] + pred_options,
     )
     assert pred_path.exists()
@@ -332,10 +318,9 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     assert pred == "XXX"
 
 
-@pytest.mark.parametrize("algo_class", (NoSavedModelAlgo, WrongSavedModelAlgo))
-def test_model_check(valid_algo_workspace, algo_class):
-    a = algo_class()
-    wp = algo.GenericAlgoWrapper(a, workspace=valid_algo_workspace, opener_wrapper=None)
+@pytest.mark.parametrize("method", (no_saved_train, wrong_saved_train))
+def test_model_check(valid_algo_workspace, method):
+    wp = algo.GenericAlgoWrapper(workspace=valid_algo_workspace, opener_wrapper=None)
 
     with pytest.raises(exceptions.MissingFileError):
-        wp.execute(method_name="train")
+        wp.execute(method=method)

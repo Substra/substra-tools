@@ -6,7 +6,7 @@ import logging
 import os
 import sys
 from copy import deepcopy
-from typing import Any
+from typing import Any, Callable
 from typing import Dict
 from typing import Optional
 
@@ -71,23 +71,12 @@ def _parser_add_default_arguments(parser):
     )
 
 
-class GenericAlgo(abc.ABC):
-    chainkeys_path = None
-
-
 class GenericAlgoWrapper(object):
     """Generic wrapper to execute an algo instance on the platform."""
 
-    _INTERFACE_CLASS = GenericAlgo
-
-    def __init__(
-        self, interface: GenericAlgo, workspace: AlgoWorkspace, opener_wrapper: Optional[opener.OpenerWrapper]
-    ):
-        assert isinstance(interface, self._INTERFACE_CLASS)
+    def __init__(self, workspace: AlgoWorkspace, opener_wrapper: Optional[opener.OpenerWrapper]):
         self._workspace = workspace
         self._opener_wrapper = opener_wrapper
-        self._interface = interface
-        self._interface.chainkeys_path = self._workspace.chainkeys_path
 
     def _assert_outputs_exists(self, outputs: Dict[str, str]):
         for key, path in outputs.items():
@@ -97,7 +86,7 @@ class GenericAlgoWrapper(object):
                 raise exceptions.MissingFileError(f"Output file {path} used to save argument `{key}` does not exists.")
 
     @utils.Timer(logger)
-    def execute(self, method_name: str, rank: int = 0, fake_data: bool = False, n_fake_samples: int = None):
+    def execute(self, method: Callable, rank: int = 0, fake_data: bool = False, n_fake_samples: int = None):
         """Execute a compute task"""
 
         # load inputs
@@ -121,9 +110,9 @@ class GenericAlgoWrapper(object):
         outputs = deepcopy(self._workspace.task_outputs)
 
         # Retrieve method from user
-        method = getattr(self._interface, method_name)
+        # method = self._get_method_from_name(self._methods_list, method_name)
 
-        logger.info("Launching task: executing `%s` function." % method_name)
+        logger.info("Launching task: executing `%s` function." % method.__name__)
         method(
             inputs=inputs,
             outputs=outputs,
@@ -135,7 +124,7 @@ class GenericAlgoWrapper(object):
         )
 
 
-def _generate_generic_algo_cli(interface):
+def _generate_generic_algo_cli():
     """Helper to generate a command line interface client."""
 
     def _algo_from_args(args):
@@ -157,12 +146,12 @@ def _generate_generic_algo_cli(interface):
             workspace=workspace,
         )
 
-        return GenericAlgoWrapper(interface, workspace, opener_wrapper)
+        return GenericAlgoWrapper(workspace, opener_wrapper)
 
-    def _user_func(args):
+    def _user_func(args, method):
         algo_wrapper = _algo_from_args(args)
         algo_wrapper.execute(
-            method_name=args.method_name,
+            method=method,
             rank=args.rank,
             fake_data=args.fake_data,
             n_fake_samples=args.n_fake_samples,
@@ -175,82 +164,11 @@ def _generate_generic_algo_cli(interface):
     return parser
 
 
-class Algo(GenericAlgo):
-    @abc.abstractmethod
-    def train(
-        self,
-        inputs: dict,
-        outputs: dict,
-        task_properties: dict,
-    ) -> None:
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def predict(
-        self,
-        inputs: dict,
-        outputs: dict,
-        task_properties: dict,
-    ) -> None:
-
-        raise NotImplementedError
-
-
-class CompositeAlgo(GenericAlgo):
-    @abc.abstractmethod
-    def train(
-        self,
-        inputs: dict,
-        outputs: dict,
-        task_properties: dict,
-    ) -> None:
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def predict(
-        self,
-        inputs: dict,
-        outputs: dict,
-        task_properties: dict,
-    ) -> None:
-
-        raise NotImplementedError
-
-
-class AggregateAlgo(GenericAlgo):
-    @abc.abstractmethod
-    def aggregate(
-        self,
-        inputs: dict,
-        outputs: dict,
-        task_properties: dict,
-    ) -> None:
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def predict(
-        self,
-        inputs: dict,
-        outputs: dict,
-        task_properties: dict,
-    ) -> None:
-
-        raise NotImplementedError
-
-
-class MetricAlgo(GenericAlgo):
-    @abc.abstractmethod
-    def score(
-        self,
-        inputs: dict,
-        outputs: dict,
-        task_properties: dict,
-    ) -> None:
-
-        raise NotImplementedError
+def _get_method_from_name(methods_list, method_name):
+    for method in methods_list:
+        if method.__name__ == method_name:
+            return method
+    raise
 
 
 def save_performance(performance: Any, path: os.PathLike):
@@ -264,12 +182,13 @@ def load_performance(path: os.PathLike) -> Any:
     return performance
 
 
-def execute(interface, sysargs=None):
+def execute(methods_list, sysargs=None):
     """Launch algo command line interface."""
 
-    cli = _generate_generic_algo_cli(interface)
+    cli = _generate_generic_algo_cli()
 
     sysargs = sysargs if sysargs is not None else sys.argv[1:]
     args = cli.parse_args(sysargs)
-    args.func(args)
+    method = _get_method_from_name(methods_list, args.method_name)
+    args.func(args, method)
     return args
