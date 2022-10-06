@@ -58,8 +58,8 @@ class OpenerWorkspace(Workspace):
                 makedir_safe(d)
 
 
-class MethodWorkspace(OpenerWorkspace):
-    """Filesystem workspace for user defined method execution."""
+class FunctionWorkspace(OpenerWorkspace):
+    """Filesystem workspace for user defined function execution."""
 
     def __init__(
         self,

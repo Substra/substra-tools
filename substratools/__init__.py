@@ -1,14 +1,14 @@
 from substratools.__version__ import __version__
 
-from . import method
+from . import function
 from . import opener
-from .method import load_performance
-from .method import save_performance
+from .function import load_performance
+from .function import save_performance
 from .opener import Opener
 
 __all__ = [
     "__version__",
-    method,
+    function,
     opener,
     Opener,
     load_performance,

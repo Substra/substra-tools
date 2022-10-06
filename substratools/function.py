@@ -14,16 +14,16 @@ from substratools import opener
 from substratools import utils
 from substratools.task_resources import StaticInputIdentifiers
 from substratools.task_resources import TaskResources
-from substratools.workspace import MethodWorkspace
+from substratools.workspace import FunctionWorkspace
 
 logger = logging.getLogger(__name__)
 
 
 def _parser_add_default_arguments(parser):
     parser.add_argument(
-        "--method-name",
+        "--function-name",
         type=str,
-        help="The name of the method to execute from the given file",
+        help="The name of the function to execute from the given file",
     )
     parser.add_argument(
         "-r",
@@ -70,10 +70,10 @@ def _parser_add_default_arguments(parser):
     )
 
 
-class MethodWrapper(object):
-    """Wrapper to execute a method on the platform."""
+class FunctionWrapper(object):
+    """Wrapper to execute a function on the platform."""
 
-    def __init__(self, workspace: MethodWorkspace, opener_wrapper: Optional[opener.OpenerWrapper]):
+    def __init__(self, workspace: FunctionWorkspace, opener_wrapper: Optional[opener.OpenerWrapper]):
         self._workspace = workspace
         self._opener_wrapper = opener_wrapper
 
@@ -85,7 +85,7 @@ class MethodWrapper(object):
                 raise exceptions.MissingFileError(f"Output file {path} used to save argument `{key}` does not exists.")
 
     @utils.Timer(logger)
-    def execute(self, method: Callable, rank: int = 0, fake_data: bool = False, n_fake_samples: int = None):
+    def execute(self, function: Callable, rank: int = 0, fake_data: bool = False, n_fake_samples: int = None):
         """Execute a compute task"""
 
         # load inputs
@@ -108,11 +108,8 @@ class MethodWrapper(object):
         # load outputs
         outputs = deepcopy(self._workspace.task_outputs)
 
-        # Retrieve method from user
-        # method = self._get_method_from_name(self._methods_list, method_name)
-
-        logger.info("Launching task: executing `%s` function." % method.__name__)
-        method(
+        logger.info("Launching task: executing `%s` function." % function.__name__)
+        function(
             inputs=inputs,
             outputs=outputs,
             task_properties=task_properties,
@@ -123,16 +120,16 @@ class MethodWrapper(object):
         )
 
 
-def _generate_method_cli():
+def _generate_function_cli():
     """Helper to generate a command line interface client."""
 
-    def _method_from_args(args):
+    def _function_from_args(args):
         inputs = TaskResources(args.inputs)
         outputs = TaskResources(args.outputs)
         log_path = args.log_path
         chainkeys_path = inputs.chainkeys_path
 
-        workspace = MethodWorkspace(
+        workspace = FunctionWorkspace(
             log_path=log_path,
             chainkeys_path=chainkeys_path,
             inputs=inputs,
@@ -145,12 +142,12 @@ def _generate_method_cli():
             workspace=workspace,
         )
 
-        return MethodWrapper(workspace, opener_wrapper)
+        return FunctionWrapper(workspace, opener_wrapper)
 
-    def _user_func(args, method):
-        method_wrapper = _method_from_args(args)
-        method_wrapper.execute(
-            method=method,
+    def _user_func(args, function):
+        function_wrapper = _function_from_args(args)
+        function_wrapper.execute(
+            function=function,
             rank=args.rank,
             fake_data=args.fake_data,
             n_fake_samples=args.n_fake_samples,
@@ -163,10 +160,10 @@ def _generate_method_cli():
     return parser
 
 
-def _get_method_from_name(methods_list, method_name):
-    for method in methods_list:
-        if method.__name__ == method_name:
-            return method
+def _get_function_from_name(functions_list, function_name):
+    for function in functions_list:
+        if function.__name__ == function_name:
+            return function
     raise
 
 
@@ -181,13 +178,13 @@ def load_performance(path: os.PathLike) -> Any:
     return performance
 
 
-def execute_cli(methods_list, sysargs=None):
-    """Launch method command line interface."""
+def execute_cli(functions_list, sysargs=None):
+    """Launch function command line interface."""
 
-    cli = _generate_method_cli()
+    cli = _generate_function_cli()
 
     sysargs = sysargs if sysargs is not None else sys.argv[1:]
     args = cli.parse_args(sysargs)
-    method = _get_method_from_name(methods_list, args.method_name)
-    args.func(args, method)
+    function = _get_function_from_name(functions_list, args.function_name)
+    args.func(args, function)
     return args

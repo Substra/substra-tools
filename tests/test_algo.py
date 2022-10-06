@@ -9,12 +9,12 @@ from typing import TypedDict
 
 import pytest
 
-from substratools import method
+from substratools import function
 from substratools import exceptions
 from substratools import opener
 from substratools.task_resources import StaticInputIdentifiers
 from substratools.task_resources import TaskResources
-from substratools.workspace import MethodWorkspace
+from substratools.workspace import FunctionWorkspace
 from tests import utils
 from tests.utils import InputIdentifiers
 from tests.utils import OutputIdentifiers
@@ -138,9 +138,9 @@ def create_models(workdir):
     return model_datas, model_filenames
 
 
-def test_train_no_model(valid_method_workspace):
-    wp = method.MethodWrapper(valid_method_workspace, opener_wrapper=None)
-    wp.execute(method=train)
+def test_train_no_model(valid_function_workspace):
+    wp = function.FunctionWrapper(valid_function_workspace, opener_wrapper=None)
+    wp.execute(function=train)
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
     assert model["value"] == 0
 
@@ -155,10 +155,10 @@ def test_train_multiple_models(output_model_path, create_models):
         json.dumps([{"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False}])
     )
 
-    workspace = MethodWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
-    wp = method.MethodWrapper(workspace=workspace, opener_wrapper=None)
+    workspace = FunctionWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
+    wp = function.FunctionWrapper(workspace=workspace, opener_wrapper=None)
 
-    wp.execute(method=train)
+    wp.execute(function=train)
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
 
     assert model["value"] == 3
@@ -170,9 +170,9 @@ def test_train_fake_data(output_model_path):
         json.dumps([{"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False}])
     )
 
-    workspace = MethodWorkspace(outputs=workspace_outputs)
-    wp = method.MethodWrapper(workspace=workspace, opener_wrapper=None)
-    wp.execute(method=train, fake_data=True, n_fake_samples=2)
+    workspace = FunctionWorkspace(outputs=workspace_outputs)
+    wp = function.FunctionWrapper(workspace=workspace, opener_wrapper=None)
+    wp.execute(function=train, fake_data=True, n_fake_samples=2)
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
     assert model["value"] == 0
 
@@ -194,9 +194,9 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models, output
         json.dumps([{"id": OutputIdentifiers.predictions, "value": str(output_model_path), "multiple": False}])
     )
 
-    workspace = MethodWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
-    wp = method.MethodWrapper(workspace=workspace, opener_wrapper=opener.load_from_module())
-    wp.execute(method=predict, fake_data=fake_data, n_fake_samples=n_fake_samples)
+    workspace = FunctionWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
+    wp = function.FunctionWrapper(workspace=workspace, opener_wrapper=opener.load_from_module())
+    wp.execute(function=predict, fake_data=fake_data, n_fake_samples=n_fake_samples)
 
     pred = utils.load_predictions(wp._workspace.task_outputs["predictions"])
     assert pred == expected_pred
@@ -217,16 +217,16 @@ def test_execute_train(workdir, output_model_path):
 
     assert not output_model_path.exists()
 
-    method.execute_cli([train], sysargs=["--method-name", "train"] + options)
+    function.execute_cli([train], sysargs=["--function-name", "train"] + options)
     assert output_model_path.exists()
 
-    method.execute_cli(
+    function.execute_cli(
         [train],
-        sysargs=["--method-name", "train", "--fake-data", "--n-fake-samples", "1", "--outputs", json.dumps(outputs)],
+        sysargs=["--function-name", "train", "--fake-data", "--n-fake-samples", "1", "--outputs", json.dumps(outputs)],
     )
     assert output_model_path.exists()
 
-    method.execute_cli([train], sysargs=["--method-name", "train", "--log-level", "debug"] + options)
+    function.execute_cli([train], sysargs=["--function-name", "train", "--log-level", "debug"] + options)
     assert output_model_path.exists()
 
 
@@ -248,10 +248,10 @@ def test_execute_train_multiple_models(workdir, output_model_path, create_models
     ]
     options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
 
-    command = ["--method-name", "train"]
+    command = ["--function-name", "train"]
     command.extend(options)
 
-    method.execute_cli([train], sysargs=command)
+    function.execute_cli([train], sysargs=command)
     assert output_model_path.exists()
     with open(output_model_path, "r") as f:
         model = json.load(f)
@@ -273,9 +273,9 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     output_model_path = Path(output_model_path)
     # first train models
     assert not pred_path.exists()
-    command = ["--method-name", "train"]
+    command = ["--function-name", "train"]
     command.extend(train_options)
-    method.execute_cli([train, predict], sysargs=command)
+    function.execute_cli([train, predict], sysargs=command)
     assert output_model_path.exists()
 
     # do predict on output model
@@ -287,7 +287,7 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
     assert not pred_path.exists()
-    method.execute_cli([train, predict], sysargs=["--method-name", "predict"] + pred_options)
+    function.execute_cli([train, predict], sysargs=["--function-name", "predict"] + pred_options)
     assert pred_path.exists()
     with open(pred_path, "r") as f:
         pred = json.load(f)
@@ -308,9 +308,9 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
     assert not pred_path.exists()
-    method.execute_cli(
+    function.execute_cli(
         [train, predict],
-        sysargs=["--method-name", "predict"] + pred_options,
+        sysargs=["--function-name", "predict"] + pred_options,
     )
     assert pred_path.exists()
     with open(pred_path, "r") as f:
@@ -318,9 +318,9 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     assert pred == "XXX"
 
 
-@pytest.mark.parametrize("function", (no_saved_train, wrong_saved_train))
-def test_model_check(valid_method_workspace, function):
-    wp = method.MethodWrapper(workspace=valid_method_workspace, opener_wrapper=None)
+@pytest.mark.parametrize("function_to_run", (no_saved_train, wrong_saved_train))
+def test_model_check(valid_function_workspace, function_to_run):
+    wp = function.FunctionWrapper(workspace=valid_function_workspace, opener_wrapper=None)
 
     with pytest.raises(exceptions.MissingFileError):
-        wp.execute(method=function)
+        wp.execute(function=function_to_run)

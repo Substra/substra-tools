@@ -7,11 +7,11 @@ from uuid import uuid4
 
 import pytest
 
-from substratools import method
+from substratools import function
 from substratools import exceptions
 from substratools import opener
 from substratools.task_resources import TaskResources
-from substratools.workspace import MethodWorkspace
+from substratools.workspace import FunctionWorkspace
 from tests.utils import InputIdentifiers
 from tests.utils import OutputIdentifiers
 from tests import utils
@@ -112,9 +112,9 @@ def create_models(workdir):
     return model_datas, model_filenames
 
 
-def test_aggregate_no_model(valid_method_workspace):
-    wp = method.MethodWrapper(workspace=valid_method_workspace, opener_wrapper=None)
-    wp.execute(method=aggregate)
+def test_aggregate_no_model(valid_function_workspace):
+    wp = function.FunctionWrapper(workspace=valid_function_workspace, opener_wrapper=None)
+    wp.execute(function=aggregate)
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
     assert model["value"] == 0
 
@@ -129,10 +129,10 @@ def test_aggregate_multiple_models(create_models, output_model_path):
         json.dumps([{"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False}])
     )
 
-    workspace = MethodWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
-    wp = method.MethodWrapper(workspace, opener_wrapper=None)
+    workspace = FunctionWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
+    wp = function.FunctionWrapper(workspace, opener_wrapper=None)
 
-    wp.execute(method=aggregate)
+    wp.execute(function=aggregate)
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
 
     assert model["value"] == 3
@@ -155,11 +155,11 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models):
         json.dumps([{"id": OutputIdentifiers.predictions, "value": model_filenames[0], "multiple": False}])
     )
 
-    workspace = MethodWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
+    workspace = FunctionWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
 
-    wp = method.MethodWrapper(workspace, opener_wrapper=opener.load_from_module())
+    wp = function.FunctionWrapper(workspace, opener_wrapper=opener.load_from_module())
 
-    wp.execute(method=predict, fake_data=fake_data, n_fake_samples=n_fake_samples)
+    wp.execute(function=predict, fake_data=fake_data, n_fake_samples=n_fake_samples)
 
     pred = utils.load_predictions(wp._workspace.task_outputs[OutputIdentifiers.predictions])
     assert pred == expected_pred
@@ -171,13 +171,13 @@ def test_execute_aggregate(output_model_path):
 
     outputs = [{"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False}]
 
-    method.execute_cli([aggregate], sysargs=["--method-name", "aggregate", "--outputs", json.dumps(outputs)])
+    function.execute_cli([aggregate], sysargs=["--function-name", "aggregate", "--outputs", json.dumps(outputs)])
     assert output_model_path.exists()
 
     output_model_path.unlink()
-    method.execute_cli(
+    function.execute_cli(
         [aggregate],
-        sysargs=["--method-name", "aggregate", "--outputs", json.dumps(outputs), "--log-level", "debug"],
+        sysargs=["--function-name", "aggregate", "--outputs", json.dumps(outputs), "--log-level", "debug"],
     )
     assert output_model_path.exists()
 
@@ -195,10 +195,10 @@ def test_execute_aggregate_multiple_models(workdir, create_models, output_model_
     ]
     options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
 
-    command = ["--method-name", "aggregate"]
+    command = ["--function-name", "aggregate"]
     command.extend(options)
 
-    method.execute_cli([aggregate], sysargs=command)
+    function.execute_cli([aggregate], sysargs=command)
     assert output_model_path.exists()
     with open(output_model_path, "r") as f:
         model = json.load(f)
@@ -215,9 +215,9 @@ def test_execute_predict(workdir, create_models, output_model_path, valid_opener
     ]
     outputs = [{"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False}]
     options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
-    command = ["--method-name", "aggregate"]
+    command = ["--function-name", "aggregate"]
     command.extend(options)
-    method.execute_cli([aggregate, predict], sysargs=command)
+    function.execute_cli([aggregate, predict], sysargs=command)
     assert output_model_path.exists()
 
     # do predict on output model
@@ -231,7 +231,7 @@ def test_execute_predict(workdir, create_models, output_model_path, valid_opener
     pred_outputs = [{"id": OutputIdentifiers.predictions, "value": str(pred_path), "multiple": False}]
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
-    method.execute_cli([aggregate, predict], sysargs=["--method-name", "predict"] + pred_options)
+    function.execute_cli([aggregate, predict], sysargs=["--function-name", "predict"] + pred_options)
     assert pred_path.exists()
     with open(pred_path, "r") as f:
         pred = json.load(f)
@@ -239,9 +239,9 @@ def test_execute_predict(workdir, create_models, output_model_path, valid_opener
     pred_path.unlink()
 
 
-@pytest.mark.parametrize("function", (no_saved_aggregate, wrong_saved_aggregate))
-def test_model_check(function, valid_method_workspace):
-    wp = method.MethodWrapper(valid_method_workspace, opener_wrapper=None)
+@pytest.mark.parametrize("function_to_run", (no_saved_aggregate, wrong_saved_aggregate))
+def test_model_check(function_to_run, valid_function_workspace):
+    wp = function.FunctionWrapper(valid_function_workspace, opener_wrapper=None)
 
     with pytest.raises(exceptions.MissingFileError):
-        wp.execute(method=function)
+        wp.execute(function=function_to_run)

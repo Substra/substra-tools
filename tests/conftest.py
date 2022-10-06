@@ -10,7 +10,7 @@ import pytest
 from substratools.task_resources import TaskResources
 from substratools.utils import import_module
 from tests.utils import OutputIdentifiers
-from substratools.workspace import MethodWorkspace
+from substratools.workspace import FunctionWorkspace
 
 
 @pytest.fixture
@@ -76,12 +76,12 @@ def output_model_path_2(workdir: Path) -> str:
 
 
 @pytest.fixture()
-def valid_method_workspace(output_model_path: str) -> MethodWorkspace:
+def valid_function_workspace(output_model_path: str) -> FunctionWorkspace:
 
     workspace_outputs = TaskResources(
         json.dumps([{"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False}])
     )
 
-    workspace = MethodWorkspace(outputs=workspace_outputs)
+    workspace = FunctionWorkspace(outputs=workspace_outputs)
 
     return workspace
