@@ -7,12 +7,12 @@ from typing import TypedDict
 import numpy as np
 import pytest
 
-from substratools import algo
+from substratools import method
 from substratools import load_performance
 from substratools import opener
 from substratools import save_performance
 from substratools.task_resources import TaskResources
-from substratools.workspace import AlgoWorkspace
+from substratools.workspace import MethodWorkspace
 from tests import utils
 from tests.utils import InputIdentifiers
 from tests.utils import OutputIdentifiers
@@ -73,8 +73,8 @@ def test_score(workdir, write_pred_file):
             [{"id": OutputIdentifiers.performance, "value": str(workdir / str(uuid.uuid4())), "multiple": False}]
         )
     )
-    workspace = AlgoWorkspace(inputs=inputs, outputs=outputs)
-    wp = algo.GenericAlgoWrapper(workspace=workspace, opener_wrapper=opener.load_from_module())
+    workspace = MethodWorkspace(inputs=inputs, outputs=outputs)
+    wp = method.MethodWrapper(workspace=workspace, opener_wrapper=opener.load_from_module())
     wp.execute(method=score)
     s = load_performance(wp._workspace.task_outputs[OutputIdentifiers.performance])
     assert s == 15
@@ -82,7 +82,7 @@ def test_score(workdir, write_pred_file):
 
 def test_execute(inputs, outputs):
     perf_path = outputs[0]["value"]
-    algo.execute(
+    method.execute_cli(
         [score],
         sysargs=["--method-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
     )
@@ -99,7 +99,7 @@ def test_execute(inputs, outputs):
 )
 def test_execute_fake_data_modes(fake_data_mode, expected_score, inputs, outputs):
     perf_path = outputs[0]["value"]
-    algo.execute(
+    method.execute_cli(
         [score],
         sysargs=fake_data_mode
         + ["--method-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
@@ -117,7 +117,7 @@ def test_execute_np(inputs, outputs):
         save_performance(np.float64(0.99), outputs.get(OutputIdentifiers.performance))
 
     perf_path = outputs[0]["value"]
-    algo.execute(
+    method.execute_cli(
         [float_np_score],
         sysargs=["--method-name", "float_np_score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
     )
@@ -134,7 +134,7 @@ def test_execute_int(inputs, outputs):
         save_performance(int(1), outputs.get(OutputIdentifiers.performance))
 
     perf_path = outputs[0]["value"]
-    algo.execute(
+    method.execute_cli(
         [int_score],
         sysargs=["--method-name", "int_score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
     )
@@ -151,7 +151,7 @@ def test_execute_dict(inputs, outputs):
         save_performance({"a": 1}, outputs.get(OutputIdentifiers.performance))
 
     perf_path = outputs[0]["value"]
-    algo.execute(
+    method.execute_cli(
         [dict_score],
         sysargs=["--method-name", "dict_score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
     )

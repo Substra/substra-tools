@@ -15,7 +15,7 @@ from substratools import opener
 from substratools import utils
 from substratools.task_resources import StaticInputIdentifiers
 from substratools.task_resources import TaskResources
-from substratools.workspace import AlgoWorkspace
+from substratools.workspace import MethodWorkspace
 
 logger = logging.getLogger(__name__)
 
@@ -71,10 +71,10 @@ def _parser_add_default_arguments(parser):
     )
 
 
-class GenericAlgoWrapper(object):
-    """Generic wrapper to execute an algo instance on the platform."""
+class MethodWrapper(object):
+    """Wrapper to execute a method on the platform."""
 
-    def __init__(self, workspace: AlgoWorkspace, opener_wrapper: Optional[opener.OpenerWrapper]):
+    def __init__(self, workspace: MethodWorkspace, opener_wrapper: Optional[opener.OpenerWrapper]):
         self._workspace = workspace
         self._opener_wrapper = opener_wrapper
 
@@ -124,16 +124,16 @@ class GenericAlgoWrapper(object):
         )
 
 
-def _generate_generic_algo_cli():
+def _generate_method_cli():
     """Helper to generate a command line interface client."""
 
-    def _algo_from_args(args):
+    def _method_from_args(args):
         inputs = TaskResources(args.inputs)
         outputs = TaskResources(args.outputs)
         log_path = args.log_path
         chainkeys_path = inputs.chainkeys_path
 
-        workspace = AlgoWorkspace(
+        workspace = MethodWorkspace(
             log_path=log_path,
             chainkeys_path=chainkeys_path,
             inputs=inputs,
@@ -146,11 +146,11 @@ def _generate_generic_algo_cli():
             workspace=workspace,
         )
 
-        return GenericAlgoWrapper(workspace, opener_wrapper)
+        return MethodWrapper(workspace, opener_wrapper)
 
     def _user_func(args, method):
-        algo_wrapper = _algo_from_args(args)
-        algo_wrapper.execute(
+        method_wrapper = _method_from_args(args)
+        method_wrapper.execute(
             method=method,
             rank=args.rank,
             fake_data=args.fake_data,
@@ -182,10 +182,10 @@ def load_performance(path: os.PathLike) -> Any:
     return performance
 
 
-def execute(methods_list, sysargs=None):
-    """Launch algo command line interface."""
+def execute_cli(methods_list, sysargs=None):
+    """Launch method command line interface."""
 
-    cli = _generate_generic_algo_cli()
+    cli = _generate_method_cli()
 
     sysargs = sysargs if sysargs is not None else sys.argv[1:]
     args = cli.parse_args(sysargs)

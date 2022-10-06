@@ -9,12 +9,12 @@ from typing import TypedDict
 
 import pytest
 
-from substratools import algo
+from substratools import method
 from substratools import exceptions
 from substratools import opener
 from substratools.task_resources import StaticInputIdentifiers
 from substratools.task_resources import TaskResources
-from substratools.workspace import AlgoWorkspace
+from substratools.workspace import MethodWorkspace
 from tests import utils
 from tests.utils import InputIdentifiers
 from tests.utils import OutputIdentifiers
@@ -138,8 +138,8 @@ def create_models(workdir):
     return model_datas, model_filenames
 
 
-def test_train_no_model(valid_algo_workspace):
-    wp = algo.GenericAlgoWrapper(valid_algo_workspace, opener_wrapper=None)
+def test_train_no_model(valid_method_workspace):
+    wp = method.MethodWrapper(valid_method_workspace, opener_wrapper=None)
     wp.execute(method=train)
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
     assert model["value"] == 0
@@ -155,8 +155,8 @@ def test_train_multiple_models(output_model_path, create_models):
         json.dumps([{"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False}])
     )
 
-    workspace = AlgoWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
-    wp = algo.GenericAlgoWrapper(workspace=workspace, opener_wrapper=None)
+    workspace = MethodWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
+    wp = method.MethodWrapper(workspace=workspace, opener_wrapper=None)
 
     wp.execute(method=train)
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
@@ -170,8 +170,8 @@ def test_train_fake_data(output_model_path):
         json.dumps([{"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False}])
     )
 
-    workspace = AlgoWorkspace(outputs=workspace_outputs)
-    wp = algo.GenericAlgoWrapper(workspace=workspace, opener_wrapper=None)
+    workspace = MethodWorkspace(outputs=workspace_outputs)
+    wp = method.MethodWrapper(workspace=workspace, opener_wrapper=None)
     wp.execute(method=train, fake_data=True, n_fake_samples=2)
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
     assert model["value"] == 0
@@ -194,8 +194,8 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models, output
         json.dumps([{"id": OutputIdentifiers.predictions, "value": str(output_model_path), "multiple": False}])
     )
 
-    workspace = AlgoWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
-    wp = algo.GenericAlgoWrapper(workspace=workspace, opener_wrapper=opener.load_from_module())
+    workspace = MethodWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
+    wp = method.MethodWrapper(workspace=workspace, opener_wrapper=opener.load_from_module())
     wp.execute(method=predict, fake_data=fake_data, n_fake_samples=n_fake_samples)
 
     pred = utils.load_predictions(wp._workspace.task_outputs["predictions"])
@@ -217,16 +217,16 @@ def test_execute_train(workdir, output_model_path):
 
     assert not output_model_path.exists()
 
-    algo.execute([train], sysargs=["--method-name", "train"] + options)
+    method.execute_cli([train], sysargs=["--method-name", "train"] + options)
     assert output_model_path.exists()
 
-    algo.execute(
+    method.execute_cli(
         [train],
         sysargs=["--method-name", "train", "--fake-data", "--n-fake-samples", "1", "--outputs", json.dumps(outputs)],
     )
     assert output_model_path.exists()
 
-    algo.execute([train], sysargs=["--method-name", "train", "--log-level", "debug"] + options)
+    method.execute_cli([train], sysargs=["--method-name", "train", "--log-level", "debug"] + options)
     assert output_model_path.exists()
 
 
@@ -251,7 +251,7 @@ def test_execute_train_multiple_models(workdir, output_model_path, create_models
     command = ["--method-name", "train"]
     command.extend(options)
 
-    algo.execute([train], sysargs=command)
+    method.execute_cli([train], sysargs=command)
     assert output_model_path.exists()
     with open(output_model_path, "r") as f:
         model = json.load(f)
@@ -275,7 +275,7 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     assert not pred_path.exists()
     command = ["--method-name", "train"]
     command.extend(train_options)
-    algo.execute([train, predict], sysargs=command)
+    method.execute_cli([train, predict], sysargs=command)
     assert output_model_path.exists()
 
     # do predict on output model
@@ -287,7 +287,7 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
     assert not pred_path.exists()
-    algo.execute([train, predict], sysargs=["--method-name", "predict"] + pred_options)
+    method.execute_cli([train, predict], sysargs=["--method-name", "predict"] + pred_options)
     assert pred_path.exists()
     with open(pred_path, "r") as f:
         pred = json.load(f)
@@ -308,7 +308,7 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
     assert not pred_path.exists()
-    algo.execute(
+    method.execute_cli(
         [train, predict],
         sysargs=["--method-name", "predict"] + pred_options,
     )
@@ -318,9 +318,9 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     assert pred == "XXX"
 
 
-@pytest.mark.parametrize("method", (no_saved_train, wrong_saved_train))
-def test_model_check(valid_algo_workspace, method):
-    wp = algo.GenericAlgoWrapper(workspace=valid_algo_workspace, opener_wrapper=None)
+@pytest.mark.parametrize("function", (no_saved_train, wrong_saved_train))
+def test_model_check(valid_method_workspace, function):
+    wp = method.MethodWrapper(workspace=valid_method_workspace, opener_wrapper=None)
 
     with pytest.raises(exceptions.MissingFileError):
-        wp.execute(method=method)
+        wp.execute(method=function)
