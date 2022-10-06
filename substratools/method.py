@@ -1,5 +1,4 @@
 # coding: utf8
-import abc
 import argparse
 import json
 import logging

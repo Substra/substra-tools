@@ -8,7 +8,6 @@ import pytest
 
 from substratools import method
 from substratools import exceptions
-from substratools.task_resources import StaticInputIdentifiers
 from substratools.task_resources import TaskResources
 from substratools.workspace import MethodWorkspace
 from substratools import opener
