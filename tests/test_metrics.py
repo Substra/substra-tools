@@ -83,7 +83,7 @@ def test_score(workdir, write_pred_file):
 def test_execute(inputs, outputs):
     perf_path = outputs[0]["value"]
     function.execute(
-        [score],
+        score,
         sysargs=["--function-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
     )
     s = load_performance(perf_path)
@@ -100,7 +100,7 @@ def test_execute(inputs, outputs):
 def test_execute_fake_data_modes(fake_data_mode, expected_score, inputs, outputs):
     perf_path = outputs[0]["value"]
     function.execute(
-        [score],
+        score,
         sysargs=fake_data_mode
         + ["--function-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
     )
@@ -118,7 +118,7 @@ def test_execute_np(inputs, outputs):
 
     perf_path = outputs[0]["value"]
     function.execute(
-        [float_np_score],
+        float_np_score,
         sysargs=["--function-name", "float_np_score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
     )
     s = load_performance(perf_path)
@@ -135,7 +135,7 @@ def test_execute_int(inputs, outputs):
 
     perf_path = outputs[0]["value"]
     function.execute(
-        [int_score],
+        int_score,
         sysargs=["--function-name", "int_score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
     )
     s = load_performance(perf_path)
@@ -152,7 +152,7 @@ def test_execute_dict(inputs, outputs):
 
     perf_path = outputs[0]["value"]
     function.execute(
-        [dict_score],
+        dict_score,
         sysargs=["--function-name", "dict_score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
     )
     s = load_performance(perf_path)

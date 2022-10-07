@@ -5,13 +5,15 @@ import logging
 import os
 import sys
 from copy import deepcopy
-from typing import Any, Callable
+from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import Optional
 
 from substratools import exceptions
 from substratools import opener
 from substratools import utils
+from substratools.exceptions import FunctionNotFoundError
 from substratools.task_resources import StaticInputIdentifiers
 from substratools.task_resources import TaskResources
 from substratools.workspace import FunctionWorkspace
@@ -160,11 +162,13 @@ def _generate_function_cli():
     return parser
 
 
-def _get_function_from_name(functions_list, function_name):
-    for function in functions_list:
+def _get_function_from_name(functions, function_name):
+
+    for function in functions:
         if function.__name__ == function_name:
             return function
-    raise
+
+    raise FunctionNotFoundError(f"The function {function_name} given as --function-name argument as not been found.")
 
 
 def save_performance(performance: Any, path: os.PathLike):
@@ -178,13 +182,13 @@ def load_performance(path: os.PathLike) -> Any:
     return performance
 
 
-def execute(functions_list, sysargs=None):
+def execute(*functions, sysargs=None):
     """Launch function command line interface."""
 
     cli = _generate_function_cli()
 
     sysargs = sysargs if sysargs is not None else sys.argv[1:]
     args = cli.parse_args(sysargs)
-    function = _get_function_from_name(functions_list, args.function_name)
+    function = _get_function_from_name(functions, args.function_name)
     args.func(args, function)
     return args
