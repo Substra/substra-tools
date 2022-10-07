@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-- BREAKING CHANGE:
+- BREAKING CHANGE (#63)
   - Rename algo to function.
   - `tools.algo.execute` become `tools.execute`
   - The previous algo class pass to the function `tools.algo.execute` is now a list of function to register. The function given by the cli is executed.
