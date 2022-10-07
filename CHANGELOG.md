@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- BREAKING CHANGE:
+  - Rename algo to function.
+  - `tools.algo.execute` become `tools.execute`
+  - The previous algo class pass to the function `tools.algo.execute` is now a list of function to register. The function given by the cli is executed.
+
+  ```py
+  if __name__ == '__main__':
+    tools.algo.execute(MyAlgo())
+  ```
+
+  become
+
+  ```py
+  if __name__ == '__main__':
+    tools.execute([my_function1, my_function2])
+  ```
+
 ## [0.18.0](https://github.com/Substra/substra-tools/releases/tag/0.18.0) - 2022-09-26
 
 ### Added

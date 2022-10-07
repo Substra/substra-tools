@@ -178,7 +178,7 @@ def load_performance(path: os.PathLike) -> Any:
     return performance
 
 
-def execute_cli(functions_list, sysargs=None):
+def execute(functions_list, sysargs=None):
     """Launch function command line interface."""
 
     cli = _generate_function_cli()
