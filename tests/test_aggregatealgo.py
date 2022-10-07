@@ -171,11 +171,11 @@ def test_execute_aggregate(output_model_path):
 
     outputs = [{"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False}]
 
-    execute([aggregate], sysargs=["--function-name", "aggregate", "--outputs", json.dumps(outputs)])
+    function.execute([aggregate], sysargs=["--function-name", "aggregate", "--outputs", json.dumps(outputs)])
     assert output_model_path.exists()
 
     output_model_path.unlink()
-    execute(
+    function.execute(
         [aggregate],
         sysargs=["--function-name", "aggregate", "--outputs", json.dumps(outputs), "--log-level", "debug"],
     )
@@ -198,7 +198,7 @@ def test_execute_aggregate_multiple_models(workdir, create_models, output_model_
     command = ["--function-name", "aggregate"]
     command.extend(options)
 
-    execute([aggregate], sysargs=command)
+    function.execute([aggregate], sysargs=command)
     assert output_model_path.exists()
     with open(output_model_path, "r") as f:
         model = json.load(f)
@@ -217,7 +217,7 @@ def test_execute_predict(workdir, create_models, output_model_path, valid_opener
     options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
     command = ["--function-name", "aggregate"]
     command.extend(options)
-    execute([aggregate, predict], sysargs=command)
+    function.execute([aggregate, predict], sysargs=command)
     assert output_model_path.exists()
 
     # do predict on output model
@@ -231,7 +231,7 @@ def test_execute_predict(workdir, create_models, output_model_path, valid_opener
     pred_outputs = [{"id": OutputIdentifiers.predictions, "value": str(pred_path), "multiple": False}]
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
-    execute([aggregate, predict], sysargs=["--function-name", "predict"] + pred_options)
+    function.execute([aggregate, predict], sysargs=["--function-name", "predict"] + pred_options)
     assert pred_path.exists()
     with open(pred_path, "r") as f:
         pred = json.load(f)
