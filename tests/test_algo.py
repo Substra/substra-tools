@@ -217,16 +217,16 @@ def test_execute_train(workdir, output_model_path):
 
     assert not output_model_path.exists()
 
-    function.execute_cli([train], sysargs=["--function-name", "train"] + options)
+    execute([train], sysargs=["--function-name", "train"] + options)
     assert output_model_path.exists()
 
-    function.execute_cli(
+    execute(
         [train],
         sysargs=["--function-name", "train", "--fake-data", "--n-fake-samples", "1", "--outputs", json.dumps(outputs)],
     )
     assert output_model_path.exists()
 
-    function.execute_cli([train], sysargs=["--function-name", "train", "--log-level", "debug"] + options)
+    execute([train], sysargs=["--function-name", "train", "--log-level", "debug"] + options)
     assert output_model_path.exists()
 
 
@@ -251,7 +251,7 @@ def test_execute_train_multiple_models(workdir, output_model_path, create_models
     command = ["--function-name", "train"]
     command.extend(options)
 
-    function.execute_cli([train], sysargs=command)
+    execute([train], sysargs=command)
     assert output_model_path.exists()
     with open(output_model_path, "r") as f:
         model = json.load(f)
@@ -275,7 +275,7 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     assert not pred_path.exists()
     command = ["--function-name", "train"]
     command.extend(train_options)
-    function.execute_cli([train, predict], sysargs=command)
+    execute([train, predict], sysargs=command)
     assert output_model_path.exists()
 
     # do predict on output model
@@ -287,7 +287,7 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
     assert not pred_path.exists()
-    function.execute_cli([train, predict], sysargs=["--function-name", "predict"] + pred_options)
+    execute([train, predict], sysargs=["--function-name", "predict"] + pred_options)
     assert pred_path.exists()
     with open(pred_path, "r") as f:
         pred = json.load(f)
@@ -308,7 +308,7 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
     assert not pred_path.exists()
-    function.execute_cli(
+    execute(
         [train, predict],
         sysargs=["--function-name", "predict"] + pred_options,
     )
