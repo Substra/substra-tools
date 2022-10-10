@@ -31,7 +31,6 @@ class DummyOpener(Opener):
     import_module("opener", script)
 
 
-# TODO change function
 def train(inputs, outputs, task_properties):
 
     models = utils.load_models(inputs.get(InputIdentifiers.models, []))
