@@ -1,8 +1,6 @@
 # Substra-tools
 
-Python package defining base classes for assets submitted on the platform:
-
-- Dataset: data opener script
+Python package defining base classes for Dataset (data opener script) and wrappers to execute functions submitted on the platform.
 
 This repository also contains a [Dockerfile](https://github.com/Substra/substra-tools/pkgs/container/substra-tools) to execute the user
 Python scripts on the Substra platform. This is currently needed to easily
