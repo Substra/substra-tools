@@ -74,10 +74,27 @@ def _parser_add_default_arguments(parser):
 
 
 class FunctionRegister:
+    """Class to create a decorator to register function in substratools. The functions are registered in the _functions
+    dictionary, with the function.__name__ as key.
+    Register a function in substratools means that this function can be access by the function.execute functions through
+    the --function-name given by the CLI."""
+
     def __init__(self):
         self._functions = {}
 
     def __call__(self, function: Callable):
+        """Function called when using an instance of the class as a decorator.
+
+        Args:
+            function (Callable): function to register in substratools.
+
+        Raises:
+            ExistingRegisteredFunctionError: Raise if a function with the same function.__name__
+            has already been registered in substratools.
+
+        Returns:
+            Callable: returns the function without decorator
+        """
 
         if function.__name__ not in self._functions:
             self._functions[function.__name__] = function
@@ -90,6 +107,8 @@ class FunctionRegister:
         return self._functions
 
 
+# Instance of the decorator to store de function to register in memory.
+# Can be imported directly from substratools.
 register = FunctionRegister()
 
 
