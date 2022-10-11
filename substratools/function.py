@@ -1,5 +1,4 @@
 # coding: utf8
-import abc
 import argparse
 import json
 import logging
@@ -7,24 +6,26 @@ import os
 import sys
 from copy import deepcopy
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import Optional
 
 from substratools import exceptions
 from substratools import opener
 from substratools import utils
+from substratools.exceptions import FunctionNotFoundError
 from substratools.task_resources import StaticInputIdentifiers
 from substratools.task_resources import TaskResources
-from substratools.workspace import AlgoWorkspace
+from substratools.workspace import FunctionWorkspace
 
 logger = logging.getLogger(__name__)
 
 
 def _parser_add_default_arguments(parser):
     parser.add_argument(
-        "--method-name",
+        "--function-name",
         type=str,
-        help="The name of the method to execute from the given file",
+        help="The name of the function to execute from the given file",
     )
     parser.add_argument(
         "-r",
@@ -71,23 +72,12 @@ def _parser_add_default_arguments(parser):
     )
 
 
-class GenericAlgo(abc.ABC):
-    chainkeys_path = None
+class FunctionWrapper(object):
+    """Wrapper to execute a function on the platform."""
 
-
-class GenericAlgoWrapper(object):
-    """Generic wrapper to execute an algo instance on the platform."""
-
-    _INTERFACE_CLASS = GenericAlgo
-
-    def __init__(
-        self, interface: GenericAlgo, workspace: AlgoWorkspace, opener_wrapper: Optional[opener.OpenerWrapper]
-    ):
-        assert isinstance(interface, self._INTERFACE_CLASS)
+    def __init__(self, workspace: FunctionWorkspace, opener_wrapper: Optional[opener.OpenerWrapper]):
         self._workspace = workspace
         self._opener_wrapper = opener_wrapper
-        self._interface = interface
-        self._interface.chainkeys_path = self._workspace.chainkeys_path
 
     def _assert_outputs_exists(self, outputs: Dict[str, str]):
         for key, path in outputs.items():
@@ -97,7 +87,7 @@ class GenericAlgoWrapper(object):
                 raise exceptions.MissingFileError(f"Output file {path} used to save argument `{key}` does not exists.")
 
     @utils.Timer(logger)
-    def execute(self, method_name: str, rank: int = 0, fake_data: bool = False, n_fake_samples: int = None):
+    def execute(self, function: Callable, rank: int = 0, fake_data: bool = False, n_fake_samples: int = None):
         """Execute a compute task"""
 
         # load inputs
@@ -120,11 +110,8 @@ class GenericAlgoWrapper(object):
         # load outputs
         outputs = deepcopy(self._workspace.task_outputs)
 
-        # Retrieve method from user
-        method = getattr(self._interface, method_name)
-
-        logger.info("Launching task: executing `%s` function." % method_name)
-        method(
+        logger.info("Launching task: executing `%s` function." % function.__name__)
+        function(
             inputs=inputs,
             outputs=outputs,
             task_properties=task_properties,
@@ -135,16 +122,16 @@ class GenericAlgoWrapper(object):
         )
 
 
-def _generate_generic_algo_cli(interface):
+def _generate_function_cli():
     """Helper to generate a command line interface client."""
 
-    def _algo_from_args(args):
+    def _function_from_args(args):
         inputs = TaskResources(args.inputs)
         outputs = TaskResources(args.outputs)
         log_path = args.log_path
         chainkeys_path = inputs.chainkeys_path
 
-        workspace = AlgoWorkspace(
+        workspace = FunctionWorkspace(
             log_path=log_path,
             chainkeys_path=chainkeys_path,
             inputs=inputs,
@@ -157,12 +144,12 @@ def _generate_generic_algo_cli(interface):
             workspace=workspace,
         )
 
-        return GenericAlgoWrapper(interface, workspace, opener_wrapper)
+        return FunctionWrapper(workspace, opener_wrapper)
 
-    def _user_func(args):
-        algo_wrapper = _algo_from_args(args)
-        algo_wrapper.execute(
-            method_name=args.method_name,
+    def _user_func(args, function):
+        function_wrapper = _function_from_args(args)
+        function_wrapper.execute(
+            function=function,
             rank=args.rank,
             fake_data=args.fake_data,
             n_fake_samples=args.n_fake_samples,
@@ -175,82 +162,13 @@ def _generate_generic_algo_cli(interface):
     return parser
 
 
-class Algo(GenericAlgo):
-    @abc.abstractmethod
-    def train(
-        self,
-        inputs: dict,
-        outputs: dict,
-        task_properties: dict,
-    ) -> None:
+def _get_function_from_name(functions, function_name):
 
-        raise NotImplementedError
+    for function in functions:
+        if function.__name__ == function_name:
+            return function
 
-    @abc.abstractmethod
-    def predict(
-        self,
-        inputs: dict,
-        outputs: dict,
-        task_properties: dict,
-    ) -> None:
-
-        raise NotImplementedError
-
-
-class CompositeAlgo(GenericAlgo):
-    @abc.abstractmethod
-    def train(
-        self,
-        inputs: dict,
-        outputs: dict,
-        task_properties: dict,
-    ) -> None:
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def predict(
-        self,
-        inputs: dict,
-        outputs: dict,
-        task_properties: dict,
-    ) -> None:
-
-        raise NotImplementedError
-
-
-class AggregateAlgo(GenericAlgo):
-    @abc.abstractmethod
-    def aggregate(
-        self,
-        inputs: dict,
-        outputs: dict,
-        task_properties: dict,
-    ) -> None:
-
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def predict(
-        self,
-        inputs: dict,
-        outputs: dict,
-        task_properties: dict,
-    ) -> None:
-
-        raise NotImplementedError
-
-
-class MetricAlgo(GenericAlgo):
-    @abc.abstractmethod
-    def score(
-        self,
-        inputs: dict,
-        outputs: dict,
-        task_properties: dict,
-    ) -> None:
-
-        raise NotImplementedError
+    raise FunctionNotFoundError(f"The function {function_name} given as --function-name argument as not been found.")
 
 
 def save_performance(performance: Any, path: os.PathLike):
@@ -264,12 +182,13 @@ def load_performance(path: os.PathLike) -> Any:
     return performance
 
 
-def execute(interface, sysargs=None):
-    """Launch algo command line interface."""
+def execute(*functions, sysargs=None):
+    """Launch function command line interface."""
 
-    cli = _generate_generic_algo_cli(interface)
+    cli = _generate_function_cli()
 
     sysargs = sysargs if sysargs is not None else sys.argv[1:]
     args = cli.parse_args(sysargs)
-    args.func(args)
+    function = _get_function_from_name(functions, args.function_name)
+    args.func(args, function)
     return args

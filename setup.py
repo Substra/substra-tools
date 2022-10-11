@@ -17,7 +17,7 @@ with open(os.path.join(here, "substratools", "__version__.py"), "r", "utf-8") as
 setup(
     name="substratools",
     version=about["__version__"],
-    description="Python tools to submit algo on the Substra platform",
+    description="Python tools to submit functions on the Substra platform",
     long_description=readme,
     long_description_content_type="text/markdown",
     url="https://github.com/Substra/substra-tools",

@@ -3,7 +3,6 @@ from enum import Enum
 from os import PathLike
 from typing import Any
 from typing import List
-from enum import Enum
 
 from substratools.task_resources import StaticInputIdentifiers
 

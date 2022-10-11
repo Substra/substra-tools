@@ -2,8 +2,8 @@ import sys
 
 import pytest
 
-from substratools import MetricAlgo
 from substratools import exceptions
+from substratools.opener import Opener
 from substratools.utils import get_logger
 from substratools.utils import import_module
 from substratools.utils import load_interface_from_module
@@ -16,7 +16,7 @@ def score():
 """
     import_module("score", code)
     with pytest.raises(exceptions.InvalidInterfaceError):
-        load_interface_from_module("score", interface_class=MetricAlgo)
+        load_interface_from_module("score", interface_class=Opener)
 
 
 @pytest.fixture
@@ -34,7 +34,7 @@ def test_empty_module(tmpdir, syspaths):
         syspaths.append(str(tmpdir))
 
         with pytest.raises(exceptions.EmptyInterfaceError):
-            load_interface_from_module("foomod", interface_class=MetricAlgo)
+            load_interface_from_module("foomod", interface_class=Opener)
 
 
 def test_get_logger(capfd):

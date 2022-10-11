@@ -20,3 +20,7 @@ class InvalidInputOutputsError(Exception):
 
 class InvalidCLIError(Exception):
     pass
+
+
+class FunctionNotFoundError(Exception):
+    pass

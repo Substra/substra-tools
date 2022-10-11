@@ -10,7 +10,6 @@ def makedir_safe(path):
         pass
 
 
-# Will be deleted when Metric and GenericAlgo are merged
 DEFAULT_INPUT_DATA_FOLDER_PATH = "data/"
 DEFAULT_INPUT_PREDICTIONS_PATH = "pred/pred"
 DEFAULT_OUTPUT_PERF_PATH = "pred/perf.json"
@@ -59,8 +58,8 @@ class OpenerWorkspace(Workspace):
                 makedir_safe(d)
 
 
-class AlgoWorkspace(OpenerWorkspace):
-    """Filesystem workspace for user defined method execution."""
+class FunctionWorkspace(OpenerWorkspace):
+    """Filesystem workspace for user defined function execution."""
 
     def __init__(
         self,
