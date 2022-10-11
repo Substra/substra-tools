@@ -75,18 +75,15 @@ def test_score(workdir, write_pred_file):
             [{"id": OutputIdentifiers.performance, "value": str(workdir / str(uuid.uuid4())), "multiple": False}]
         )
     )
-
     workspace = FunctionWorkspace(inputs=inputs, outputs=outputs)
     wp = function.FunctionWrapper(workspace=workspace, opener_wrapper=opener.load_from_module())
     wp.execute(function=score)
-
     s = load_performance(wp._workspace.task_outputs[OutputIdentifiers.performance])
     assert s == 15
 
 
 def test_execute(inputs, outputs):
     perf_path = outputs[0]["value"]
-
     function.execute(
         sysargs=["--function-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
     )
@@ -121,7 +118,6 @@ def test_execute_np(inputs, outputs):
         save_performance(np.float64(0.99), outputs.get(OutputIdentifiers.performance))
 
     perf_path = outputs[0]["value"]
-
     function.execute(
         sysargs=["--function-name", "float_np_score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
     )
@@ -139,7 +135,6 @@ def test_execute_int(inputs, outputs):
         save_performance(int(1), outputs.get(OutputIdentifiers.performance))
 
     perf_path = outputs[0]["value"]
-
     function.execute(
         sysargs=["--function-name", "int_score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
     )
@@ -157,7 +152,6 @@ def test_execute_dict(inputs, outputs):
         save_performance({"a": 1}, outputs.get(OutputIdentifiers.performance))
 
     perf_path = outputs[0]["value"]
-
     function.execute(
         sysargs=["--function-name", "dict_score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
     )
