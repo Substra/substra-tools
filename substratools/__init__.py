@@ -8,7 +8,6 @@ from .function import register
 from .function import save_performance
 from .opener import Opener
 
-
 __all__ = [
     "__version__",
     function,
