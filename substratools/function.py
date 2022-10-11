@@ -107,7 +107,7 @@ class FunctionRegister:
         return self._functions
 
 
-# Instance of the decorator to store de function to register in memory.
+# Instance of the decorator to store the function to register in memory.
 # Can be imported directly from substratools.
 register = FunctionRegister()
 
