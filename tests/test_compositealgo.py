@@ -84,14 +84,7 @@ def predict(
             OutputIdentifiers.predictions: os.PathLike,
         },
     ),
-<<<<<<< HEAD
-<<<<<<< HEAD
     task_properties: TypedDict("task_properties", {InputIdentifiers.rank: int}),
-=======
->>>>>>> 6e4f311 (from class to function)
-=======
-    task_properties: TypedDict("task_properties", {InputIdentifiers.rank: int}),
->>>>>>> f40b37f (one commit)
 ):
 
     # init phase
@@ -149,15 +142,7 @@ def no_saved_head_train(inputs, outputs, task_properties):
     utils.save_model(model=new_trunk_model, path=outputs.get(OutputIdentifiers.shared))
 
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 def wrong_saved_trunk_train(inputs, outputs, task_properties):
-=======
-def wrong_saved_trunk_train(self, inputs, outputs, task_properties):
->>>>>>> 6e4f311 (from class to function)
-=======
-def wrong_saved_trunk_train(inputs, outputs, task_properties):
->>>>>>> f40b37f (one commit)
     # init phase
     # load models
     head_model = utils.load_model(path=inputs.get(InputIdentifiers.local))
