@@ -12,6 +12,7 @@ import pytest
 from substratools import function
 from substratools import exceptions
 from substratools import opener
+from substratools.function import register
 from substratools.task_resources import StaticInputIdentifiers
 from substratools.task_resources import TaskResources
 from substratools.workspace import FunctionWorkspace
@@ -25,6 +26,7 @@ def setup(valid_opener):
     pass
 
 
+@register
 def train(
     inputs: TypedDict(
         "inputs",
@@ -59,6 +61,7 @@ def train(
     utils.save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
 
 
+@register
 def predict(
     inputs: TypedDict("inputs", {InputIdentifiers.datasamples: Any, InputIdentifiers.model: List[PathLike]}),
     outputs: TypedDict("outputs", {OutputIdentifiers.predictions: PathLike}),
@@ -77,6 +80,7 @@ def predict(
     utils.save_predictions(predictions=pred, path=outputs.get(OutputIdentifiers.predictions))
 
 
+@register
 def no_saved_train(inputs, outputs, task_properties):
     # TODO: checks on data
     # load models
@@ -97,6 +101,7 @@ def no_saved_train(inputs, outputs, task_properties):
     utils.no_save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
 
 
+@register
 def wrong_saved_train(inputs, outputs, task_properties):
     # TODO: checks on data
     # load models
@@ -217,16 +222,15 @@ def test_execute_train(workdir, output_model_path):
 
     assert not output_model_path.exists()
 
-    function.execute(train, sysargs=["--function-name", "train"] + options)
+    function.execute(sysargs=["--function-name", "train"] + options)
     assert output_model_path.exists()
 
     function.execute(
-        train,
         sysargs=["--function-name", "train", "--fake-data", "--n-fake-samples", "1", "--outputs", json.dumps(outputs)],
     )
     assert output_model_path.exists()
 
-    function.execute(train, sysargs=["--function-name", "train", "--log-level", "debug"] + options)
+    function.execute(sysargs=["--function-name", "train", "--log-level", "debug"] + options)
     assert output_model_path.exists()
 
 
@@ -251,7 +255,7 @@ def test_execute_train_multiple_models(workdir, output_model_path, create_models
     command = ["--function-name", "train"]
     command.extend(options)
 
-    function.execute(train, sysargs=command)
+    function.execute(sysargs=command)
     assert output_model_path.exists()
     with open(output_model_path, "r") as f:
         model = json.load(f)
@@ -275,7 +279,7 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     assert not pred_path.exists()
     command = ["--function-name", "train"]
     command.extend(train_options)
-    function.execute(train, predict, sysargs=command)
+    function.execute(sysargs=command)
     assert output_model_path.exists()
 
     # do predict on output model
@@ -287,7 +291,7 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
     assert not pred_path.exists()
-    function.execute(train, predict, sysargs=["--function-name", "predict"] + pred_options)
+    function.execute(sysargs=["--function-name", "predict"] + pred_options)
     assert pred_path.exists()
     with open(pred_path, "r") as f:
         pred = json.load(f)
@@ -328,11 +332,19 @@ def test_model_check(valid_function_workspace, function_to_run):
 
 
 def test_function_not_found():
-    def train():
-        pass
-
     with pytest.raises(exceptions.FunctionNotFoundError):
         function.execute(
-            train,
             sysargs=["--function-name", "imaginary_function"],
         )
+
+
+def test_function_name_already_register():
+    @register
+    def fake_function():
+        pass
+
+    with pytest.raises(exceptions.ExistingRegisteredFunctionError):
+
+        @register
+        def fake_function():
+            pass
