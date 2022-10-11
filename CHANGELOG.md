@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 - BREAKING CHANGE (#65)
-  - Register function to substratools can be done with a decorator.
+  - Register functions to substratools can be done with a decorator.
   ```py
   def my_function1:
     pass
