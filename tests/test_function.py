@@ -226,7 +226,7 @@ def test_execute_train(workdir, output_model_path):
     assert output_model_path.exists()
 
     function.execute(
-        sysargs=["--function-name", "train", "--fake-data", "--n-fake-samples", "1", "--outputs", json.dumps(outputs)],
+        sysargs=["--function-name", "train", "--fake-data", "--n-fake-samples", "1", "--outputs", json.dumps(outputs)]
     )
     assert output_model_path.exists()
 
@@ -312,11 +312,7 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
     assert not pred_path.exists()
-    function.execute(
-        train,
-        predict,
-        sysargs=["--function-name", "predict"] + pred_options,
-    )
+    function.execute(sysargs=["--function-name", "predict"] + pred_options)
     assert pred_path.exists()
     with open(pred_path, "r") as f:
         pred = json.load(f)
@@ -333,9 +329,7 @@ def test_model_check(valid_function_workspace, function_to_run):
 
 def test_function_not_found():
     with pytest.raises(exceptions.FunctionNotFoundError):
-        function.execute(
-            sysargs=["--function-name", "imaginary_function"],
-        )
+        function.execute(sysargs=["--function-name", "imaginary_function"])
 
 
 def test_function_name_already_register():
