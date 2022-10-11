@@ -61,7 +61,6 @@ def test_workflow(workdir, dummy_opener):
     loop1_workspace_outputs = TaskResources(
         json.dumps([{"id": OutputIdentifiers.model, "value": str(loop1_model_path), "multiple": False}])
     )
-
     loop1_workspace = FunctionWorkspace(outputs=loop1_workspace_outputs)
     loop1_wp = FunctionWrapper(workspace=loop1_workspace, opener_wrapper=None)
 
@@ -80,13 +79,11 @@ def test_workflow(workdir, dummy_opener):
     loop2_workspace_outputs = TaskResources(
         json.dumps([{"id": OutputIdentifiers.model, "value": str(loop2_model_path), "multiple": False}])
     )
-
     loop2_workspace = FunctionWorkspace(inputs=loop2_workspace_inputs, outputs=loop2_workspace_outputs)
     loop2_wp = FunctionWrapper(workspace=loop2_workspace, opener_wrapper=None)
 
     # loop 2 (one model as input)
     loop2_wp.execute(function=train)
-
     model = utils.load_model(path=loop2_wp._workspace.task_outputs[OutputIdentifiers.model])
     assert model == {"i": 2, "total": 1}
     assert os.path.exists(loop2_model_path)
@@ -103,7 +100,6 @@ def test_workflow(workdir, dummy_opener):
     loop3_workspace_outputs = TaskResources(
         json.dumps([{"id": OutputIdentifiers.model, "value": str(loop3_model_path), "multiple": False}])
     )
-
     loop3_workspace = FunctionWorkspace(inputs=loop3_workspace_inputs, outputs=loop3_workspace_outputs)
     loop3_wp = FunctionWrapper(workspace=loop3_workspace, opener_wrapper=None)
 
@@ -120,7 +116,6 @@ def test_workflow(workdir, dummy_opener):
     predict_workspace_outputs = TaskResources(
         json.dumps([{"id": OutputIdentifiers.predictions, "value": str(predictions_path), "multiple": False}])
     )
-
     predict_workspace = FunctionWorkspace(inputs=predict_workspace_inputs, outputs=predict_workspace_outputs)
     predict_wp = FunctionWrapper(workspace=predict_workspace, opener_wrapper=None)
 
@@ -141,7 +136,6 @@ def test_workflow(workdir, dummy_opener):
         inputs=metric_workspace_inputs,
         outputs=metric_workspace_outputs,
     )
-
     metrics_wp = FunctionWrapper(workspace=metric_workspace, opener_wrapper=opener.load_from_module())
     metrics_wp.execute(function=score)
     res = load_performance(path=metrics_wp._workspace.task_outputs[OutputIdentifiers.performance])
