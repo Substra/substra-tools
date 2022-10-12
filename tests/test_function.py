@@ -12,7 +12,6 @@ import pytest
 from substratools import function
 from substratools import exceptions
 from substratools import opener
-from substratools.function import register
 from substratools.task_resources import StaticInputIdentifiers
 from substratools.task_resources import TaskResources
 from substratools.workspace import FunctionWorkspace
@@ -26,7 +25,7 @@ def setup(valid_opener):
     pass
 
 
-@register
+@function.register
 def train(
     inputs: TypedDict(
         "inputs",
@@ -61,7 +60,7 @@ def train(
     utils.save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
 
 
-@register
+@function.register
 def predict(
     inputs: TypedDict("inputs", {InputIdentifiers.datasamples: Any, InputIdentifiers.model: List[PathLike]}),
     outputs: TypedDict("outputs", {OutputIdentifiers.predictions: PathLike}),
@@ -80,7 +79,7 @@ def predict(
     utils.save_predictions(predictions=pred, path=outputs.get(OutputIdentifiers.predictions))
 
 
-@register
+@function.register
 def no_saved_train(inputs, outputs, task_properties):
     # TODO: checks on data
     # load models
@@ -101,7 +100,7 @@ def no_saved_train(inputs, outputs, task_properties):
     utils.no_save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
 
 
-@register
+@function.register
 def wrong_saved_train(inputs, outputs, task_properties):
     # TODO: checks on data
     # load models
@@ -333,12 +332,12 @@ def test_function_not_found():
 
 
 def test_function_name_already_register():
-    @register
+    @function.register
     def fake_function():
         pass
 
     with pytest.raises(exceptions.ExistingRegisteredFunctionError):
 
-        @register
+        @function.register
         def fake_function():
             pass
