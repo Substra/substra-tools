@@ -9,7 +9,6 @@ import pytest
 
 from substratools import function
 from substratools import exceptions
-from substratools.function import register
 from substratools import opener
 from substratools.task_resources import TaskResources
 from substratools.workspace import FunctionWorkspace
@@ -23,7 +22,7 @@ def setup(valid_opener):
     pass
 
 
-@register
+@function.register
 def aggregate(
     inputs: TypedDict(
         "inputs",
@@ -44,7 +43,7 @@ def aggregate(
     utils.save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
 
 
-@register
+@function.register
 def aggregate_predict(
     inputs: TypedDict(
         "inputs",

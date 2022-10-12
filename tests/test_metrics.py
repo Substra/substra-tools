@@ -10,7 +10,6 @@ import pytest
 from substratools import function
 from substratools import load_performance
 from substratools import opener
-from substratools.function import register
 from substratools import save_performance
 from substratools.task_resources import TaskResources
 from substratools.workspace import FunctionWorkspace
@@ -47,7 +46,7 @@ def setup(valid_opener, write_pred_file):
     pass
 
 
-@register
+@function.register
 def score(
     inputs: TypedDict("inputs", {InputIdentifiers.datasamples: Any, InputIdentifiers.predictions: Any}),
     outputs: TypedDict("outputs", {OutputIdentifiers.performance: PathLike}),
@@ -109,7 +108,7 @@ def test_execute_fake_data_modes(fake_data_mode, expected_score, inputs, outputs
 
 
 def test_execute_np(inputs, outputs):
-    @register
+    @function.register
     def float_np_score(
         inputs,
         outputs,
@@ -126,7 +125,7 @@ def test_execute_np(inputs, outputs):
 
 
 def test_execute_int(inputs, outputs):
-    @register
+    @function.register
     def int_score(
         inputs,
         outputs,
@@ -143,7 +142,7 @@ def test_execute_int(inputs, outputs):
 
 
 def test_execute_dict(inputs, outputs):
-    @register
+    @function.register
     def dict_score(
         inputs,
         outputs,
