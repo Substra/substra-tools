@@ -114,7 +114,7 @@ def create_models(workdir):
 
 def test_aggregate_no_model(valid_function_workspace):
     wp = function.FunctionWrapper(workspace=valid_function_workspace, opener_wrapper=None)
-    wp.execute(function=aggregate)
+    wp.execute_function(function=aggregate)
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
     assert model["value"] == 0
 
@@ -132,7 +132,7 @@ def test_aggregate_multiple_models(create_models, output_model_path):
     workspace = FunctionWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
     wp = function.FunctionWrapper(workspace, opener_wrapper=None)
 
-    wp.execute(function=aggregate)
+    wp.execute_function(function=aggregate)
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
 
     assert model["value"] == 3
@@ -159,7 +159,7 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models):
 
     wp = function.FunctionWrapper(workspace, opener_wrapper=opener.load_from_module())
 
-    wp.execute(function=predict, fake_data=fake_data, n_fake_samples=n_fake_samples)
+    wp.execute_function(function=predict, fake_data=fake_data, n_fake_samples=n_fake_samples)
 
     pred = utils.load_predictions(wp._workspace.task_outputs[OutputIdentifiers.predictions])
     assert pred == expected_pred
@@ -244,4 +244,4 @@ def test_model_check(function_to_run, valid_function_workspace):
     wp = function.FunctionWrapper(valid_function_workspace, opener_wrapper=None)
 
     with pytest.raises(exceptions.MissingFileError):
-        wp.execute(function=function_to_run)
+        wp.execute_function(function=function_to_run)

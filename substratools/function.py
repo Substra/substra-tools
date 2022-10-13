@@ -87,7 +87,7 @@ class FunctionWrapper(object):
                 raise exceptions.MissingFileError(f"Output file {path} used to save argument `{key}` does not exists.")
 
     @utils.Timer(logger)
-    def execute(self, function: Callable, rank: int = 0, fake_data: bool = False, n_fake_samples: int = None):
+    def execute_function(self, function: Callable, rank: int = 0, fake_data: bool = False, n_fake_samples: int = None):
         """Execute a compute task"""
 
         # load inputs
@@ -148,7 +148,7 @@ def _generate_function_cli():
 
     def _user_func(args, function):
         function_wrapper = _function_from_args(args)
-        function_wrapper.execute(
+        function_wrapper.execute_function(
             function=function,
             rank=args.rank,
             fake_data=args.fake_data,

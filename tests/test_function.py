@@ -140,7 +140,7 @@ def create_models(workdir):
 
 def test_train_no_model(valid_function_workspace):
     wp = function.FunctionWrapper(valid_function_workspace, opener_wrapper=None)
-    wp.execute(function=train)
+    wp.execute_function(function=train)
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
     assert model["value"] == 0
 
@@ -158,7 +158,7 @@ def test_train_multiple_models(output_model_path, create_models):
     workspace = FunctionWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
     wp = function.FunctionWrapper(workspace=workspace, opener_wrapper=None)
 
-    wp.execute(function=train)
+    wp.execute_function(function=train)
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
 
     assert model["value"] == 3
@@ -172,7 +172,7 @@ def test_train_fake_data(output_model_path):
 
     workspace = FunctionWorkspace(outputs=workspace_outputs)
     wp = function.FunctionWrapper(workspace=workspace, opener_wrapper=None)
-    wp.execute(function=train, fake_data=True, n_fake_samples=2)
+    wp.execute_function(function=train, fake_data=True, n_fake_samples=2)
     model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
     assert model["value"] == 0
 
@@ -196,7 +196,7 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models, output
 
     workspace = FunctionWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
     wp = function.FunctionWrapper(workspace=workspace, opener_wrapper=opener.load_from_module())
-    wp.execute(function=predict, fake_data=fake_data, n_fake_samples=n_fake_samples)
+    wp.execute_function(function=predict, fake_data=fake_data, n_fake_samples=n_fake_samples)
 
     pred = utils.load_predictions(wp._workspace.task_outputs["predictions"])
     assert pred == expected_pred
@@ -324,7 +324,7 @@ def test_model_check(valid_function_workspace, function_to_run):
     wp = function.FunctionWrapper(workspace=valid_function_workspace, opener_wrapper=None)
 
     with pytest.raises(exceptions.MissingFileError):
-        wp.execute(function=function_to_run)
+        wp.execute_function(function=function_to_run)
 
 
 def test_function_not_found():

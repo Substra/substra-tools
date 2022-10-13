@@ -75,7 +75,7 @@ def test_score(workdir, write_pred_file):
     )
     workspace = FunctionWorkspace(inputs=inputs, outputs=outputs)
     wp = function.FunctionWrapper(workspace=workspace, opener_wrapper=opener.load_from_module())
-    wp.execute(function=score)
+    wp.execute_function(function=score)
     s = load_performance(wp._workspace.task_outputs[OutputIdentifiers.performance])
     assert s == 15
 
