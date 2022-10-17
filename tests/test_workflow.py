@@ -65,7 +65,7 @@ def test_workflow(workdir, dummy_opener):
     loop1_wp = FunctionWrapper(workspace=loop1_workspace, opener_wrapper=None)
 
     # loop 1 (no input)
-    loop1_wp.execute(function=train)
+    loop1_wp.execute_function(function=train)
     model = utils.load_model(path=loop1_wp._workspace.task_outputs[OutputIdentifiers.model])
 
     assert model == {"i": 1, "total": 0}
@@ -83,7 +83,7 @@ def test_workflow(workdir, dummy_opener):
     loop2_wp = FunctionWrapper(workspace=loop2_workspace, opener_wrapper=None)
 
     # loop 2 (one model as input)
-    loop2_wp.execute(function=train)
+    loop2_wp.execute_function(function=train)
     model = utils.load_model(path=loop2_wp._workspace.task_outputs[OutputIdentifiers.model])
     assert model == {"i": 2, "total": 1}
     assert os.path.exists(loop2_model_path)
@@ -104,7 +104,7 @@ def test_workflow(workdir, dummy_opener):
     loop3_wp = FunctionWrapper(workspace=loop3_workspace, opener_wrapper=None)
 
     # loop 3 (two models as input)
-    loop3_wp.execute(function=train)
+    loop3_wp.execute_function(function=train)
     model = utils.load_model(path=loop3_wp._workspace.task_outputs[OutputIdentifiers.model])
     assert model == {"i": 3, "total": 3}
     assert os.path.exists(loop3_model_path)
@@ -120,7 +120,7 @@ def test_workflow(workdir, dummy_opener):
     predict_wp = FunctionWrapper(workspace=predict_workspace, opener_wrapper=None)
 
     # predict
-    predict_wp.execute(function=predict)
+    predict_wp.execute_function(function=predict)
     pred = utils.load_predictions(path=predict_wp._workspace.task_outputs[OutputIdentifiers.predictions])
     assert pred == {"sum": 3}
 
@@ -137,6 +137,6 @@ def test_workflow(workdir, dummy_opener):
         outputs=metric_workspace_outputs,
     )
     metrics_wp = FunctionWrapper(workspace=metric_workspace, opener_wrapper=opener.load_from_module())
-    metrics_wp.execute(function=score)
+    metrics_wp.execute_function(function=score)
     res = load_performance(path=metrics_wp._workspace.task_outputs[OutputIdentifiers.performance])
     assert res == 3.0

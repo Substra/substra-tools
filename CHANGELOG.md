@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- chore: rename `FunctionWrapper.execute` to `FunctionWrapper.execute_function`
 - BREAKING CHANGE (#63)
   - Rename algo to function.
   - `tools.algo.execute` become `tools.execute`

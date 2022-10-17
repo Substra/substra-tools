@@ -247,7 +247,7 @@ def test_train_no_model(train_outputs):
 
     dummy_train_workspace = FunctionWorkspace(outputs=train_outputs)
     dummy_train_wrapper = function.FunctionWrapper(dummy_train_workspace, None)
-    dummy_train_wrapper.execute(function=train)
+    dummy_train_wrapper.execute_function(function=train)
     local_model = utils.load_model(dummy_train_wrapper._workspace.task_outputs["local"])
     shared_model = utils.load_model(dummy_train_wrapper._workspace.task_outputs["shared"])
 
@@ -259,7 +259,7 @@ def test_train_input_head_trunk_models(composite_inputs, train_outputs):
 
     dummy_train_workspace = FunctionWorkspace(inputs=composite_inputs, outputs=train_outputs)
     dummy_train_wrapper = function.FunctionWrapper(dummy_train_workspace, None)
-    dummy_train_wrapper.execute(function=train)
+    dummy_train_wrapper.execute_function(function=train)
     local_model = utils.load_model(dummy_train_wrapper._workspace.task_outputs["local"])
     shared_model = utils.load_model(dummy_train_wrapper._workspace.task_outputs["shared"])
 
@@ -272,7 +272,9 @@ def test_train_fake_data(train_outputs, n_fake_samples):
     _opener = opener.load_from_module()
     dummy_train_workspace = FunctionWorkspace(outputs=train_outputs)
     dummy_train_wrapper = function.FunctionWrapper(dummy_train_workspace, _opener)
-    dummy_train_wrapper.execute(function=fake_data_train, fake_data=bool(n_fake_samples), n_fake_samples=n_fake_samples)
+    dummy_train_wrapper.execute_function(
+        function=fake_data_train, fake_data=bool(n_fake_samples), n_fake_samples=n_fake_samples
+    )
 
     local_model = utils.load_model(dummy_train_wrapper._workspace.task_outputs[OutputIdentifiers.local])
     shared_model = utils.load_model(dummy_train_wrapper._workspace.task_outputs[OutputIdentifiers.shared])
@@ -286,7 +288,7 @@ def test_predict_fake_data(composite_inputs, predict_outputs, n_fake_samples):
     _opener = opener.load_from_module()
     dummy_train_workspace = FunctionWorkspace(inputs=composite_inputs, outputs=predict_outputs)
     dummy_train_wrapper = function.FunctionWrapper(dummy_train_workspace, _opener)
-    dummy_train_wrapper.execute(
+    dummy_train_wrapper.execute_function(
         function=fake_data_predict, fake_data=bool(n_fake_samples), n_fake_samples=n_fake_samples
     )
 
@@ -309,4 +311,4 @@ def test_model_check(function_to_run, train_outputs):
     wp = function.FunctionWrapper(workspace=dummy_train_workspace, opener_wrapper=None)
 
     with pytest.raises(exceptions.MissingFileError):
-        wp.execute(function_to_run)
+        wp.execute_function(function_to_run)
