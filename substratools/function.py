@@ -14,6 +14,7 @@ from substratools import exceptions
 from substratools import opener
 from substratools import utils
 from substratools.exceptions import FunctionNotFoundError
+from substratools.exceptions import ExistingRegisteredFunctionError
 from substratools.task_resources import StaticInputIdentifiers
 from substratools.task_resources import TaskResources
 from substratools.workspace import FunctionWorkspace
@@ -70,6 +71,45 @@ def _parser_add_default_arguments(parser):
         default="[]",
         help="Outputs of the compute task",
     )
+
+
+class FunctionRegister:
+    """Class to create a decorator to register function in substratools. The functions are registered in the _functions
+    dictionary, with the function.__name__ as key.
+    Register a function in substratools means that this function can be access by the function.execute functions through
+    the --function-name CLI argument."""
+
+    def __init__(self):
+        self._functions = {}
+
+    def __call__(self, function: Callable):
+        """Function called when using an instance of the class as a decorator.
+
+        Args:
+            function (Callable): function to register in substratools.
+
+        Raises:
+            ExistingRegisteredFunctionError: Raise if a function with the same function.__name__
+            has already been registered in substratools.
+
+        Returns:
+            Callable: returns the function without decorator
+        """
+
+        if function.__name__ not in self._functions:
+            self._functions[function.__name__] = function
+        else:
+            raise ExistingRegisteredFunctionError("A function with the same name is already registered.")
+
+        return function
+
+    def get_registered_functions(self):
+        return self._functions
+
+
+# Instance of the decorator to store the function to register in memory.
+# Can be imported directly from substratools.
+register = FunctionRegister()
 
 
 class FunctionWrapper(object):
@@ -162,13 +202,14 @@ def _generate_function_cli():
     return parser
 
 
-def _get_function_from_name(functions, function_name):
+def _get_function_from_name(functions: dict, function_name: str):
 
-    for function in functions:
-        if function.__name__ == function_name:
-            return function
+    if function_name not in functions:
+        raise FunctionNotFoundError(
+            f"The function {function_name} given as --function-name argument as not been found."
+        )
 
-    raise FunctionNotFoundError(f"The function {function_name} given as --function-name argument as not been found.")
+    return functions[function_name]
 
 
 def save_performance(performance: Any, path: os.PathLike):
@@ -182,13 +223,14 @@ def load_performance(path: os.PathLike) -> Any:
     return performance
 
 
-def execute(*functions, sysargs=None):
+def execute(sysargs=None):
     """Launch function command line interface."""
 
     cli = _generate_function_cli()
 
     sysargs = sysargs if sysargs is not None else sys.argv[1:]
     args = cli.parse_args(sysargs)
-    function = _get_function_from_name(functions, args.function_name)
+    function = _get_function_from_name(register.get_registered_functions(), args.function_name)
     args.func(args, function)
+
     return args

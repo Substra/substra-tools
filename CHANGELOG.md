@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- BREAKING CHANGE (#65)
+  - Register functions to substratools can be done with a decorator.
+  ```py
+  def my_function1:
+    pass
+
+  def my_function2:
+    pass
+
+  if __name__ == '__main__':
+    tools.execute(my_function1, my_function2)
+  ```
+
+  become
+
+  ```py
+  @tools.register
+  def my_function1:
+    pass
+
+  @tools.register
+  def my_function2:
+    pass
+
+  if __name__ == '__main__':
+    tools.execute()
+  ```
+
 - BREAKING CHANGE (#63)
   - Rename algo to function.
   - `tools.algo.execute` become `tools.execute`

@@ -46,6 +46,7 @@ def setup(valid_opener, write_pred_file):
     pass
 
 
+@function.register
 def score(
     inputs: TypedDict("inputs", {InputIdentifiers.datasamples: Any, InputIdentifiers.predictions: Any}),
     outputs: TypedDict("outputs", {OutputIdentifiers.performance: PathLike}),
@@ -83,7 +84,6 @@ def test_score(workdir, write_pred_file):
 def test_execute(inputs, outputs):
     perf_path = outputs[0]["value"]
     function.execute(
-        score,
         sysargs=["--function-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
     )
     s = load_performance(perf_path)
@@ -100,7 +100,6 @@ def test_execute(inputs, outputs):
 def test_execute_fake_data_modes(fake_data_mode, expected_score, inputs, outputs):
     perf_path = outputs[0]["value"]
     function.execute(
-        score,
         sysargs=fake_data_mode
         + ["--function-name", "score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
     )
@@ -109,6 +108,7 @@ def test_execute_fake_data_modes(fake_data_mode, expected_score, inputs, outputs
 
 
 def test_execute_np(inputs, outputs):
+    @function.register
     def float_np_score(
         inputs,
         outputs,
@@ -118,7 +118,6 @@ def test_execute_np(inputs, outputs):
 
     perf_path = outputs[0]["value"]
     function.execute(
-        float_np_score,
         sysargs=["--function-name", "float_np_score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
     )
     s = load_performance(perf_path)
@@ -126,6 +125,7 @@ def test_execute_np(inputs, outputs):
 
 
 def test_execute_int(inputs, outputs):
+    @function.register
     def int_score(
         inputs,
         outputs,
@@ -135,7 +135,6 @@ def test_execute_int(inputs, outputs):
 
     perf_path = outputs[0]["value"]
     function.execute(
-        int_score,
         sysargs=["--function-name", "int_score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
     )
     s = load_performance(perf_path)
@@ -143,6 +142,7 @@ def test_execute_int(inputs, outputs):
 
 
 def test_execute_dict(inputs, outputs):
+    @function.register
     def dict_score(
         inputs,
         outputs,
@@ -152,7 +152,6 @@ def test_execute_dict(inputs, outputs):
 
     perf_path = outputs[0]["value"]
     function.execute(
-        dict_score,
         sysargs=["--function-name", "dict_score", "--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)],
     )
     s = load_performance(perf_path)

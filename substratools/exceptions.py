@@ -24,3 +24,7 @@ class InvalidCLIError(Exception):
 
 class FunctionNotFoundError(Exception):
     pass
+
+
+class ExistingRegisteredFunctionError(Exception):
+    pass

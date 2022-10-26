@@ -22,6 +22,7 @@ def setup(valid_opener):
     pass
 
 
+@function.register
 def aggregate(
     inputs: TypedDict(
         "inputs",
@@ -42,7 +43,8 @@ def aggregate(
     utils.save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
 
 
-def predict(
+@function.register
+def aggregate_predict(
     inputs: TypedDict(
         "inputs",
         {
@@ -159,7 +161,7 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models):
 
     wp = function.FunctionWrapper(workspace, opener_wrapper=opener.load_from_module())
 
-    wp.execute(function=predict, fake_data=fake_data, n_fake_samples=n_fake_samples)
+    wp.execute(function=aggregate_predict, fake_data=fake_data, n_fake_samples=n_fake_samples)
 
     pred = utils.load_predictions(wp._workspace.task_outputs[OutputIdentifiers.predictions])
     assert pred == expected_pred
@@ -171,12 +173,10 @@ def test_execute_aggregate(output_model_path):
 
     outputs = [{"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False}]
 
-    function.execute(aggregate, sysargs=["--function-name", "aggregate", "--outputs", json.dumps(outputs)])
+    function.execute(sysargs=["--function-name", "aggregate", "--outputs", json.dumps(outputs)])
     assert output_model_path.exists()
-
     output_model_path.unlink()
     function.execute(
-        aggregate,
         sysargs=["--function-name", "aggregate", "--outputs", json.dumps(outputs), "--log-level", "debug"],
     )
     assert output_model_path.exists()
@@ -198,7 +198,7 @@ def test_execute_aggregate_multiple_models(workdir, create_models, output_model_
     command = ["--function-name", "aggregate"]
     command.extend(options)
 
-    function.execute(aggregate, sysargs=command)
+    function.execute(sysargs=command)
     assert output_model_path.exists()
     with open(output_model_path, "r") as f:
         model = json.load(f)
@@ -217,7 +217,7 @@ def test_execute_predict(workdir, create_models, output_model_path, valid_opener
     options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
     command = ["--function-name", "aggregate"]
     command.extend(options)
-    function.execute(aggregate, predict, sysargs=command)
+    function.execute(sysargs=command)
     assert output_model_path.exists()
 
     # do predict on output model
@@ -231,7 +231,7 @@ def test_execute_predict(workdir, create_models, output_model_path, valid_opener
     pred_outputs = [{"id": OutputIdentifiers.predictions, "value": str(pred_path), "multiple": False}]
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
 
-    function.execute(aggregate, predict, sysargs=["--function-name", "predict"] + pred_options)
+    function.execute(sysargs=["--function-name", "predict"] + pred_options)
     assert pred_path.exists()
     with open(pred_path, "r") as f:
         pred = json.load(f)
