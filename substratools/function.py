@@ -77,7 +77,7 @@ class FunctionRegister:
     """Class to create a decorator to register function in substratools. The functions are registered in the _functions
     dictionary, with the function.__name__ as key.
     Register a function in substratools means that this function can be access by the function.execute functions through
-    the --function-name given by the CLI."""
+    the --function-name CLI argument."""
 
     def __init__(self):
         self._functions = {}
