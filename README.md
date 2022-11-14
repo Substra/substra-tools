@@ -18,7 +18,7 @@ pip install substratools
 ## Pull the substra-tools Docker image
 
 ```sh
-docker pull ghcr.io/substra/substra-tools:0.16.0-nvidiacuda11.6.0-base-ubuntu20.04-python3.9-workflows
+docker pull ghcr.io/substra/substra-tools:0.16.0-nvidiacuda11.8.0-base-ubuntu22.04-python3.9-workflows
 ```
 
 ## Developers
