@@ -52,6 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     tools.execute(my_function1, my_function2)
   ```
 
+- Update flake8 repository in pre-commit configuration (#69)
+
 ## [0.18.0](https://github.com/Substra/substra-tools/releases/tag/0.18.0) - 2022-09-26
 
 ### Added
