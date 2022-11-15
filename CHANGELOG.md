@@ -53,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ```
 
 - Update flake8 repository in pre-commit configuration (#69)
+- BREAKING CHANGE: Update substratools Docker image (#112)
 
 ## [0.18.0](https://github.com/Substra/substra-tools/releases/tag/0.18.0) - 2022-09-26
 
