@@ -6,7 +6,7 @@ FROM $CUDA_IMAGE
 ARG PYTHON_VERSION=3.10
 # TODO: find a way to parse this from the CUDA_IMAGE
 # with bash string manipulation: ${CUDA_IMAGE##*-}//.
-ARG DISTRO=ubuntu2004
+ARG DISTRO=ubuntu2204
 
 ARG USER_ID=1001
 ARG GROUP_ID=1001
