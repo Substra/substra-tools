@@ -67,6 +67,7 @@ class TaskResources:
         ]
         """
         self._values = {}
+        # TODO test if pathlib.Path(argstr) would work
         resource_list = json.loads(argstr.replace("\\", "/"))
 
         _check_resources_format(resource_list)
