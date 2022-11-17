@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### CHANGED
+
 - BREAKING CHANGE (#65)
   - Register functions to substratools can be done with a decorator.
+
   ```py
   def my_function1:
     pass
@@ -52,6 +55,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     tools.execute(my_function1, my_function2)
   ```
 
+### Fixed
+
+- Replace backslash by slash in TaskResources to fix windows compatibility (#70)
 - Update flake8 repository in pre-commit configuration (#69)
 
 ## [0.18.0](https://github.com/Substra/substra-tools/releases/tag/0.18.0) - 2022-09-26
@@ -60,7 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - feat: allow CLI parameters to be read from a file
 
-### CHANGED
+### Changed
 
 - BREAKING CHANGES:
 
