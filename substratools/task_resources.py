@@ -67,7 +67,7 @@ class TaskResources:
         ]
         """
         self._values = {}
-        resource_list = json.loads(argstr)
+        resource_list = json.loads(argstr.replace("\\", "/"))
 
         _check_resources_format(resource_list)
 
