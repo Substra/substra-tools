@@ -35,7 +35,6 @@ setup(
         "Topic :: Scientific/Engineering",
     ],
     python_requires=">=3.6",
-    setup_requires=["pytest-runner"],
     extras_require={
         "test": [
             "flake8",
