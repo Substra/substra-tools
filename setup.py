@@ -34,7 +34,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Topic :: Scientific/Engineering",
     ],
-    python_requires=">=3.6",
+    python_requires=">=3.8",
     extras_require={
         "test": [
             "flake8",
