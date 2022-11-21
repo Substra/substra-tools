@@ -57,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Remove depreciated `pytest-runner` from setup.py (#71)
 - Replace backslash by slash in TaskResources to fix windows compatibility (#70)
 - Update flake8 repository in pre-commit configuration (#69)
 - BREAKING CHANGE: Update substratools Docker image (#112)
