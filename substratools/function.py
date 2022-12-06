@@ -82,12 +82,13 @@ class FunctionRegister:
     def __init__(self):
         self._functions = {}
 
-    def __call__(self, function: Callable, function_name: Optional = None):
+    def __call__(self, function: Callable, function_name: Optional[str] = None):
         """Function called when using an instance of the class as a decorator.
 
         Args:
             function (Callable): function to register in substratools.
-
+            function_name (str, optional): function name to register the given function.
+                If None, function.__name__ is used for registration.
         Raises:
             ExistingRegisteredFunctionError: Raise if a function with the same function.__name__
             has already been registered in substratools.
