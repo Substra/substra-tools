@@ -82,7 +82,7 @@ class FunctionRegister:
     def __init__(self):
         self._functions = {}
 
-    def __call__(self, function: Callable):
+    def __call__(self, function: Callable, function_name: Optional = None):
         """Function called when using an instance of the class as a decorator.
 
         Args:
@@ -96,8 +96,9 @@ class FunctionRegister:
             Callable: returns the function without decorator
         """
 
-        if function.__name__ not in self._functions:
-            self._functions[function.__name__] = function
+        function_name = function_name or function.__name__
+        if function_name not in self._functions:
+            self._functions[function_name] = function
         else:
             raise ExistingRegisteredFunctionError("A function with the same name is already registered.")
 
