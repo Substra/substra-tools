@@ -188,7 +188,7 @@ def _generate_function_cli():
         function_wrapper = _function_from_args(args)
         function_wrapper.execute(
             function=function,
-            rank=args.task_properties,
+            task_properties=args.task_properties,
             fake_data=args.fake_data,
             n_fake_samples=args.n_fake_samples,
         )
