@@ -32,7 +32,7 @@ def _parser_add_default_arguments(parser):
         "-r",
         "--task-properties",
         type=str,
-        default={},
+        default="{}",
         help="Define the task properties",
     ),
     parser.add_argument(
@@ -190,7 +190,7 @@ def _generate_function_cli():
         function_wrapper = _function_from_args(args)
         function_wrapper.execute(
             function=function,
-            task_properties=args.task_properties,
+            task_properties=json.loads(args.task_properties),
             fake_data=args.fake_data,
             n_fake_samples=args.n_fake_samples,
         )
