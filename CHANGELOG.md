@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- Rank is now passed in a task property dictionary from the backend (instead of the rank argument) (#75)
+
 ## [0.19.0](https://github.com/Substra/substra-tools/releases/tag/0.19.0) - 2022-11-22
 
 ### CHANGED
