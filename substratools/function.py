@@ -30,10 +30,10 @@ def _parser_add_default_arguments(parser):
     )
     parser.add_argument(
         "-r",
-        "--rank",
-        type=int,
-        default=0,
-        help="Define machine learning task rank",
+        "--task-properties",
+        type=str,
+        default="{}",
+        help="Define the task properties",
     ),
     parser.add_argument(
         "-d",
@@ -127,13 +127,13 @@ class FunctionWrapper(object):
                 raise exceptions.MissingFileError(f"Output file {path} used to save argument `{key}` does not exists.")
 
     @utils.Timer(logger)
-    def execute(self, function: Callable, rank: int = 0, fake_data: bool = False, n_fake_samples: int = None):
+    def execute(
+        self, function: Callable, task_properties: dict = {}, fake_data: bool = False, n_fake_samples: int = None
+    ):
         """Execute a compute task"""
 
         # load inputs
         inputs = deepcopy(self._workspace.task_inputs)
-
-        task_properties = {StaticInputIdentifiers.rank.value: rank}
 
         # load data from opener
         if self._opener_wrapper:
@@ -190,7 +190,7 @@ def _generate_function_cli():
         function_wrapper = _function_from_args(args)
         function_wrapper.execute(
             function=function,
-            rank=args.rank,
+            task_properties=json.loads(args.task_properties),
             fake_data=args.fake_data,
             n_fake_samples=args.n_fake_samples,
         )
