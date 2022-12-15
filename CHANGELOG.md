@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- Add optional argument to ``register`` decorator to choose a custom function name. Allow to register the same function several time with a different name (#74)
 - Rank is now passed in a task properties dictionary from the backend (instead of the rank argument) (#75)
 
 ## [0.19.0](https://github.com/Substra/substra-tools/releases/tag/0.19.0) - 2022-11-22
