@@ -31,20 +31,20 @@ def train(
         "inputs",
         {
             InputIdentifiers.datasamples: Tuple[List["str"], List[int]],  # cf valid_opener_code
-            InputIdentifiers.models: Optional[
+            InputIdentifiers.shared: Optional[
                 PathLike
             ],  # inputs contains a dict where keys are identifiers and values are paths on the disk
         },
     ),
     outputs: TypedDict(
-        "outputs", {OutputIdentifiers.model: PathLike}
+        "outputs", {OutputIdentifiers.shared: PathLike}
     ),  # outputs contains a dict where keys are identifiers and values are paths on disk
     task_properties: TypedDict("task_properties", {InputIdentifiers.rank: int}),
 ) -> None:
     # TODO: checks on data
     # load models
     if inputs:
-        models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
+        models = utils.load_models(paths=inputs.get(InputIdentifiers.shared, []))
     else:
         models = []
     # init model
@@ -57,19 +57,19 @@ def train(
         new_model["value"] += m["value"]
 
     # save model
-    utils.save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
+    utils.save_model(model=new_model, path=outputs.get(OutputIdentifiers.shared))
 
 
 @function.register
 def predict(
-    inputs: TypedDict("inputs", {InputIdentifiers.datasamples: Any, InputIdentifiers.model: List[PathLike]}),
+    inputs: TypedDict("inputs", {InputIdentifiers.datasamples: Any, InputIdentifiers.shared: List[PathLike]}),
     outputs: TypedDict("outputs", {OutputIdentifiers.predictions: PathLike}),
     task_properties: TypedDict("task_properties", {InputIdentifiers.rank: int}),
 ) -> None:
     # TODO: checks on data
 
     # load_model
-    model = utils.load_model(path=inputs.get(InputIdentifiers.model))
+    model = utils.load_model(path=inputs.get(InputIdentifiers.shared))
 
     # predict
     X = inputs.get(InputIdentifiers.datasamples)[0]
@@ -84,7 +84,7 @@ def no_saved_train(inputs, outputs, task_properties):
     # TODO: checks on data
     # load models
     if inputs:
-        models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
+        models = utils.load_models(paths=inputs.get(InputIdentifiers.shared, []))
     else:
         models = []
     # init model
@@ -97,7 +97,7 @@ def no_saved_train(inputs, outputs, task_properties):
         new_model["value"] += m["value"]
 
     # save model
-    utils.no_save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
+    utils.no_save_model(model=new_model, path=outputs.get(OutputIdentifiers.shared))
 
 
 @function.register
@@ -105,7 +105,7 @@ def wrong_saved_train(inputs, outputs, task_properties):
     # TODO: checks on data
     # load models
     if inputs:
-        models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
+        models = utils.load_models(paths=inputs.get(InputIdentifiers.shared, []))
     else:
         models = []
     # init model
@@ -145,7 +145,7 @@ def create_models(workdir):
 def test_train_no_model(valid_function_workspace):
     wp = function.FunctionWrapper(valid_function_workspace, opener_wrapper=None)
     wp.execute(function=train)
-    model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
+    model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.shared])
     assert model["value"] == 0
 
 
@@ -153,31 +153,30 @@ def test_train_multiple_models(output_model_path, create_models):
     _, model_filenames = create_models
 
     workspace_inputs = TaskResources(
-        json.dumps([{"id": InputIdentifiers.models, "value": str(f), "multiple": True} for f in model_filenames])
+        json.dumps([{"id": InputIdentifiers.shared, "value": str(f), "multiple": True} for f in model_filenames])
     )
     workspace_outputs = TaskResources(
-        json.dumps([{"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False}])
+        json.dumps([{"id": OutputIdentifiers.shared, "value": str(output_model_path), "multiple": False}])
     )
 
     workspace = FunctionWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
     wp = function.FunctionWrapper(workspace=workspace, opener_wrapper=None)
 
     wp.execute(function=train)
-    model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
+    model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.shared])
 
     assert model["value"] == 3
 
 
 def test_train_fake_data(output_model_path):
-
     workspace_outputs = TaskResources(
-        json.dumps([{"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False}])
+        json.dumps([{"id": OutputIdentifiers.shared, "value": str(output_model_path), "multiple": False}])
     )
 
     workspace = FunctionWorkspace(outputs=workspace_outputs)
     wp = function.FunctionWrapper(workspace=workspace, opener_wrapper=None)
     wp.execute(function=train, fake_data=True, n_fake_samples=2)
-    model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
+    model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.shared])
     assert model["value"] == 0
 
 
@@ -192,7 +191,7 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models, output
     _, model_filenames = create_models
 
     workspace_inputs = TaskResources(
-        json.dumps([{"id": InputIdentifiers.model, "value": model_filenames[0], "multiple": False}])
+        json.dumps([{"id": InputIdentifiers.shared, "value": model_filenames[0], "multiple": False}])
     )
     workspace_outputs = TaskResources(
         json.dumps([{"id": OutputIdentifiers.predictions, "value": str(output_model_path), "multiple": False}])
@@ -215,7 +214,7 @@ def test_execute_train(workdir, output_model_path):
         },
     ]
     outputs = [
-        {"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False},
+        {"id": OutputIdentifiers.shared, "value": str(output_model_path), "multiple": False},
     ]
     options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
 
@@ -243,11 +242,11 @@ def test_execute_train_multiple_models(workdir, output_model_path, create_models
     assert not pred_path.exists()
 
     inputs = [
-        {"id": InputIdentifiers.models, "value": str(workdir / model), "multiple": True} for model in model_filenames
+        {"id": InputIdentifiers.shared, "value": str(workdir / model), "multiple": True} for model in model_filenames
     ]
 
     outputs = [
-        {"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False},
+        {"id": OutputIdentifiers.shared, "value": str(output_model_path), "multiple": False},
     ]
     options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
 
@@ -267,10 +266,10 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     _, model_filenames = create_models
     pred_path = workdir / "pred"
     train_inputs = [
-        {"id": InputIdentifiers.models, "value": str(workdir / model), "multiple": True} for model in model_filenames
+        {"id": InputIdentifiers.shared, "value": str(workdir / model), "multiple": True} for model in model_filenames
     ]
 
-    train_outputs = [{"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False}]
+    train_outputs = [{"id": OutputIdentifiers.shared, "value": str(output_model_path), "multiple": False}]
     train_options = ["--inputs", json.dumps(train_inputs), "--outputs", json.dumps(train_outputs)]
 
     output_model_path = Path(output_model_path)
@@ -284,7 +283,7 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     # do predict on output model
     pred_inputs = [
         {"id": InputIdentifiers.opener, "value": valid_opener_script, "multiple": False},
-        {"id": InputIdentifiers.model, "value": str(output_model_path), "multiple": False},
+        {"id": InputIdentifiers.shared, "value": str(output_model_path), "multiple": False},
     ]
     pred_outputs = [{"id": OutputIdentifiers.predictions, "value": str(pred_path), "multiple": False}]
     pred_options = ["--inputs", json.dumps(pred_inputs), "--outputs", json.dumps(pred_outputs)]
@@ -304,7 +303,7 @@ def test_execute_predict(workdir, output_model_path, create_models, valid_opener
     shutil.move(output_model_path, input_model_path)
 
     pred_inputs = [
-        {"id": InputIdentifiers.model, "value": str(input_model_path), "multiple": False},
+        {"id": InputIdentifiers.shared, "value": str(input_model_path), "multiple": False},
         {"id": InputIdentifiers.opener, "value": valid_opener_script, "multiple": False},
     ]
     pred_outputs = [{"id": OutputIdentifiers.predictions, "value": str(pred_path), "multiple": False}]

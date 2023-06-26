@@ -77,9 +77,8 @@ def output_model_path_2(workdir: Path) -> str:
 
 @pytest.fixture()
 def valid_function_workspace(output_model_path: str) -> FunctionWorkspace:
-
     workspace_outputs = TaskResources(
-        json.dumps([{"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False}])
+        json.dumps([{"id": OutputIdentifiers.shared, "value": str(output_model_path), "multiple": False}])
     )
 
     workspace = FunctionWorkspace(outputs=workspace_outputs)
