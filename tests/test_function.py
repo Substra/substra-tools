@@ -118,7 +118,7 @@ def wrong_saved_train(inputs, outputs, task_properties):
         new_model["value"] += m["value"]
 
     # save model
-    utils.wrong_save_model(model=new_model, path=outputs.get("model"))
+    utils.wrong_save_model(model=new_model, path=outputs.get(OutputIdentifiers.shared))
 
 
 @pytest.fixture
