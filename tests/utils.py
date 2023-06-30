@@ -10,8 +10,6 @@ from substratools.task_resources import StaticInputIdentifiers
 class InputIdentifiers(str, Enum):
     local = "local"
     shared = "shared"
-    model = "model"
-    models = "models"
     predictions = "predictions"
     opener = StaticInputIdentifiers.opener.value
     datasamples = StaticInputIdentifiers.datasamples.value
@@ -21,7 +19,6 @@ class InputIdentifiers(str, Enum):
 class OutputIdentifiers(str, Enum):
     local = "local"
     shared = "shared"
-    model = "model"
     predictions = "predictions"
     performance = "performance"
 

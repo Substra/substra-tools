@@ -26,13 +26,13 @@ def setup(valid_opener):
 def aggregate(
     inputs: TypedDict(
         "inputs",
-        {InputIdentifiers.models: List[PathLike]},
+        {InputIdentifiers.shared: List[PathLike]},
     ),
-    outputs: TypedDict("outputs", {OutputIdentifiers.model: PathLike}),
+    outputs: TypedDict("outputs", {OutputIdentifiers.shared: PathLike}),
     task_properties: TypedDict("task_properties", {InputIdentifiers.rank: int}),
 ) -> None:
     if inputs:
-        models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
+        models = utils.load_models(paths=inputs.get(InputIdentifiers.shared, []))
     else:
         models = []
 
@@ -40,7 +40,7 @@ def aggregate(
     for m in models:
         new_model["value"] += m["value"]
 
-    utils.save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
+    utils.save_model(model=new_model, path=outputs.get(OutputIdentifiers.shared))
 
 
 @function.register
@@ -49,13 +49,13 @@ def aggregate_predict(
         "inputs",
         {
             InputIdentifiers.datasamples: Any,
-            InputIdentifiers.model: PathLike,
+            InputIdentifiers.shared: PathLike,
         },
     ),
-    outputs: TypedDict("outputs", {OutputIdentifiers.model: PathLike}),
+    outputs: TypedDict("outputs", {OutputIdentifiers.shared: PathLike}),
     task_properties: TypedDict("task_properties", {InputIdentifiers.rank: int}),
 ):
-    model = utils.load_model(path=inputs.get(OutputIdentifiers.model))
+    model = utils.load_model(path=inputs.get(OutputIdentifiers.shared))
 
     # Predict
     X = inputs.get(InputIdentifiers.datasamples)[0]
@@ -66,9 +66,8 @@ def aggregate_predict(
 
 
 def no_saved_aggregate(inputs, outputs, task_properties):
-
     if inputs:
-        models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
+        models = utils.load_models(paths=inputs.get(InputIdentifiers.shared, []))
     else:
         models = []
 
@@ -76,13 +75,12 @@ def no_saved_aggregate(inputs, outputs, task_properties):
     for m in models:
         new_model["value"] += m["value"]
 
-    utils.no_save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
+    utils.no_save_model(model=new_model, path=outputs.get(OutputIdentifiers.shared))
 
 
 def wrong_saved_aggregate(inputs, outputs, task_properties):
-
     if inputs:
-        models = utils.load_models(paths=inputs.get(InputIdentifiers.models, []))
+        models = utils.load_models(paths=inputs.get(InputIdentifiers.shared, []))
     else:
         models = []
 
@@ -90,7 +88,7 @@ def wrong_saved_aggregate(inputs, outputs, task_properties):
     for m in models:
         new_model["value"] += m["value"]
 
-    utils.wrong_save_model(model=new_model, path=outputs.get(OutputIdentifiers.model))
+    utils.wrong_save_model(model=new_model, path=outputs.get(OutputIdentifiers.shared))
 
 
 @pytest.fixture
@@ -98,7 +96,7 @@ def create_models(workdir):
     model_a = {"value": 1}
     model_b = {"value": 2}
 
-    model_dir = workdir / OutputIdentifiers.model
+    model_dir = workdir / OutputIdentifiers.shared
     model_dir.mkdir()
 
     def _create_model(model_data):
@@ -117,7 +115,7 @@ def create_models(workdir):
 def test_aggregate_no_model(valid_function_workspace):
     wp = function.FunctionWrapper(workspace=valid_function_workspace, opener_wrapper=None)
     wp.execute(function=aggregate)
-    model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
+    model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.shared])
     assert model["value"] == 0
 
 
@@ -125,17 +123,17 @@ def test_aggregate_multiple_models(create_models, output_model_path):
     _, model_filenames = create_models
 
     workspace_inputs = TaskResources(
-        json.dumps([{"id": InputIdentifiers.models, "value": f, "multiple": True} for f in model_filenames])
+        json.dumps([{"id": InputIdentifiers.shared, "value": f, "multiple": True} for f in model_filenames])
     )
     workspace_outputs = TaskResources(
-        json.dumps([{"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False}])
+        json.dumps([{"id": OutputIdentifiers.shared, "value": str(output_model_path), "multiple": False}])
     )
 
     workspace = FunctionWorkspace(inputs=workspace_inputs, outputs=workspace_outputs)
     wp = function.FunctionWrapper(workspace, opener_wrapper=None)
 
     wp.execute(function=aggregate)
-    model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.model])
+    model = utils.load_model(wp._workspace.task_outputs[OutputIdentifiers.shared])
 
     assert model["value"] == 3
 
@@ -151,7 +149,7 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models):
     _, model_filenames = create_models
 
     workspace_inputs = TaskResources(
-        json.dumps([{"id": InputIdentifiers.model, "value": model_filenames[0], "multiple": False}])
+        json.dumps([{"id": InputIdentifiers.shared, "value": model_filenames[0], "multiple": False}])
     )
     workspace_outputs = TaskResources(
         json.dumps([{"id": OutputIdentifiers.predictions, "value": model_filenames[0], "multiple": False}])
@@ -168,10 +166,9 @@ def test_predict(fake_data, expected_pred, n_fake_samples, create_models):
 
 
 def test_execute_aggregate(output_model_path):
-
     assert not output_model_path.exists()
 
-    outputs = [{"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False}]
+    outputs = [{"id": OutputIdentifiers.shared, "value": str(output_model_path), "multiple": False}]
 
     function.execute(sysargs=["--function-name", "aggregate", "--outputs", json.dumps(outputs)])
     assert output_model_path.exists()
@@ -188,10 +185,10 @@ def test_execute_aggregate_multiple_models(workdir, create_models, output_model_
     assert not output_model_path.exists()
 
     inputs = [
-        {"id": InputIdentifiers.models, "value": str(workdir / model), "multiple": True} for model in model_filenames
+        {"id": InputIdentifiers.shared, "value": str(workdir / model), "multiple": True} for model in model_filenames
     ]
     outputs = [
-        {"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False},
+        {"id": OutputIdentifiers.shared, "value": str(output_model_path), "multiple": False},
     ]
     options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
 
@@ -210,10 +207,10 @@ def test_execute_predict(workdir, create_models, output_model_path, valid_opener
     assert not output_model_path.exists()
 
     inputs = [
-        {"id": InputIdentifiers.models, "value": str(workdir / model_name), "multiple": True}
+        {"id": InputIdentifiers.shared, "value": str(workdir / model_name), "multiple": True}
         for model_name in model_filenames
     ]
-    outputs = [{"id": OutputIdentifiers.model, "value": str(output_model_path), "multiple": False}]
+    outputs = [{"id": OutputIdentifiers.shared, "value": str(output_model_path), "multiple": False}]
     options = ["--inputs", json.dumps(inputs), "--outputs", json.dumps(outputs)]
     command = ["--function-name", "aggregate"]
     command.extend(options)
@@ -225,7 +222,7 @@ def test_execute_predict(workdir, create_models, output_model_path, valid_opener
     assert not pred_path.exists()
 
     pred_inputs = [
-        {"id": InputIdentifiers.model, "value": str(output_model_path), "multiple": False},
+        {"id": InputIdentifiers.shared, "value": str(output_model_path), "multiple": False},
         {"id": InputIdentifiers.opener, "value": valid_opener_script, "multiple": False},
     ]
     pred_outputs = [{"id": OutputIdentifiers.predictions, "value": str(pred_path), "multiple": False}]
