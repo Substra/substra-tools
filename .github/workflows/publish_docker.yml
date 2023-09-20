@@ -50,7 +50,7 @@ jobs:
 
           if [ $SUBSTRA_TOOLS_REF = "main" ]; then
             echo "IMG_BASE_TAG=latest-$CUDA_IMAGE_TAG-python${{ matrix.python_version }}" >> $GITHUB_ENV
-            # Set the most recent image to latest, latest-minimal, latest-workflows
+            # Set the most recent image to latest
             if [ "${{ matrix.cuda_image }}" == "nvidia/cuda:11.8.0-base-ubuntu22.04" ] &&  [ "${{ matrix.python_version }}" == "3.10" ]; then
               echo "LATEST_TAG=latest" >> $GITHUB_ENV
             fi
@@ -75,26 +75,6 @@ jobs:
         uses: docker/metadata-action@v3
         with:
           images: "${{ env.REGISTRY }}/substra-tools"
-          tags: |
-            ${{ env.IMG_BASE_TAG }}
-            ${{ env.LATEST_TAG }}
-
-      - name: Docker minimal image metadata
-        id: minimal-metadata
-        uses: docker/metadata-action@v3
-        with:
-          images: "${{ env.REGISTRY }}/substra-tools"
-          flavor: suffix=-minimal
-          tags: |
-            ${{ env.IMG_BASE_TAG }}
-            ${{ env.LATEST_TAG }}
-
-      - name: Docker workflows image metadata
-        id: workflows-metadata
-        uses: docker/metadata-action@v3
-        with:
-          images: "${{ env.REGISTRY }}/substra-tools"
-          flavor: suffix=-workflows
           tags: |
             ${{ env.IMG_BASE_TAG }}
             ${{ env.LATEST_TAG }}
