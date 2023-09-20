@@ -110,27 +110,3 @@ jobs:
           build-args: |
             CUDA_IMAGE=${{ matrix.cuda_image }}
             PYTHON_VERSION=${{ matrix.python_version }}
-
-      - name: Build and Push minimal image
-        uses: docker/build-push-action@v2
-        with:
-          push: ${{ github.event_name != 'pull_request' }}
-          file: Dockerfile.minimal
-          context: .
-          tags: ${{ steps.minimal-metadata.outputs.tags }}
-          labels: ${{ steps.minimal-metadata.outputs.labels }}
-          build-args: |
-            CUDA_IMAGE=${{ matrix.cuda_image }}
-            PYTHON_VERSION=${{ matrix.python_version }}
-
-      - name: Build and Push workflows image
-        uses: docker/build-push-action@v2
-        with:
-          push: ${{ github.event_name != 'pull_request' }}
-          file: Dockerfile.workflows
-          context: .
-          tags: ${{ steps.workflows-metadata.outputs.tags }}
-          labels: ${{ steps.workflows-metadata.outputs.labels }}
-          build-args: |
-            CUDA_IMAGE=${{ matrix.cuda_image }}
-            PYTHON_VERSION=${{ matrix.python_version }}
