@@ -3,7 +3,7 @@ ARG CUDA_IMAGE=nvidia/cuda:11.8.0-base-ubuntu22.04
 FROM $CUDA_IMAGE
 
 # Modified by .github/workflows/publish_docker.yml
-ARG PYTHON_VERSION=3.10
+ARG PYTHON_VERSION=3.11
 # TODO: find a way to parse this from the CUDA_IMAGE
 # with bash string manipulation: ${CUDA_IMAGE##*-}//.
 ARG DISTRO=ubuntu2204
