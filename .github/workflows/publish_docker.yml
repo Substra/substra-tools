@@ -29,7 +29,7 @@ jobs:
     outputs:
       # Add a version to this list to automatically build Dockerfiles from it for the next releases
       default_cuda_images: '["nvidia/cuda:11.8.0-base-ubuntu22.04"]'
-      default_python_versions: '["3.8", "3.9", "3.10", "3.11"]'
+      default_python_versions: '["3.9", "3.10", "3.11"]'
     steps:
       - run: true
 

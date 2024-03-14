@@ -9,16 +9,16 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: 3.8
+          python-version: 3.11
       - name: Install tools
         run: pip install wheel
       - name: Build
         run:
           python setup.py sdist bdist_wheel
       - name: Publish
-        uses: pypa/gh-action-pypi-publish@v1.5.1
+        uses: pypa/gh-action-pypi-publish@v1.8.14
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
