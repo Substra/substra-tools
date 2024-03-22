@@ -42,6 +42,7 @@ setup(
             "pytest-cov",
             "pytest-mock",
             "numpy",
+            "towncrier",
         ],
     },
     zip_safe=False,
