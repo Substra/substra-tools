@@ -25,7 +25,7 @@ jobs:
       - name: Lint
         run: flake8 substratools
       - name: Install substra-tools
-        run: pip install -e '.[test]'
+        run: pip install -e '.[dev]'
       - name: Test
         run: |
           make test

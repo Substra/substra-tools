@@ -51,13 +51,13 @@ docker build -f Dockerfile .
 To setup the project in development mode, run:
 
 ```sh
-pip install -e ".[test]"
+pip install -e ".[dev]"
 ```
 
 To run all tests, use the following command:
 
 ```sh
-python setup.py test
+make test
 ```
 
 ## How to generate the changelog

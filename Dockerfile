@@ -14,8 +14,9 @@ ARG USER_NAME=sandbox
 ARG GROUP_NAME=sandbox
 ARG HOME_DIR=/sandbox
 
-COPY ./setup.py /tmp
+COPY ./pyproject.toml /tmp
 COPY ./README.md /tmp
+COPY ./LICENSE /tmp
 COPY ./substratools /tmp/substratools
 
 # Update the CUDA Linux GPG Repository Key
