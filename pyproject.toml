@@ -12,6 +12,7 @@ path = "substratools/__version__.py"
 name = "substratools"
 description = "Python tools to submit functions on the Substra platform"
 dynamic = ["version"]
+readme = "README.md"
 requires-python = ">= 3.9"
 dependencies = []
 keywords = ["substra"]
