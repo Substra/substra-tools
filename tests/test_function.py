@@ -228,7 +228,7 @@ def test_execute_train(workdir, output_model_path):
     )
     assert output_model_path.exists()
 
-    function.execute(sysargs=["--function-name", "train"] + options)
+    function.execute(sysargs=["--function-name", "train", "--log-level", "debug"] + options)
     assert output_model_path.exists()
 
 

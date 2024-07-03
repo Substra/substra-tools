@@ -2,19 +2,19 @@ import abc
 import os
 
 
-DEFAULT_INPUT_DATA_FOLDER_PATH = "data/"
-DEFAULT_INPUT_PREDICTIONS_PATH = "pred/pred"
-DEFAULT_OUTPUT_PERF_PATH = "pred/perf.json"
-DEFAULT_LOG_PATH = "model/log_model.log"
-DEFAULT_CHAINKEYS_PATH = "chainkeys/"
-
-
 def makedir_safe(path):
     """Create dir (no failure)."""
     try:
         os.makedirs(path)
     except (FileExistsError, PermissionError):
         pass
+
+
+DEFAULT_INPUT_DATA_FOLDER_PATH = "data/"
+DEFAULT_INPUT_PREDICTIONS_PATH = "pred/pred"
+DEFAULT_OUTPUT_PERF_PATH = "pred/perf.json"
+DEFAULT_LOG_PATH = "model/log_model.log"
+DEFAULT_CHAINKEYS_PATH = "chainkeys/"
 
 
 class Workspace(abc.ABC):
