@@ -2,15 +2,16 @@ import json
 import shutil
 from os import PathLike
 from pathlib import Path
-from typing import Any, Tuple
+from typing import Any
 from typing import List
 from typing import Optional
+from typing import Tuple
 from typing import TypedDict
 
 import pytest
 
-from substratools import function
 from substratools import exceptions
+from substratools import function
 from substratools import opener
 from substratools.task_resources import StaticInputIdentifiers
 from substratools.task_resources import TaskResources

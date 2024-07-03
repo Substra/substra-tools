@@ -13,8 +13,8 @@ from typing import Optional
 from substratools import exceptions
 from substratools import opener
 from substratools import utils
-from substratools.exceptions import FunctionNotFoundError
 from substratools.exceptions import ExistingRegisteredFunctionError
+from substratools.exceptions import FunctionNotFoundError
 from substratools.task_resources import StaticInputIdentifiers
 from substratools.task_resources import TaskResources
 from substratools.workspace import FunctionWorkspace

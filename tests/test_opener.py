@@ -3,12 +3,12 @@ import os
 import pytest
 
 from substratools import exceptions
-from substratools.opener import load_from_module
 from substratools.opener import Opener
+from substratools.opener import OpenerWrapper
+from substratools.opener import load_from_module
 from substratools.utils import import_module
 from substratools.utils import load_interface_from_module
 from substratools.workspace import DEFAULT_INPUT_DATA_FOLDER_PATH
-from substratools.opener import OpenerWrapper
 
 
 @pytest.fixture

@@ -1,6 +1,5 @@
 import json
 import os
-
 import sys
 from pathlib import Path
 from uuid import uuid4
@@ -9,8 +8,8 @@ import pytest
 
 from substratools.task_resources import TaskResources
 from substratools.utils import import_module
-from tests.utils import OutputIdentifiers
 from substratools.workspace import FunctionWorkspace
+from tests.utils import OutputIdentifiers
 
 
 @pytest.fixture

@@ -1,9 +1,11 @@
-from substratools.task_resources import TaskResources
-from substratools.task_resources import StaticInputIdentifiers
+import json
+
 import pytest
+
 from substratools.exceptions import InvalidCLIError
 from substratools.exceptions import InvalidInputOutputsError
-import json
+from substratools.task_resources import StaticInputIdentifiers
+from substratools.task_resources import TaskResources
 
 _VALID_RESOURCES = [
     {"id": "foo", "value": "bar", "multiple": True},
