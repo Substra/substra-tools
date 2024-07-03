@@ -2,14 +2,6 @@ import abc
 import os
 
 
-def makedir_safe(path):
-    """Create dir (no failure)."""
-    try:
-        os.makedirs(path)
-    except (FileExistsError, PermissionError):
-        pass
-
-
 DEFAULT_INPUT_DATA_FOLDER_PATH = "data/"
 DEFAULT_INPUT_PREDICTIONS_PATH = "pred/pred"
 DEFAULT_OUTPUT_PERF_PATH = "pred/perf.json"
@@ -53,10 +45,6 @@ class OpenerWorkspace(Workspace):
             DEFAULT_INPUT_DATA_FOLDER_PATH
         )
 
-        for d in self.input_data_folder_paths:
-            if d:
-                makedir_safe(d)
-
 
 class FunctionWorkspace(OpenerWorkspace):
     """Filesystem workspace for user defined function execution."""
@@ -81,15 +69,3 @@ class FunctionWorkspace(OpenerWorkspace):
 
         self.task_inputs = inputs.formatted_dynamic_resources if inputs else {}
         self.task_outputs = outputs.formatted_dynamic_resources if outputs else {}
-
-        dirs = [
-            self.chainkeys_path,
-        ]
-        paths = [
-            self.log_path,
-        ]
-
-        dirs.extend([os.path.dirname(p) for p in paths])
-        for d in dirs:
-            if d:
-                makedir_safe(d)
