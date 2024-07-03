@@ -9,6 +9,14 @@ DEFAULT_LOG_PATH = "model/log_model.log"
 DEFAULT_CHAINKEYS_PATH = "chainkeys/"
 
 
+def makedir_safe(path):
+    """Create dir (no failure)."""
+    try:
+        os.makedirs(path)
+    except (FileExistsError, PermissionError):
+        pass
+
+
 class Workspace(abc.ABC):
     """Filesystem workspace for task execution."""
 
@@ -69,3 +77,15 @@ class FunctionWorkspace(OpenerWorkspace):
 
         self.task_inputs = inputs.formatted_dynamic_resources if inputs else {}
         self.task_outputs = outputs.formatted_dynamic_resources if outputs else {}
+
+        dirs = [
+            self.chainkeys_path,
+        ]
+        paths = [
+            self.log_path,
+        ]
+
+        dirs.extend([os.path.dirname(p) for p in paths])
+        for d in dirs:
+            if d:
+                makedir_safe(d)
