@@ -53,12 +53,8 @@ class OpenerWorkspace(Workspace):
             DEFAULT_INPUT_DATA_FOLDER_PATH
         )
 
-        for d in self.input_data_folder_paths:
-            if d:
-                makedir_safe(d)
 
-
-class FunctionWorkspace(OpenerWorkspace):
+class FunctionWorkspace(Workspace):
     """Filesystem workspace for user defined function execution."""
 
     def __init__(
@@ -70,8 +66,12 @@ class FunctionWorkspace(OpenerWorkspace):
         outputs=None,
     ):
 
-        super().__init__(
-            dirpath=dirpath, input_data_folder_paths=None if inputs is None else inputs.input_data_folder_paths
+        super().__init__(dirpath=dirpath)
+
+        self.input_data_folder_paths = (
+            self._get_default_subpaths(DEFAULT_INPUT_DATA_FOLDER_PATH)
+            if inputs is None
+            else inputs.input_data_folder_paths
         )
 
         self.log_path = log_path or self._get_default_path(DEFAULT_LOG_PATH)
