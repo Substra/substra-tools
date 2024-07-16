@@ -17,10 +17,6 @@
 
 Substra is an open source federated learning (FL) software. This specific repository, substra-tools, is a Python package defining base classes for Dataset (data opener script) and wrappers to execute functions submitted on the platform.
 
-This repository also contains a [Dockerfile](https://github.com/Substra/substra-tools/pkgs/container/substra-tools) to execute the user
-Python scripts on the Substra platform. This is currently needed to easily
-have substratools package available inside the Docker image without using a
-pypi server.
 
 ## Getting started
 
@@ -30,21 +26,10 @@ To install the substratools Python package, run the following command:
 pip install substratools
 ```
 
-## Pull the substra-tools Docker image
-
-```sh
-docker pull ghcr.io/substra/substra-tools:0.16.0-nvidiacuda11.8.0-base-ubuntu22.04-python3.11
-```
-
 ## Developers
 
 Clone the repository: <https://github.com/Substra/substra-tools>
 
-### Build the Docker image from source
-
-```sh
-docker build -f Dockerfile .
-```
 
 ### Setup
 

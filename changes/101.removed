@@ -1,0 +1,1 @@
+Remove base Docker image. Substrafl now uses python-slim as base image.
