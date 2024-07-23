@@ -1,5 +1,5 @@
-import imp
 import importlib
+import importlib.util
 import inspect
 import logging
 import os
@@ -66,7 +66,8 @@ class Timer(object):
 def import_module(module_name, code):
     if module_name in sys.modules:
         logging.warning("Module {} will be overwritten".format(module_name))
-    module = imp.new_module(module_name)
+    spec = importlib.util.spec_from_loader(module_name, loader=None, origin=module_name)
+    module = importlib.util.module_from_spec(spec)
     sys.modules[module_name] = module
     exec(code, module.__dict__)
 

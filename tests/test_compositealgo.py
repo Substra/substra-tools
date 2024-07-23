@@ -1,16 +1,16 @@
 import json
 import os
-
 from typing import Any
 from typing import Optional
 from typing import TypedDict
+
 import pytest
 
-from substratools import function
 from substratools import exceptions
+from substratools import function
+from substratools import opener
 from substratools.task_resources import TaskResources
 from substratools.workspace import FunctionWorkspace
-from substratools import opener
 from tests import utils
 from tests.utils import InputIdentifiers
 from tests.utils import OutputIdentifiers

@@ -7,14 +7,14 @@ from uuid import uuid4
 
 import pytest
 
-from substratools import function
 from substratools import exceptions
+from substratools import function
 from substratools import opener
 from substratools.task_resources import TaskResources
 from substratools.workspace import FunctionWorkspace
+from tests import utils
 from tests.utils import InputIdentifiers
 from tests.utils import OutputIdentifiers
-from tests import utils
 
 
 @pytest.fixture(autouse=True)
