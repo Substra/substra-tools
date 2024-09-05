@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- towncrier release notes start -->
 
+## [0.22.0](https://github.com/Substra/substra-tools/releases/tag/0.22.0) - 2024-09-04
+
+### Changed
+
+- The Opener and Function workspace does not try to create folder for data samples anymore. ([#100](https://github.com/Substra/substra-tools/pull/100))
+
+### Removed
+
+- Remove base Docker image. Substrafl now uses python-slim as base image. ([#101](https://github.com/Substra/substra-tools/pull/101))
+
+
 ## [0.21.4](https://github.com/Substra/substra-tools/releases/tag/0.21.4) - 2024-06-03
 
 
