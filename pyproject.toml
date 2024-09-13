@@ -13,7 +13,7 @@ name = "substratools"
 description = "Python tools to submit functions on the Substra platform"
 dynamic = ["version"]
 readme = "README.md"
-requires-python = ">= 3.9"
+requires-python = ">= 3.10"
 dependencies = []
 keywords = ["substra"]
 classifiers = [
@@ -21,7 +21,6 @@ classifiers = [
     "Topic :: Utilities",
     "Natural Language :: English",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
