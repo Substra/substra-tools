@@ -101,9 +101,17 @@ def load_interface_from_module(module_name, interface_class, interface_signature
         )
 
     # find interface class
+    found_interfaces = []
     for _, obj in inspect.getmembers(module, inspect.isclass):
-        if issubclass(obj, interface_class):
-            return obj()  # return interface instance
+        if issubclass(obj, interface_class) and obj != interface_class:
+            found_interfaces.append(obj)
+
+    if len(found_interfaces) == 1:
+        return found_interfaces[0]()  # return interface instance
+    elif len(found_interfaces) > 1:
+        raise exceptions.InvalidInterfaceError(
+            f"Multiple interfaces found in module '{module_name}': {found_interfaces}"
+        )
 
     # backward compatibility; accept methods at module level directly
     if interface_signature is None:
