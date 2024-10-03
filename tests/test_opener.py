@@ -74,6 +74,36 @@ def test_load_opener_from_path(tmp_cwd, valid_opener_code):
     assert o.get_data()[0] == "X"
 
 
+def test_load_opener_from_path_error_with_inheritance(tmp_cwd):
+    wrong_opener_code = """
+import json
+from substratools import Opener
+
+class FakeOpener(Opener):
+    def get_data(self, folder):
+        return 'X', list(range(0, 3))
+
+    def fake_data(self, n_samples):
+        return ['Xfake'] * n_samples, [0] * n_samples
+
+class FinalOpener(FakeOpener):
+    def __init__(self):
+        super().__init__()
+"""
+    dirpath = tmp_cwd / "myopener"
+    dirpath.mkdir()
+    path = dirpath / "my_opener.py"
+    path.write_text(wrong_opener_code)
+
+    with pytest.raises(exceptions.InvalidInterfaceError):
+        load_interface_from_module(
+            "opener",
+            interface_class=Opener,
+            interface_signature=None,  # XXX does not support interface for debugging
+            path=path,
+        )
+
+
 def test_opener_check_folders(tmp_cwd):
     script = """
 from substratools import Opener
